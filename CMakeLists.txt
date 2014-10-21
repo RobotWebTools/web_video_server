@@ -37,7 +37,10 @@ target_link_libraries(web_video_http_server
 
 
 ## Declare a cpp executable
-add_executable(${PROJECT_NAME} src/web_video_server.cpp)
+add_executable(${PROJECT_NAME}
+  src/web_video_server.cpp
+  src/image_streamer.cpp
+  src/jpeg_streamers.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
