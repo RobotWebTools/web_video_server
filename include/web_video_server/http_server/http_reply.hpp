@@ -76,19 +76,6 @@ struct HttpReply {
 };
 
 
-// Request Handler that serves a a predefined response
-class StaticHttpRequestHandler {
-public:
-  StaticHttpRequestHandler(HttpReply::status_type status,
-			   const std::vector<HttpHeader>& headers,
-			   const std::string& content);
-  void operator()(const HttpRequest&, boost::shared_ptr<HttpConnection>);
-private:
-  const std::vector<HttpHeader> headers_;
-  const std::string content_string_;
-  std::vector<boost::asio::const_buffer> buffers_;
-};
-
 // Object to build and send a reply
 class ReplyBuilder {
 public:
@@ -99,9 +86,21 @@ public:
   void write(HttpConnectionPtr connection);
 private:
   HttpReply::status_type status_;
-  std::vector<HttpHeader> headers_;
+  boost::shared_ptr<std::vector<HttpHeader> > headers_;
 };
 
+
+// Request Handler that serves a a predefined response
+class StaticHttpRequestHandler {
+public:
+  StaticHttpRequestHandler(HttpReply::status_type status,
+			   const std::vector<HttpHeader>& headers,
+			   const std::string& content);
+  void operator()(const HttpRequest&, boost::shared_ptr<HttpConnection>);
+private:
+  ReplyBuilder reply_builder_;
+  const std::string content_string_;
+};
 
 }
 }

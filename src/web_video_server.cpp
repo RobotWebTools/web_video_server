@@ -93,10 +93,10 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       cv::Mat img_resized;
       cv::Size new_size(width_, height_);
       cv::resize(img, img_resized, new_size);
-      sendImage(img_resized);
+      sendImage(img_resized, msg->header.stamp);
     }
     else{
-      sendImage(img);
+      sendImage(img, msg->header.stamp);
     }
   }
   catch (cv_bridge::Exception& e) {
@@ -146,7 +146,7 @@ MjpegStreamer::MjpegStreamer(const http_server::HttpRequest& request,
     .write(connection);
   connection->write("--boundarydonotcross \r\n");
 }
-bool MjpegStreamer::sendImage(const cv::Mat& img) {
+void MjpegStreamer::sendImage(const cv::Mat& img, const ros::Time& time) {
   std::vector<int> encode_params;
   encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
@@ -154,11 +154,14 @@ bool MjpegStreamer::sendImage(const cv::Mat& img) {
   std::vector<uchar> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
-  std::vector<http_server::HttpHeader> headers;
-  headers.push_back(http_server::HttpHeader("Content-type", "image/jpeg"));
-  headers.push_back(http_server::HttpHeader("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size())));
-  connection_->write(http_server::HttpReply::to_buffers(headers));
-  connection_->write(boost::asio::buffer(encoded_buffer));
+  char stamp[20];
+  sprintf(stamp, "%.06lf", time.toSec());
+  boost::shared_ptr<std::vector<http_server::HttpHeader> > headers(new std::vector<http_server::HttpHeader>());
+  headers->push_back(http_server::HttpHeader("Content-type", "image/jpeg"));
+  headers->push_back(http_server::HttpHeader("X-Timestamp", stamp));
+  headers->push_back(http_server::HttpHeader("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size())));
+  connection_->write(http_server::HttpReply::to_buffers(*headers), headers);
+  connection_->write_and_clear(encoded_buffer);
   connection_->write("\r\n--boundarydonotcross \r\n");
 }
 
@@ -168,7 +171,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(const http_server::HttpRequest& reque
   : ImageStreamer(request, connection, it){
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
-bool JpegSnapshotStreamer::sendImage(const cv::Mat& img) {
+void JpegSnapshotStreamer::sendImage(const cv::Mat& img, const ros::Time& time) {
   std::vector<int> encode_params;
   encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
@@ -176,16 +179,19 @@ bool JpegSnapshotStreamer::sendImage(const cv::Mat& img) {
   std::vector<uchar> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
+  char stamp[20];
+  sprintf(stamp, "%.06lf", time.toSec());
   http_server::HttpReply::builder(http_server::HttpReply::ok)
     .header("Connection", "close")
     .header("Server", "web_video_server")
     .header("Cache-Control", "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
+    .header("X-Timestamp", stamp)
     .header("Pragma", "no-cache")
     .header("Content-type", "image/jpeg")
     .header("Access-Control-Allow-Origin", "*")
     .header("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size()))
     .write(connection_);
-  connection_->write(boost::asio::buffer(encoded_buffer));
+  connection_->write_and_clear(encoded_buffer);
   inactive_ = true;
 }
 
@@ -209,13 +215,18 @@ WebVideoServer::WebVideoServer(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
   int port;
   private_nh.param("port", port, 8080);
 
+  int server_threads;
+  private_nh.param("server_threads", server_threads, 1);
+
+  private_nh.param("ros_threads", ros_threads_, 2);
+
   handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2));
   handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this, _1, _2));
   handler_group_.addHandlerForPath("/stream_viewer", boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2));
   handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2));
 
   server_.reset(new http_server::HttpServer("0.0.0.0", boost::lexical_cast<std::string>(port),
-					    boost::bind(ros_connection_logger, handler_group_, _1, _2), 5));
+					    boost::bind(ros_connection_logger, handler_group_, _1, _2), server_threads));
 }
 
 WebVideoServer::~WebVideoServer() {
@@ -224,7 +235,8 @@ WebVideoServer::~WebVideoServer() {
 void WebVideoServer::spin() {
   server_->run();
   ROS_INFO("Waiting For connections");
-  ros::spin();
+  ros::MultiThreadedSpinner spinner(ros_threads_);
+  spinner.spin();
   server_->stop();
 }
 

@@ -245,14 +245,12 @@ HttpServerRequestHandler HttpReply::stock_reply(HttpReply::status_type status) {
 StaticHttpRequestHandler::StaticHttpRequestHandler(HttpReply::status_type status,
 						   const std::vector<HttpHeader>& headers,
 						   const std::string& content)
-  : headers_(headers), content_string_(content) {
-  std::vector<boost::asio::const_buffer> header_buffers = HttpReply::to_buffers(headers_);
-  buffers_.push_back(status_strings::to_buffer(status));
-  buffers_.insert(buffers_.end(), header_buffers.begin(), header_buffers.end());
-  buffers_.push_back(boost::asio::buffer(content_string_));
+  : reply_builder_(status), content_string_(content) {
+  reply_builder_.headers(headers);
 }
 void StaticHttpRequestHandler::operator()(const HttpRequest& request, boost::shared_ptr<HttpConnection> connection){
-  connection->write(buffers_);
+  reply_builder_.write(connection);
+  connection->write(content_string_);
 }
 
 
@@ -260,24 +258,24 @@ ReplyBuilder HttpReply::builder(HttpReply::status_type status) {
   return ReplyBuilder(status);
 }
 ReplyBuilder::ReplyBuilder(HttpReply::status_type status)
-  : status_(status) {}
+  : status_(status), headers_(new std::vector<HttpHeader>()) {}
 
 ReplyBuilder& ReplyBuilder::header(const std::string& name, const std::string& value) {
   return header(HttpHeader(name, value));
 }
 ReplyBuilder& ReplyBuilder::header(const HttpHeader& header) {
-  headers_.push_back(header);
+  headers_->push_back(header);
   return *this;
 }
 
 ReplyBuilder& ReplyBuilder::headers(const std::vector<HttpHeader>& headers) {
-  headers_.insert(headers_.end(), headers.begin(), headers.end());
+  headers_->insert(headers_->end(), headers.begin(), headers.end());
   return *this;
 }
 
 void ReplyBuilder::write(HttpConnectionPtr connection) {
-  connection->write(status_strings::to_buffer(status_));
-  connection->write(HttpReply::to_buffers(headers_));
+  connection->write(status_strings::to_buffer(status_), HttpConnection::ResourcePtr());
+  connection->write(HttpReply::to_buffers(*headers_), headers_);
 }
 
 

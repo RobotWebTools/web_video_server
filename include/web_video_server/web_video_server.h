@@ -56,7 +56,7 @@ class ImageStreamer {
   bool isInactive();
   std::string getTopic() { return topic_; };
  protected:
-  virtual bool sendImage(const cv::Mat&) = 0;
+  virtual void sendImage(const cv::Mat&, const ros::Time& time) = 0;
   http_server::HttpConnectionPtr connection_;
   bool inactive_;
  private:
@@ -74,7 +74,7 @@ class MjpegStreamer : public ImageStreamer {
 		http_server::HttpConnectionPtr connection,
 		image_transport::ImageTransport it);
  protected:
-  virtual bool sendImage(const cv::Mat&);
+  virtual void sendImage(const cv::Mat&, const ros::Time& time);
  private:
   int quality_;
 };
@@ -84,7 +84,7 @@ class JpegSnapshotStreamer : public ImageStreamer {
 		       http_server::HttpConnectionPtr connection,
 		       image_transport::ImageTransport it);
  protected:
-  virtual bool sendImage(const cv::Mat&);
+  virtual void sendImage(const cv::Mat&, const ros::Time& time);
  private:
   int quality_;
 };
@@ -127,6 +127,7 @@ class WebVideoServer {
   ros::NodeHandle nh_;
   image_transport::ImageTransport image_transport_;
   ros::Timer cleanup_timer_;
+  int ros_threads_;
   boost::shared_ptr<http_server::HttpServer> server_;
   web_video_server::http_server::RequestHandlerGroup handler_group_;
 
