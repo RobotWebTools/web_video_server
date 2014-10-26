@@ -43,7 +43,8 @@ namespace web_video_server
 ImageStreamer::ImageStreamer(const http_server::HttpRequest& request,
 			     http_server::HttpConnectionPtr connection,
 			     image_transport::ImageTransport it)
-  : connection_(connection), inactive_(false), it_(it) {
+  : request_(request), connection_(connection), it_(it),
+    inactive_(false), initialized_(false) {
   topic_ = request.get_query_param_value_or_default("topic", "");
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -52,15 +53,16 @@ ImageStreamer::ImageStreamer(const http_server::HttpRequest& request,
 void ImageStreamer::start() {
   image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
 }
+void ImageStreamer::initialize(const cv::Mat&) {}
 void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
   if(inactive_)
     return;
 
-  cv::Mat img_orig;
+  cv::Mat img;
   try {
     if(msg->encoding.find("F") != std::string::npos) {
       // scale floating point images
-      cv::Mat float_image_bridge = cv_bridge::toCvShare(msg, msg->encoding)->image;
+      cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
       cv::Mat_<float> float_image = float_image_bridge;
       double max_val;
       cv::minMaxIdx(float_image, 0, &max_val);
@@ -68,14 +70,20 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       if(max_val > 0) {
 	float_image *= (255 / max_val);
       }
-      img_orig = float_image;
+      img = float_image;
     }
     else {
       // Convert to OpenCV native BGR color
-      img_orig = cv_bridge::toCvShare(msg, "bgr8")->image;
+      img = cv_bridge::toCvCopy(msg, "bgr8")->image;
     }
 
-    cv::Mat img = img_orig.clone();
+    int input_width = img.cols;
+    int input_height = img.rows;
+
+    if(output_width_ == -1)
+      output_width_ = input_width;
+    if(output_height_ == -1)
+      output_height_ = input_height;
 
     if(invert_) {
       // Rotate 180 degrees
@@ -83,16 +91,23 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       cv::flip(img, img, true);
     }
 
-    if(output_width_ > 0 && output_height_ > 0) {
-      //TODO: don't do this if the mat is already the correct size
+    cv::Mat output_size_image;
+    if(output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
-      sendImage(img_resized, msg->header.stamp);
+      output_size_image = img_resized;
     }
     else{
-      sendImage(img, msg->header.stamp);
+      output_size_image = img;
     }
+
+    if(!initialized_){
+      initialize(output_size_image);
+      initialized_ = true;
+    }
+    sendImage(output_size_image, msg->header.stamp);
+
   }
   catch (cv_bridge::Exception& e) {
     ROS_ERROR_THROTTLE(30, "cv_bridge exception: %s", e.what());

@@ -56,7 +56,9 @@ class ImageStreamer {
   std::string getTopic() { return topic_; };
  protected:
   virtual void sendImage(const cv::Mat&, const ros::Time& time) = 0;
+  virtual void initialize(const cv::Mat&);
   http_server::HttpConnectionPtr connection_;
+  http_server::HttpRequest request_;
   bool inactive_;
   image_transport::Subscriber image_sub_;
   std::string topic_;
@@ -65,6 +67,7 @@ class ImageStreamer {
   bool invert_;
  private:
   image_transport::ImageTransport it_;
+  bool initialized_;
   void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 };
 
