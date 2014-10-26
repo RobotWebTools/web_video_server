@@ -141,8 +141,6 @@ void WebVideoServer::handle_stream_viewer(const http_server::HttpRequest& reques
   std::string type = request.get_query_param_value_or_default("type", "mjpeg");
   if(stream_types_.find(type) != stream_types_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
-    std::string width = request.get_query_param_value_or_default("width", "640");
-    std::string height = request.get_query_param_value_or_default("height", "480");
 
     http_server::HttpReply::builder(http_server::HttpReply::ok)
       .header("Connection", "close")

@@ -87,6 +87,7 @@ class LibavStreamer : public ImageStreamer {
   int qmin_;
   int qmax_;
   int gop_;
+  std::string quality_;
 };
 
 class LibavStreamerType : public ImageStreamerType{

@@ -105,6 +105,7 @@ LibavStreamer::LibavStreamer(const http_server::HttpRequest& request,
   qmin_ = request.get_query_param_value_or_default<int>("qmin", 10);
   qmax_ = request.get_query_param_value_or_default<int>("qmax", 42);
   gop_ = request.get_query_param_value_or_default<int>("gop", 250);
+  quality_ = request.get_query_param_value_or_default("quality", "realtime");
 
   av_lockmgr_register(&ffmpeg_boost_mutex_lock_manager);
   av_register_all();
@@ -183,7 +184,7 @@ void LibavStreamer::initialize(const cv::Mat& img){
 
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
-  av_opt_map["quality"] = "realtime";
+  av_opt_map["quality"] = quality_;
   av_opt_map["deadline"] = "1";
   av_opt_map["auto-alt-ref"] = "0";
   av_opt_map["lag-in-frames"] = "1";
