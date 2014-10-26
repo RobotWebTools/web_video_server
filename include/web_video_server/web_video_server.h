@@ -92,6 +92,7 @@ class WebVideoServer {
   web_video_server::http_server::RequestHandlerGroup handler_group_;
 
   std::vector<boost::shared_ptr<ImageStreamer> > image_subscribers_;
+  std::map<std::string, boost::shared_ptr<ImageStreamerType> > stream_types_;
   boost::mutex subscriber_mutex_;
 };
 

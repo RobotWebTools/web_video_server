@@ -41,8 +41,8 @@ namespace web_video_server
 {
 
 MjpegStreamer::MjpegStreamer(const http_server::HttpRequest& request,
-			       http_server::HttpConnectionPtr connection,
-			       image_transport::ImageTransport it)
+			     http_server::HttpConnectionPtr connection,
+			     image_transport::ImageTransport it)
   : ImageStreamer(request, connection, it){
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 
@@ -74,6 +74,20 @@ void MjpegStreamer::sendImage(const cv::Mat& img, const ros::Time& time) {
   connection_->write_and_clear(encoded_buffer);
   connection_->write("\r\n--boundarydonotcross \r\n");
 }
+boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(const http_server::HttpRequest& request,
+						 http_server::HttpConnectionPtr connection,
+						 image_transport::ImageTransport it) {
+  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, it));
+}
+std::string MjpegStreamerType::create_viewer(const http_server::HttpRequest& request) {
+  std::stringstream ss;
+  ss << "<img src=\"/stream?";
+  ss << request.query;
+  ss << "\"></img>";
+  return ss.str();
+}
+
+
 
 JpegSnapshotStreamer::JpegSnapshotStreamer(const http_server::HttpRequest& request,
 			       http_server::HttpConnectionPtr connection,

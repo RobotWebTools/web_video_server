@@ -1,12 +1,19 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(web_video_server)
 
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS roscpp std_msgs roslib cv_bridge image_transport)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(avcodec libavcodec REQUIRED)
+pkg_check_modules(avformat libavformat REQUIRED)
+pkg_check_modules(avutil libavutil REQUIRED)
+pkg_check_modules(swscale libswscale REQUIRED)
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -25,6 +32,10 @@ catkin_package()
 include_directories(include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${avcodec_INCLUDE_DIRS}
+  ${avformat_INCLUDE_DIRS}
+  ${avutil_INCLUDE_DIRS}
+  ${swscale_INCLUDE_DIRS}
 )
 
 add_library(web_video_http_server src/http_server/http_server.cpp
@@ -40,11 +51,19 @@ target_link_libraries(web_video_http_server
 add_executable(${PROJECT_NAME}
   src/web_video_server.cpp
   src/image_streamer.cpp
+  src/libav_streamer.cpp
   src/jpeg_streamers.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES} ${Boost_LIBRARIES} ${OpenCV_LIBS} web_video_http_server
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${avcodec_LIBRARIES}
+  ${avformat_LIBRARIES}
+  ${avutil_LIBRARIES}
+  ${swscale_LIBRARIES}
+  web_video_http_server
 )
 
 #############

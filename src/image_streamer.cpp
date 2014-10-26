@@ -43,12 +43,14 @@ namespace web_video_server
 ImageStreamer::ImageStreamer(const http_server::HttpRequest& request,
 			     http_server::HttpConnectionPtr connection,
 			     image_transport::ImageTransport it)
-    : connection_(connection), inactive_(false) {
+  : connection_(connection), inactive_(false), it_(it) {
   topic_ = request.get_query_param_value_or_default("topic", "");
-  width_ = request.get_query_param_value_or_default<int>("width", -1);
-  height_ = request.get_query_param_value_or_default<int>("height", -1);
+  output_width_ = request.get_query_param_value_or_default<int>("width", -1);
+  output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
-  image_sub_ = it.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
+}
+void ImageStreamer::start() {
+  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
 }
 void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
   if(inactive_)
@@ -81,9 +83,10 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       cv::flip(img, img, true);
     }
 
-    if(width_ > 0 && height_ > 0) {
+    if(output_width_ > 0 && output_height_ > 0) {
+      //TODO: don't do this if the mat is already the correct size
       cv::Mat img_resized;
-      cv::Size new_size(width_, height_);
+      cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
       sendImage(img_resized, msg->header.stamp);
     }

@@ -43,6 +43,7 @@
 
 #include "web_video_server/web_video_server.h"
 #include "web_video_server/jpeg_streamers.h"
+#include "web_video_server/libav_streamer.h"
 #include "web_video_server/http_server/http_reply.hpp"
 
 namespace web_video_server
@@ -73,6 +74,9 @@ WebVideoServer::WebVideoServer(ros::NodeHandle& nh, ros::NodeHandle& private_nh)
   private_nh.param("server_threads", server_threads, 1);
 
   private_nh.param("ros_threads", ros_threads_, 2);
+
+  stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
+  stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new LibavStreamerType("webm", "libvpx", "video/webm"));
 
   handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2));
   handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this, _1, _2));
@@ -110,37 +114,52 @@ void WebVideoServer::cleanup_inactive_streams(){
 
 
 void WebVideoServer::handle_stream(const http_server::HttpRequest& request,
-				http_server::HttpConnectionPtr connection) {
-  boost::mutex::scoped_lock lock(subscriber_mutex_);
-  image_subscribers_.push_back(boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, image_transport_)));
+				   http_server::HttpConnectionPtr connection) {
+  std::string type = request.get_query_param_value_or_default("type", "mjpeg");
+  if(stream_types_.find(type) != stream_types_.end()) {
+    boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request, connection, image_transport_);
+    streamer->start();
+    boost::mutex::scoped_lock lock(subscriber_mutex_);
+    image_subscribers_.push_back(streamer);
+  }
+  else {
+    http_server::HttpReply::stock_reply(http_server::HttpReply::not_found)(request, connection);
+  }
 }
 
 void WebVideoServer::handle_snapshot(const http_server::HttpRequest& request,
-				  http_server::HttpConnectionPtr connection) {
+				     http_server::HttpConnectionPtr connection) {
+  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, image_transport_));
+  streamer->start();
+
   boost::mutex::scoped_lock lock(subscriber_mutex_);
-  image_subscribers_.push_back(boost::shared_ptr<ImageStreamer>(new JpegSnapshotStreamer(request, connection, image_transport_)));
+  image_subscribers_.push_back(streamer);
 }
 
 void WebVideoServer::handle_stream_viewer(const http_server::HttpRequest& request,
-				      http_server::HttpConnectionPtr connection) {
-  std::string topic = request.get_query_param_value_or_default("topic", "");
-  std::string width = request.get_query_param_value_or_default("width", "640");
-  std::string height = request.get_query_param_value_or_default("height", "480");
+					  http_server::HttpConnectionPtr connection) {
+  std::string type = request.get_query_param_value_or_default("type", "mjpeg");
+  if(stream_types_.find(type) != stream_types_.end()) {
+    std::string topic = request.get_query_param_value_or_default("topic", "");
+    std::string width = request.get_query_param_value_or_default("width", "640");
+    std::string height = request.get_query_param_value_or_default("height", "480");
 
-  http_server::HttpReply::builder(http_server::HttpReply::ok)
-    .header("Connection", "close")
-    .header("Server", "web_video_server")
-    .header("Content-type", "text/html;")
-    .write(connection);
+    http_server::HttpReply::builder(http_server::HttpReply::ok)
+      .header("Connection", "close")
+      .header("Server", "web_video_server")
+      .header("Content-type", "text/html;")
+      .write(connection);
 
-  std::stringstream ss;
-  ss << "<html><head><title>" << topic << "</title></head><body>";
-  ss << "<h1>" << topic << "</h1>";
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\" width=\"" << width << "\" height=\"" << height << "\"></img>";
-  ss << "</body></html>";
-  connection->write(ss.str());
+    std::stringstream ss;
+    ss << "<html><head><title>" << topic << "</title></head><body>";
+    ss << "<h1>" << topic << "</h1>";
+    ss << stream_types_[type]->create_viewer(request);
+    ss << "</body></html>";
+    connection->write(ss.str());
+  }
+  else {
+    http_server::HttpReply::stock_reply(http_server::HttpReply::not_found)(request, connection);
+  }
 }
 
 void WebVideoServer::handle_list_streams(const http_server::HttpRequest& request,
