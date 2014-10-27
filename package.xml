@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
   <name>web_video_server</name>
-  <version>1.0.0</version>
-  <description>A package that provides ROS image topic streaming over HTTP using various web encodings</description>
+  <version>0.0.0</version>
+  <description>A ROS Node to Stream Image Topics Via a MJPEG Server</description>
 
   <maintainer email="rctoris@wpi.edu">Russell Toris</maintainer>
   <author email="mwills@wpi.edu">Mitchell Wills</author>
