@@ -2,7 +2,7 @@
 <package>
   <name>web_video_server</name>
   <version>0.0.1</version>
-  <description>A ROS Node to Stream Image Topics Via a MJPEG Server</description>
+  <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 
   <maintainer email="rctoris@wpi.edu">Russell Toris</maintainer>
   <author email="mwills@wpi.edu">Mitchell Wills</author>
