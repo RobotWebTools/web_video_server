@@ -69,7 +69,6 @@ LibavStreamer::LibavStreamer(const http_server::HttpRequest &request,
   qmin_ = request.get_query_param_value_or_default<int>("qmin", 10);
   qmax_ = request.get_query_param_value_or_default<int>("qmax", 42);
   gop_ = request.get_query_param_value_or_default<int>("gop", 250);
-  quality_ = request.get_query_param_value_or_default("quality", "realtime");
 
   av_lockmgr_register(&ffmpeg_boost_mutex_lock_manager);
   av_register_all();
@@ -151,8 +150,11 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->height = output_height_;
   codec_context_->delay = 0;
 
-  codec_context_->time_base.den = 1;
+  video_stream_->time_base.num = 1;
+  video_stream_->time_base.den = 1000;
+
   codec_context_->time_base.num = 1;
+  codec_context_->time_base.den = 1;
   codec_context_->gop_size = gop_;
   codec_context_->pix_fmt = PIX_FMT_YUV420P;
   codec_context_->max_b_frames = 0;
@@ -161,30 +163,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->qmin = qmin_;
   codec_context_->qmax = qmax_;
 
-  typedef std::map<std::string, std::string> AvOptMap;
-  AvOptMap av_opt_map;
-  av_opt_map["quality"] = quality_;
-  av_opt_map["deadline"] = "1";
-  av_opt_map["auto-alt-ref"] = "0";
-  av_opt_map["lag-in-frames"] = "1";
-  av_opt_map["rc_lookahead"] = "1";
-  av_opt_map["drop_frame"] = "1";
-  av_opt_map["error-resilient"] = "1";
-
-  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr)
-  {
-    av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
-  }
-
-  // Buffering settings
-  int bufsize = 10;
-  codec_context_->rc_buffer_size = bufsize;
-  codec_context_->rc_initial_buffer_occupancy = bufsize;//bitrate/3;
-  av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
-  av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
-  av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
-  codec_context_->rc_buffer_aggressivity = 0.5;
-  codec_context_->frame_skip_threshold = 10;
+  initializeEncoder();
 
   // Some formats want stream headers to be separate
   if (format_context_->oformat->flags & AVFMT_GLOBALHEADER)
@@ -257,6 +236,10 @@ void LibavStreamer::initialize(const cv::Mat &img)
   connection_->write_and_clear(header_buffer);
 }
 
+void LibavStreamer::initializeEncoder()
+{
+}
+
 void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
@@ -317,9 +300,10 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
     double seconds = (time - first_image_timestamp_).toSec();
     // Encode video at 1/0.95 to minimize delay
-    pkt.pts = (int) (seconds / av_q2d(video_stream_->time_base) * 0.95);
+    pkt.pts = (int64_t) (seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt.pts <= 0)
       pkt.pts = 1;
+    pkt.dts = AV_NOPTS_VALUE;
 
     if (codec_context_->coded_frame->key_frame)
       pkt.flags |= AV_PKT_FLAG_KEY;

@@ -51,6 +51,7 @@ add_executable(${PROJECT_NAME}
   src/web_video_server.cpp
   src/image_streamer.cpp
   src/libav_streamer.cpp
+  src/vp8_streamer.cpp
   src/jpeg_streamers.cpp)
 
 ## Specify libraries to link a library or executable target against

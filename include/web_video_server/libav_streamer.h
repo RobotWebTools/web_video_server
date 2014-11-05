@@ -32,20 +32,20 @@ public:
   ~LibavStreamer();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
-
-  virtual void initialize(const cv::Mat &);
+  virtual void initializeEncoder();
+  virtual void sendImage(const cv::Mat&, const ros::Time& time);
+  virtual void initialize(const cv::Mat&);
+  AVOutputFormat* output_format_;
+  AVFormatContext* format_context_;
+  AVCodec* codec_;
+  AVCodecContext* codec_context_;
+  AVStream* video_stream_;
 
 private:
-  AVOutputFormat *output_format_;
-  AVFormatContext *format_context_;
-  AVCodec *codec_;
-  AVCodecContext *codec_context_;
-  AVStream *video_stream_;
-  AVFrame *frame_;
-  AVPicture *picture_;
-  AVPicture *tmp_picture_;
-  struct SwsContext *sws_context_;
+  AVFrame* frame_;
+  AVPicture* picture_;
+  AVPicture* tmp_picture_;
+  struct SwsContext* sws_context_;
   ros::Time first_image_timestamp_;
   boost::mutex encode_mutex_;
 
@@ -56,7 +56,6 @@ private:
   int qmin_;
   int qmax_;
   int gop_;
-  std::string quality_;
 };
 
 class LibavStreamerType : public ImageStreamerType
