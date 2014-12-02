@@ -3,8 +3,8 @@
 
 #include <image_transport/image_transport.h>
 #include "web_video_server/image_streamer.h"
-#include "web_video_server/http_server/http_request.hpp"
-#include "web_video_server/http_server/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server
 {
@@ -12,9 +12,8 @@ namespace web_video_server
 class MjpegStreamer : public ImageStreamer
 {
 public:
-  MjpegStreamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it);
+  MjpegStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
+                image_transport::ImageTransport it);
 
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
@@ -26,20 +25,18 @@ private:
 class MjpegStreamerType : public ImageStreamerType
 {
 public:
-  boost::shared_ptr<ImageStreamer> create_streamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it);
+  boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
+                                                   async_web_server_cpp::HttpConnectionPtr connection,
+                                                   image_transport::ImageTransport it);
 
-  std::string create_viewer(const http_server::HttpRequest &request);
+  std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 };
-
 
 class JpegSnapshotStreamer : public ImageStreamer
 {
 public:
-  JpegSnapshotStreamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it);
+  JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
+                       async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it);
 
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);

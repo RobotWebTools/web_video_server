@@ -3,8 +3,8 @@
 
 #include <image_transport/image_transport.h>
 #include "web_video_server/image_streamer.h"
-#include "web_video_server/http_server/http_request.hpp"
-#include "web_video_server/http_server/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 
 extern "C"
 {
@@ -23,11 +23,9 @@ namespace web_video_server
 class LibavStreamer : public ImageStreamer
 {
 public:
-  LibavStreamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it,
-      const std::string &format_name, const std::string &codec_name,
-      const std::string &content_type);
+  LibavStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
+                image_transport::ImageTransport it, const std::string &format_name, const std::string &codec_name,
+                const std::string &content_type);
 
   ~LibavStreamer();
 
@@ -61,14 +59,13 @@ private:
 class LibavStreamerType : public ImageStreamerType
 {
 public:
-  LibavStreamerType(const std::string &format_name, const std::string &codec_name,
-      const std::string &content_type);
+  LibavStreamerType(const std::string &format_name, const std::string &codec_name, const std::string &content_type);
 
-  boost::shared_ptr<ImageStreamer> create_streamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it);
+  boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
+                                                   async_web_server_cpp::HttpConnectionPtr connection,
+                                                   image_transport::ImageTransport it);
 
-  std::string create_viewer(const http_server::HttpRequest &request);
+  std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 
 private:
   const std::string format_name_;

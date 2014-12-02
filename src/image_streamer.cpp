@@ -4,11 +4,9 @@
 namespace web_video_server
 {
 
-ImageStreamer::ImageStreamer(const http_server::HttpRequest &request,
-    http_server::HttpConnectionPtr connection,
-    image_transport::ImageTransport it)
-    : request_(request), connection_(connection), it_(it),
-      inactive_(false), initialized_(false)
+ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
+                             async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it) :
+    request_(request), connection_(connection), it_(it), inactive_(false), initialized_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);

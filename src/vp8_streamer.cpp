@@ -34,21 +34,23 @@
  *
  *********************************************************************/
 
-
 #include "web_video_server/vp8_streamer.h"
 
 namespace web_video_server
 {
 
-Vp8Streamer::Vp8Streamer(const http_server::HttpRequest& request,
-			 http_server::HttpConnectionPtr connection,
-			 image_transport::ImageTransport it)
-  : LibavStreamer(request, connection, it, "webm", "libvpx", "video/webm") {
+Vp8Streamer::Vp8Streamer(const async_web_server_cpp::HttpRequest& request,
+                         async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it) :
+    LibavStreamer(request, connection, it, "webm", "libvpx", "video/webm")
+{
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
-Vp8Streamer::~Vp8Streamer() {}
+Vp8Streamer::~Vp8Streamer()
+{
+}
 
-void Vp8Streamer::initializeEncoder() {
+void Vp8Streamer::initializeEncoder()
+{
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
   av_opt_map["quality"] = quality_;
@@ -59,14 +61,15 @@ void Vp8Streamer::initializeEncoder() {
   av_opt_map["drop_frame"] = "1";
   av_opt_map["error-resilient"] = "1";
 
-  for(AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr){
+  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr)
+  {
     av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
   }
 
   // Buffering settings
   int bufsize = 10;
   codec_context_->rc_buffer_size = bufsize;
-  codec_context_->rc_initial_buffer_occupancy = bufsize;//bitrate/3;
+  codec_context_->rc_initial_buffer_occupancy = bufsize; //bitrate/3;
   av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
@@ -74,13 +77,16 @@ void Vp8Streamer::initializeEncoder() {
   codec_context_->frame_skip_threshold = 10;
 }
 
-Vp8StreamerType::Vp8StreamerType() : LibavStreamerType("webm", "libvpx", "video/webm") {}
-
-boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(const http_server::HttpRequest& request,
-						 http_server::HttpConnectionPtr connection,
-						 image_transport::ImageTransport it) {
-  return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, it));
+Vp8StreamerType::Vp8StreamerType() :
+    LibavStreamerType("webm", "libvpx", "video/webm")
+{
 }
 
+boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
+                                                                  async_web_server_cpp::HttpConnectionPtr connection,
+                                                                  image_transport::ImageTransport it)
+{
+  return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, it));
+}
 
 }

@@ -4,8 +4,8 @@
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <opencv2/opencv.hpp>
-#include "web_video_server/http_server/http_server.hpp"
-#include "web_video_server/http_server/http_request.hpp"
+#include "async_web_server_cpp/http_server.hpp"
+#include "async_web_server_cpp/http_request.hpp"
 
 namespace web_video_server
 {
@@ -13,9 +13,8 @@ namespace web_video_server
 class ImageStreamer
 {
 public:
-  ImageStreamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it);
+  ImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
+                image_transport::ImageTransport it);
 
   void start();
 
@@ -24,14 +23,15 @@ public:
   std::string getTopic()
   {
     return topic_;
-  };
+  }
+  ;
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
 
   virtual void initialize(const cv::Mat &);
 
-  http_server::HttpConnectionPtr connection_;
-  http_server::HttpRequest request_;
+  async_web_server_cpp::HttpConnectionPtr connection_;
+  async_web_server_cpp::HttpRequest request_;
   bool inactive_;
   image_transport::Subscriber image_sub_;
   std::string topic_;
@@ -48,11 +48,11 @@ private:
 class ImageStreamerType
 {
 public:
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(const http_server::HttpRequest &request,
-      http_server::HttpConnectionPtr connection,
-      image_transport::ImageTransport it) = 0;
+  virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
+                                                           async_web_server_cpp::HttpConnectionPtr connection,
+                                                           image_transport::ImageTransport it) = 0;
 
-  virtual std::string create_viewer(const http_server::HttpRequest &request) = 0;
+  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest &request) = 0;
 };
 
 }

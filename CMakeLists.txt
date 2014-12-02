@@ -4,7 +4,7 @@ project(web_video_server)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport)
+find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport async_web_server_cpp)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 
@@ -37,15 +37,6 @@ include_directories(include
   ${swscale_INCLUDE_DIRS}
 )
 
-add_library(web_video_http_server src/http_server/http_server.cpp
-  src/http_server/http_connection.cpp src/http_server/http_request_parser.cpp
-  src/http_server/http_reply.cpp src/http_server/request_handler.cpp
-  src/http_server/http_request.cpp)
-target_link_libraries(web_video_http_server
-  ${Boost_LIBRARIES}
-)
-
-
 ## Declare a cpp executable
 add_executable(${PROJECT_NAME}
   src/web_video_server.cpp
@@ -63,7 +54,6 @@ target_link_libraries(${PROJECT_NAME}
   ${avformat_LIBRARIES}
   ${avutil_LIBRARIES}
   ${swscale_LIBRARIES}
-  web_video_http_server
 )
 
 #############
@@ -71,7 +61,7 @@ target_link_libraries(${PROJECT_NAME}
 #############
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} web_video_http_server
+install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

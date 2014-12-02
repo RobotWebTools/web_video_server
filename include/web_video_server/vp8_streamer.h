@@ -39,35 +39,34 @@
 
 #include <image_transport/image_transport.h>
 #include "web_video_server/libav_streamer.h"
-#include "web_video_server/http_server/http_request.hpp"
-#include "web_video_server/http_server/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server
 {
 
-class Vp8Streamer : public LibavStreamer {
- public:
-  Vp8Streamer(const http_server::HttpRequest& request,
-		http_server::HttpConnectionPtr connection,
-	      image_transport::ImageTransport it);
+class Vp8Streamer : public LibavStreamer
+{
+public:
+  Vp8Streamer(const async_web_server_cpp::HttpRequest& request, async_web_server_cpp::HttpConnectionPtr connection,
+              image_transport::ImageTransport it);
   ~Vp8Streamer();
- protected:
+protected:
   virtual void initializeEncoder();
- private:
+private:
   std::string quality_;
 };
 
-class Vp8StreamerType : public LibavStreamerType{
- public:
+class Vp8StreamerType : public LibavStreamerType
+{
+public:
   Vp8StreamerType();
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(const http_server::HttpRequest& request,
-						   http_server::HttpConnectionPtr connection,
-						   image_transport::ImageTransport it);
+  virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest& request,
+                                                           async_web_server_cpp::HttpConnectionPtr connection,
+                                                           image_transport::ImageTransport it);
 };
 
-
 }
-
 
 #endif
 
