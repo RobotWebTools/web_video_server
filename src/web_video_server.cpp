@@ -42,6 +42,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("server_threads", server_threads, 1);
 
   private_nh.param("ros_threads", ros_threads_, 2);
+  private_nh.param("publish_rate", publish_rate_, -1.0);
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
@@ -66,10 +67,36 @@ void WebVideoServer::spin()
 {
   server_->run();
   ROS_INFO("Waiting For connections");
-  ros::MultiThreadedSpinner spinner(ros_threads_);
-  spinner.spin();
+
+  ros::AsyncSpinner spinner(ros_threads_);
+  spinner.start();
+
+  if ( publish_rate_ > 0 ) {
+    ros::WallRate r(publish_rate_);
+
+    while( ros::ok() ) {
+      this->restreamFrames( 1.0 / publish_rate_ );
+      r.sleep();
+    }
+  } else {
+    ros::waitForShutdown();
+  }
+  
   server_->stop();
 }
+
+void WebVideoServer::restreamFrames( double max_age )
+{
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
+
+  typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
+
+  for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr)
+    {
+      (*itr)->restreamFrame( max_age );
+    }
+}
+
 
 void WebVideoServer::cleanup_inactive_streams()
 {

@@ -31,7 +31,7 @@ public:
 
 protected:
   virtual void initializeEncoder();
-  virtual void sendImage(const cv::Mat&, const ros::Time& time);
+  virtual void sendImage(const cv::Mat&, const ros::WallTime& time);
   virtual void initialize(const cv::Mat&);
   AVOutputFormat* output_format_;
   AVFormatContext* format_context_;
@@ -44,7 +44,7 @@ private:
   AVPicture* picture_;
   AVPicture* tmp_picture_;
   struct SwsContext* sws_context_;
-  ros::Time first_image_timestamp_;
+  ros::WallTime first_image_timestamp_;
   boost::mutex encode_mutex_;
 
   std::string format_name_;

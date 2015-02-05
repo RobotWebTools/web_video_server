@@ -152,7 +152,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->time_base.den = 1;
   codec_context_->gop_size = gop_;
   codec_context_->pix_fmt = PIX_FMT_YUV420P;
-  codec_context_->max_b_frames = 0;
+  codec_context_->max_b_frames = 1;
 
   // Quality settings
   codec_context_->qmin = qmin_;
@@ -230,7 +230,7 @@ void LibavStreamer::initializeEncoder()
 {
 }
 
-void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void LibavStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
   if (first_image_timestamp_.isZero())
@@ -320,7 +320,12 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
   av_free_packet(&pkt);
 
-  connection_->write_and_clear(encoded_frame);
+  try {
+    connection_->write_and_clear(encoded_frame);
+  } catch (boost::system::system_error& e) {
+    // probably a broken pipe.
+    throw std::runtime_error(std::string("Error on socket connection: ") + e.what() );
+  }
 }
 
 LibavStreamerType::LibavStreamerType(const std::string &format_name, const std::string &codec_name,

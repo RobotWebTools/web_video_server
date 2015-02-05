@@ -24,9 +24,13 @@ public:
   {
     return topic_;
   }
-  ;
+
+  /**
+   * Restreams the last received image frame if older than max_age.
+   */
+  virtual void restreamFrame(double max_age);
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
+  virtual void sendImage(const cv::Mat &, const ros::WallTime &time) = 0;
 
   virtual void initialize(const cv::Mat &);
 
@@ -38,6 +42,10 @@ protected:
   int output_width_;
   int output_height_;
   bool invert_;
+  ros::WallTime last_frame;
+  cv::Mat output_size_image;
+  boost::mutex send_mutex_;
+
 private:
   image_transport::ImageTransport it_;
   bool initialized_;

@@ -1,6 +1,6 @@
 #include "web_video_server/image_streamer.h"
 #include <cv_bridge/cv_bridge.h>
-
+#include <iostream>
 namespace web_video_server
 {
 
@@ -21,6 +21,16 @@ void ImageStreamer::start()
 
 void ImageStreamer::initialize(const cv::Mat &)
 {
+}
+
+void ImageStreamer::restreamFrame(double max_age)
+{
+  if (inactive_ || !initialized_ )
+    return;
+  if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
+    boost::mutex::scoped_lock lock(send_mutex_);
+    sendImage(output_size_image, ros::WallTime::now() ); // don't update last_frame, it may remain an old value.
+  }
 }
 
 void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
@@ -66,7 +76,6 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       cv::flip(img, img, true);
     }
 
-    cv::Mat output_size_image;
     if (output_width_ != input_width || output_height_ != input_height)
     {
       cv::Mat img_resized;
@@ -84,7 +93,9 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       initialize(output_size_image);
       initialized_ = true;
     }
-    sendImage(output_size_image, msg->header.stamp);
+    boost::mutex::scoped_lock lock(send_mutex_);
+    last_frame = ros::WallTime::now();
+    sendImage(output_size_image, last_frame );
 
   }
   catch (cv_bridge::Exception &e)

@@ -16,7 +16,7 @@ public:
                 image_transport::ImageTransport it);
 
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const ros::WallTime &time);
 
 private:
   int quality_;
@@ -39,7 +39,7 @@ public:
                        async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it);
 
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const ros::WallTime &time);
 
 private:
   int quality_;

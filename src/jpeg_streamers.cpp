@@ -18,7 +18,7 @@ MjpegStreamer::MjpegStreamer(const async_web_server_cpp::HttpRequest &request,
   connection->write("--boundarydonotcross \r\n");
 }
 
-void MjpegStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void MjpegStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
@@ -64,7 +64,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(const async_web_server_cpp::HttpReque
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
 
-void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
