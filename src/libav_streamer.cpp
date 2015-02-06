@@ -320,14 +320,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 
   av_free_packet(&pkt);
 
-  try {
-    connection_->write_and_clear(encoded_frame);
-  } catch (boost::system::system_error& e) {
-    // probably a broken pipe. Bail out.
-    ROS_DEBUG("system_error exception: %s", e.what());
-    inactive_ = true;
-    return;
-  }
+  connection_->write_and_clear(encoded_frame);
 }
 
 LibavStreamerType::LibavStreamerType(const std::string &format_name, const std::string &codec_name,

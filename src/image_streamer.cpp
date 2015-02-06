@@ -27,10 +27,32 @@ void ImageStreamer::restreamFrame(double max_age)
 {
   if (inactive_ || !initialized_ )
     return;
-  if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
-    boost::mutex::scoped_lock lock(send_mutex_);
-    sendImage(output_size_image, ros::WallTime::now() ); // don't update last_frame, it may remain an old value.
+  try {
+    if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
+      boost::mutex::scoped_lock lock(send_mutex_);
+      sendImage(output_size_image, ros::WallTime::now() ); // don't update last_frame, it may remain an old value.
+    }
   }
+  catch (boost::system::system_error &e)
+  {
+    // happens when client disconnects
+    ROS_DEBUG("system_error exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (std::exception &e)
+  {
+    ROS_ERROR_THROTTLE(30, "exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (...)
+  {
+    ROS_ERROR_THROTTLE(30, "exception");
+    inactive_ = true;
+    return;
+  }
+
 }
 
 void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
