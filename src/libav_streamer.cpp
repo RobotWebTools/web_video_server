@@ -323,8 +323,10 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
   try {
     connection_->write_and_clear(encoded_frame);
   } catch (boost::system::system_error& e) {
-    // probably a broken pipe.
-    throw std::runtime_error(std::string("Error on socket connection: ") + e.what() );
+    // probably a broken pipe. Bail out.
+    ROS_DEBUG("system_error exception: %s", e.what());
+    inactive_ = true;
+    return;
   }
 }
 
