@@ -64,6 +64,8 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
 
 LibavStreamer::~LibavStreamer()
 {
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects all structures below when send is still in progress.
   if (codec_context_)
     avcodec_close(codec_context_);
   if (frame_)

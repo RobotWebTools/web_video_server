@@ -98,6 +98,7 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       cv::flip(img, img, true);
     }
 
+    boost::mutex::scoped_lock lock(send_mutex_); // protects output_size_image
     if (output_width_ != input_width || output_height_ != input_height)
     {
       cv::Mat img_resized;
@@ -115,7 +116,7 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       initialize(output_size_image);
       initialized_ = true;
     }
-    boost::mutex::scoped_lock lock(send_mutex_);
+
     last_frame = ros::WallTime::now();
     sendImage(output_size_image, last_frame );
 

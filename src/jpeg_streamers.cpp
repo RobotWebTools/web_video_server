@@ -18,6 +18,12 @@ MjpegStreamer::MjpegStreamer(const async_web_server_cpp::HttpRequest &request,
   connection->write("--boundarydonotcross \r\n");
 }
 
+MjpegStreamer::~MjpegStreamer()
+{
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+}
+
 void MjpegStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
   std::vector<int> encode_params;
@@ -63,6 +69,14 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(const async_web_server_cpp::HttpReque
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
+
+JpegSnapshotStreamer::~JpegSnapshotStreamer()
+{
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+}
+
+
 
 void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
