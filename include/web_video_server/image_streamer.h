@@ -16,6 +16,8 @@ public:
   ImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
                 image_transport::ImageTransport it);
 
+  virtual ~ImageStreamer();
+
   void start();
 
   bool isInactive();

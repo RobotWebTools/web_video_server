@@ -14,6 +14,10 @@ ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
   invert_ = request.has_query_param("invert");
 }
 
+ImageStreamer::~ImageStreamer()
+{
+}
+
 void ImageStreamer::start()
 {
   image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
