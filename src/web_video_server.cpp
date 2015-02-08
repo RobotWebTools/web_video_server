@@ -100,17 +100,22 @@ void WebVideoServer::restreamFrames( double max_age )
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  boost::mutex::scoped_lock lock(subscriber_mutex_, boost::try_to_lock);
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
   if (lock)
   {
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
-    itr_type new_end = std::remove_if(image_subscribers_.begin(), image_subscribers_.end(),
-                                      boost::bind(&ImageStreamer::isInactive, _1));
-    for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
+    itr_type itr = image_subscribers_.begin();
+    while ( itr != image_subscribers_.end() )
     {
-      ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+      if ( (*itr)->isInactive() ) {
+	ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+	image_subscribers_.erase( itr );
+	itr = image_subscribers_.begin();
+      }
+      else {
+	++itr;
+      }
     }
-    image_subscribers_.erase(new_end, image_subscribers_.end());
   }
 }
 
