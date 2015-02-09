@@ -108,7 +108,7 @@ void WebVideoServer::cleanup_inactive_streams()
     while ( itr != image_subscribers_.end() )
     {
       if ( (*itr)->isInactive() ) {
-	ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+	ROS_INFO_STREAM("Removing Stream: " << (*itr)->getTopic() << " (streams left: "<< (image_subscribers_.end() - itr ) -1 << ")");
 	image_subscribers_.erase( itr );
 	itr = image_subscribers_.begin();
       }
