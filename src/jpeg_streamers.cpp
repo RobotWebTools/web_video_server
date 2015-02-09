@@ -41,6 +41,7 @@ void MjpegStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
   headers->push_back(
       async_web_server_cpp::HttpHeader("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size())));
+  headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Allow-Origin", "*"));
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
   connection_->write_and_clear(encoded_buffer);
   connection_->write("\r\n--boundarydonotcross \r\n");
