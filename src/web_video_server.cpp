@@ -44,6 +44,8 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("ros_threads", ros_threads_, 2);
   private_nh.param("publish_rate", publish_rate_, -1.0);
 
+  // required single-threaded, once-only init:
+  LibavStreamer::SetupAVLibrary();
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
 

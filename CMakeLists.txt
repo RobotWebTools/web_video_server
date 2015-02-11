@@ -23,6 +23,8 @@ pkg_check_modules(swscale libswscale REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package()
 
+set(CMAKE_BUILD_TYPE Debug )
+
 ###########
 ## Build ##
 ###########

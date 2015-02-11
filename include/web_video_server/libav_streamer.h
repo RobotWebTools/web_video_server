@@ -29,6 +29,7 @@ public:
 
   ~LibavStreamer();
 
+  static void SetupAVLibrary();
 protected:
   virtual void initializeEncoder();
   virtual void sendImage(const cv::Mat&, const ros::WallTime& time);

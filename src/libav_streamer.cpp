@@ -58,6 +58,10 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
   qmax_ = request.get_query_param_value_or_default<int>("qmax", 42);
   gop_ = request.get_query_param_value_or_default<int>("gop", 250);
 
+}
+
+void LibavStreamer::SetupAVLibrary()
+{
   av_lockmgr_register(&ffmpeg_boost_mutex_lock_manager);
   av_register_all();
 }
@@ -154,7 +158,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->time_base.den = 1;
   codec_context_->gop_size = gop_;
   codec_context_->pix_fmt = PIX_FMT_YUV420P;
-  codec_context_->max_b_frames = 1;
+  codec_context_->max_b_frames = 0;
 
   // Quality settings
   codec_context_->qmin = qmin_;
