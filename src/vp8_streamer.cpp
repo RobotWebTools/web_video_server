@@ -54,7 +54,7 @@ void Vp8Streamer::initializeEncoder()
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
   av_opt_map["quality"] = quality_;
-  av_opt_map["deadline"] = "1";
+  //av_opt_map["deadline"] = "1";
   av_opt_map["auto-alt-ref"] = "0";
   av_opt_map["lag-in-frames"] = "1";
   av_opt_map["rc_lookahead"] = "1";
@@ -65,7 +65,7 @@ void Vp8Streamer::initializeEncoder()
   {
     av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
   }
-
+#if 0
   // Buffering settings
   int bufsize = 10;
   codec_context_->rc_buffer_size = bufsize;
@@ -74,7 +74,8 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
   codec_context_->rc_buffer_aggressivity = 0.5;
-  codec_context_->frame_skip_threshold = 10;
+  codec_context_->frame_skip_threshold = 2;
+#endif
 }
 
 Vp8StreamerType::Vp8StreamerType() :
