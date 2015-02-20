@@ -35,8 +35,9 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
 {
   cleanup_timer_ = nh.createTimer(ros::Duration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
 
-  int port;
-  private_nh.param("port", port, 8080);
+  private_nh.param("port", port_, 8080);
+
+  private_nh.param<std::string>("address", address_, "0.0.0.0");
 
   int server_threads;
   private_nh.param("server_threads", server_threads, 1);
@@ -53,7 +54,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
 
   server_.reset(
-      new async_web_server_cpp::HttpServer("0.0.0.0", boost::lexical_cast<std::string>(port),
+      new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
                                            boost::bind(ros_connection_logger, handler_group_, _1, _2, _3, _4),
                                            server_threads));
 }
@@ -65,7 +66,7 @@ WebVideoServer::~WebVideoServer()
 void WebVideoServer::spin()
 {
   server_->run();
-  ROS_INFO("Waiting For connections");
+  ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
   ros::MultiThreadedSpinner spinner(ros_threads_);
   spinner.spin();
   server_->stop();
