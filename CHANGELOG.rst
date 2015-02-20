@@ -2,6 +2,18 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.2 (2015-02-20)
+------------------
+* Merge pull request #10 from mitchellwills/develop
+  Added option to specify server address
+* Added option to specify server address
+* Merge pull request #3 from mitchellwills/develop
+  Remove old http_server implementation and replace it with async_web_server_cpp package
+* Moved from using built in http server to new async_web_server_cpp package
+* Did some cleanup of streamers
+* Update package.xml
+* Contributors: Mitchell Wills, Russell Toris
+
 0.0.1 (2014-10-30)
 ------------------
 * missed travis file
