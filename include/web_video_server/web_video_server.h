@@ -36,6 +36,9 @@ public:
    */
   void spin();
 
+  void handle_www_root(std::string wwwroot, const async_web_server_cpp::HttpRequest &request,
+                     async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+
   void handle_stream(const async_web_server_cpp::HttpRequest &request,
                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 

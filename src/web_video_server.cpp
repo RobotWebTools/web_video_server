@@ -4,6 +4,7 @@
 #include <vector>
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/opencv.hpp>
+#include <fstream>
 
 #include "web_video_server/web_video_server.h"
 #include "web_video_server/jpeg_streamers.h"
@@ -12,6 +13,34 @@
 
 namespace web_video_server
 {
+
+struct mime_map
+{
+  const char* extension;
+  const char* mime_type;
+} mime_mapping[] =
+  {
+    { "gif", "image/gif" },
+    { "htm", "text/html" },
+    { "html", "text/html" },
+    { "jpg", "image/jpeg" },
+    { "png", "image/png" },
+    { "css", "text/css" },
+    { "js", "text/javascript" },
+    { 0, 0 } // Marks end of list.
+  };
+
+std::string mimeExtensionToType(const std::string& extension)
+{
+  for (mime_map* m = mime_mapping; m->extension; ++m)
+    {
+      if (m->extension == extension)
+	{
+	  return m->mime_type;
+	}
+    }
+  return "text/plain";
+}
 
 static void ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler forward,
                                   const async_web_server_cpp::HttpRequest &request,
@@ -39,6 +68,12 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
 
   private_nh.param<std::string>("address", address_, "0.0.0.0");
 
+  std::string wwwroot_;
+  private_nh.param<std::string>("wwwroot", wwwroot_, ".");
+
+  bool www_file_server_;
+  private_nh.param<bool>("www_file_server", www_file_server_, false);
+
   int server_threads;
   private_nh.param("server_threads", server_threads, 1);
 
@@ -47,11 +82,17 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
 
-  handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
   handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this, _1, _2, _3, _4));
   handler_group_.addHandlerForPath("/stream_viewer",
                                    boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2, _3, _4));
   handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
+
+  if ( www_file_server_ == true ) {
+    handler_group_.addHandlerForPath("/.*", boost::bind(&WebVideoServer::handle_www_root, this, wwwroot_,  _1, _2, _3, _4));
+  }
+  else {
+    handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
+  }
 
   server_.reset(
       new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
@@ -143,6 +184,66 @@ void WebVideoServer::handle_stream_viewer(const async_web_server_cpp::HttpReques
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(request, connection, begin,
                                                                                              end);
   }
+}
+
+void WebVideoServer::handle_www_root(std::string wwwroot, const async_web_server_cpp::HttpRequest &request,
+                                         async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
+                                         const char* end)
+{
+  std::string request_path = request.path;
+  if (request_path == "/")
+    request_path = "/index.html";
+
+  std::size_t last_slash_pos = request_path.find_last_of("/");
+  std::size_t last_dot_pos = request_path.find_last_of(".");
+  std::string extension;
+  if (last_dot_pos != std::string::npos && last_dot_pos > last_slash_pos)
+    {
+      extension = request_path.substr(last_dot_pos + 1);
+    }
+
+  // Open the file to send back.
+  std::string full_path = wwwroot + request_path;
+  std::ifstream is(full_path.c_str(), std::ios::in | std::ios::binary);
+  if (!is)
+    {
+      // not found reply.
+      async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(request, connection, begin,
+											       end);
+      ROS_INFO("Http request from client: %s - file not found", full_path.c_str());
+      return;
+    }
+
+    // get length of file:
+    is.seekg (0, is.end);
+    int length = is.tellg();
+    is.seekg (0, is.beg);
+
+    char * buffer = new char [length];
+
+    // read data as a block:
+    is.read (buffer,length);
+
+    if (!is)
+    {
+      // not found reply.
+      async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(request, connection, begin,
+											       end);
+      ROS_INFO("Http request from client: %s - file found but incomplete read.", full_path.c_str());
+      return;
+    }
+
+    async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close")
+      .header("Server", "web_video_server")
+      .header("Content-Length", boost::lexical_cast < std::string > ( is.gcount() ) )
+      .header("Content-type", mimeExtensionToType(extension) ).write(connection);
+
+    is.close();
+
+    // NOTE: this must be doable more efficiently ! How to pass buffer directly without copying it into a string ?
+    connection->write( std::string(buffer, length ) );
+
+    delete[] buffer;
 }
 
 void WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest &request,
