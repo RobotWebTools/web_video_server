@@ -43,7 +43,10 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("server_threads", server_threads, 1);
 
   private_nh.param("ros_threads", ros_threads_, 2);
+  private_nh.param("publish_rate", publish_rate_, -1.0);
 
+  // required single-threaded, once-only init:
+  LibavStreamer::SetupAVLibrary();
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
 
@@ -66,25 +69,57 @@ WebVideoServer::~WebVideoServer()
 void WebVideoServer::spin()
 {
   server_->run();
+
   ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
-  ros::MultiThreadedSpinner spinner(ros_threads_);
-  spinner.spin();
+
+  ros::AsyncSpinner spinner(ros_threads_);
+  spinner.start();
+
+  if ( publish_rate_ > 0 ) {
+    ros::WallRate r(publish_rate_);
+
+    while( ros::ok() ) {
+      this->restreamFrames( 1.0 / publish_rate_ );
+      r.sleep();
+    }
+  } else {
+    ros::waitForShutdown();
+  }
+  
   server_->stop();
 }
 
+void WebVideoServer::restreamFrames( double max_age )
+{
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
+
+  typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
+
+  for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr)
+    {
+      (*itr)->restreamFrame( max_age );
+    }
+}
+
+
 void WebVideoServer::cleanup_inactive_streams()
 {
-  boost::mutex::scoped_lock lock(subscriber_mutex_, boost::try_to_lock);
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
   if (lock)
   {
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
-    itr_type new_end = std::remove_if(image_subscribers_.begin(), image_subscribers_.end(),
-                                      boost::bind(&ImageStreamer::isInactive, _1));
-    for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
+    itr_type itr = image_subscribers_.begin();
+    while ( itr != image_subscribers_.end() )
     {
-      ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+      if ( (*itr)->isInactive() ) {
+	ROS_INFO_STREAM("Removing Stream: " << (*itr)->getTopic() << " (streams left: "<< (image_subscribers_.end() - itr ) -1 << ")");
+	image_subscribers_.erase( itr );
+	itr = image_subscribers_.begin();
+      }
+      else {
+	++itr;
+      }
     }
-    image_subscribers_.erase(new_end, image_subscribers_.end());
   }
 }
 

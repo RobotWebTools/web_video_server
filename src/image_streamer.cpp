@@ -1,6 +1,6 @@
 #include "web_video_server/image_streamer.h"
 #include <cv_bridge/cv_bridge.h>
-
+#include <iostream>
 namespace web_video_server
 {
 
@@ -14,6 +14,10 @@ ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
   invert_ = request.has_query_param("invert");
 }
 
+ImageStreamer::~ImageStreamer()
+{
+}
+
 void ImageStreamer::start()
 {
   image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
@@ -21,6 +25,38 @@ void ImageStreamer::start()
 
 void ImageStreamer::initialize(const cv::Mat &)
 {
+}
+
+void ImageStreamer::restreamFrame(double max_age)
+{
+  if (inactive_ || !initialized_ )
+    return;
+  try {
+    if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
+      boost::mutex::scoped_lock lock(send_mutex_);
+      sendImage(output_size_image, ros::WallTime::now() ); // don't update last_frame, it may remain an old value.
+    }
+  }
+  catch (boost::system::system_error &e)
+  {
+    // happens when client disconnects
+    ROS_DEBUG("system_error exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (std::exception &e)
+  {
+    ROS_ERROR_THROTTLE(30, "exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (...)
+  {
+    ROS_ERROR_THROTTLE(30, "exception");
+    inactive_ = true;
+    return;
+  }
+
 }
 
 void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
@@ -66,7 +102,7 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       cv::flip(img, img, true);
     }
 
-    cv::Mat output_size_image;
+    boost::mutex::scoped_lock lock(send_mutex_); // protects output_size_image
     if (output_width_ != input_width || output_height_ != input_height)
     {
       cv::Mat img_resized;
@@ -84,7 +120,9 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
       initialize(output_size_image);
       initialized_ = true;
     }
-    sendImage(output_size_image, msg->header.stamp);
+
+    last_frame = ros::WallTime::now();
+    sendImage(output_size_image, last_frame );
 
   }
   catch (cv_bridge::Exception &e)

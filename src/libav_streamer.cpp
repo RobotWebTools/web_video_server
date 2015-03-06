@@ -54,16 +54,22 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
 {
 
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
-  qmin_ = request.get_query_param_value_or_default<int>("qmin", 10);
-  qmax_ = request.get_query_param_value_or_default<int>("qmax", 42);
-  gop_ = request.get_query_param_value_or_default<int>("gop", 250);
+  qmin_ = request.get_query_param_value_or_default<int>("qmin", 1);
+  qmax_ = request.get_query_param_value_or_default<int>("qmax", 40);
+  gop_ = request.get_query_param_value_or_default<int>("gop", 5);
 
+}
+
+void LibavStreamer::SetupAVLibrary()
+{
   av_lockmgr_register(&ffmpeg_boost_mutex_lock_manager);
   av_register_all();
 }
 
 LibavStreamer::~LibavStreamer()
 {
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects all structures below when send is still in progress.
   if (codec_context_)
     avcodec_close(codec_context_);
   if (frame_)
@@ -136,6 +142,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_ = video_stream_->codec;
 
   // Set options
+  // calls av_opt_set_defaults internally:
   avcodec_get_context_defaults3(codec_context_, codec_);
 
   codec_context_->codec_id = output_format_->video_codec;
@@ -146,10 +153,10 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->delay = 0;
 
   video_stream_->time_base.num = 1;
-  video_stream_->time_base.den = 1000;
+  video_stream_->time_base.den = 10;
 
   codec_context_->time_base.num = 1;
-  codec_context_->time_base.den = 1;
+  codec_context_->time_base.den = 10;
   codec_context_->gop_size = gop_;
   codec_context_->pix_fmt = PIX_FMT_YUV420P;
   codec_context_->max_b_frames = 0;
@@ -230,7 +237,7 @@ void LibavStreamer::initializeEncoder()
 {
 }
 
-void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void LibavStreamer::sendImage(const cv::Mat &img, const ros::WallTime &time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
   if (first_image_timestamp_.isZero())
@@ -286,7 +293,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
     double seconds = (time - first_image_timestamp_).toSec();
     // Encode video at 1/0.95 to minimize delay
-    pkt.pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
+    pkt.pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 1.0);
     if (pkt.pts <= 0)
       pkt.pts = 1;
     pkt.dts = AV_NOPTS_VALUE;

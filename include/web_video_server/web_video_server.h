@@ -49,12 +49,14 @@ public:
                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
 private:
+  void restreamFrames( double max_age );
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
   image_transport::ImageTransport image_transport_;
   ros::Timer cleanup_timer_;
   int ros_threads_;
+  double publish_rate_;
   int port_;
   std::string address_;
   boost::shared_ptr<async_web_server_cpp::HttpServer> server_;
