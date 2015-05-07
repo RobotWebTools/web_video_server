@@ -13,12 +13,17 @@
 namespace web_video_server
 {
 
+static bool __verbose;
+
 static void ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler forward,
                                   const async_web_server_cpp::HttpRequest &request,
                                   async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                   const char* end)
 {
-  ROS_INFO_STREAM("Handling Request: " << request.uri);
+  if (__verbose)
+  {
+    ROS_INFO_STREAM("Handling Request: " << request.uri);
+  }
   try
   {
     forward(request, connection, begin, end);
@@ -36,6 +41,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   cleanup_timer_ = nh.createTimer(ros::Duration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
 
   private_nh.param("port", port_, 8080);
+  private_nh.param("verbose", __verbose, true);
 
   private_nh.param<std::string>("address", address_, "0.0.0.0");
 
@@ -80,9 +86,12 @@ void WebVideoServer::cleanup_inactive_streams()
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
     itr_type new_end = std::remove_if(image_subscribers_.begin(), image_subscribers_.end(),
                                       boost::bind(&ImageStreamer::isInactive, _1));
-    for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
+    if (__verbose)
     {
-      ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+      for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
+      {
+        ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+      }
     }
     image_subscribers_.erase(new_end, image_subscribers_.end());
   }
