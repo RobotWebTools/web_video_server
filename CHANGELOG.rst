@@ -2,6 +2,11 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.3 (2015-05-07)
+------------------
+* added verbose flag
+* Contributors: Russell Toris
+
 0.0.2 (2015-02-20)
 ------------------
 * Merge pull request #10 from mitchellwills/develop
