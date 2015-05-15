@@ -3,6 +3,7 @@
 
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
+#include <sensor_msgs/CompressedImage.h>
 #include <opencv2/opencv.hpp>
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -27,6 +28,7 @@ public:
   ;
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
+  virtual void sendImageCompressed(const cv::Mat &img, const ros::Time &time)=0;
 
   virtual void initialize(const cv::Mat &);
 
@@ -42,6 +44,7 @@ private:
   image_transport::ImageTransport it_;
   bool initialized_;
 
+  void imageCompressCb(const sensor_msgs::CompressedImageConstPtr& msg);
   void imageCallback(const sensor_msgs::ImageConstPtr &msg);
 };
 

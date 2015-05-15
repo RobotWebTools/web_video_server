@@ -16,7 +16,24 @@ ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
 
 void ImageStreamer::start()
 {
-  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
+//  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
+  ros::NodeHandle nh;
+  ros::Subscriber sub_compress = nh.subscribe<sensor_msgs::CompressedImage>("/usb_cam/image_raw/compressed",
+                                                                    1,
+                                                                    boost::bind(&ImageStreamer::imageCompressCb, this, _1),
+                                                                    ros::VoidPtr(),
+                                                                    ros::TransportHints().tcpNoDelay());  
+
+}
+void ImageStreamer::imageCompressCb(const sensor_msgs::CompressedImageConstPtr& msg)
+{
+    ROS_INFO("ImageStreamer::imageCompressCb");
+
+    cv::Mat compressed;
+    compressed = cv::Mat(1, msg->data.size(), CV_8UC1,
+                            const_cast<unsigned char*>(&msg->data[0]));
+    sendImageCompressed(compressed, msg->header.stamp);
+
 }
 
 void ImageStreamer::initialize(const cv::Mat &)
