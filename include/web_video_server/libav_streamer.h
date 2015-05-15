@@ -32,6 +32,7 @@ public:
 protected:
   virtual void initializeEncoder();
   virtual void sendImage(const cv::Mat&, const ros::Time& time);
+  virtual void sendImageCompressed(const cv::Mat&, const ros::Time& time);
   virtual void initialize(const cv::Mat&);
   AVOutputFormat* output_format_;
   AVFormatContext* format_context_;

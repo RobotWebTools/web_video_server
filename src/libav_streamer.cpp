@@ -230,6 +230,10 @@ void LibavStreamer::initializeEncoder()
 {
 }
 
+void LibavStreamer::sendImageCompressed(const cv::Mat &img, const ros::Time &time)
+{
+
+}
 void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
