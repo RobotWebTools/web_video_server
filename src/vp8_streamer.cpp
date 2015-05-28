@@ -54,11 +54,9 @@ void Vp8Streamer::initializeEncoder()
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
   av_opt_map["quality"] = quality_;
-  //av_opt_map["deadline"] = "1";
+  av_opt_map["deadline"] = "1";
   av_opt_map["auto-alt-ref"] = "0";
-  av_opt_map["lag-in-frames"] = "1";
-  av_opt_map["rc_lookahead"] = "1";
-  av_opt_map["drop_frame"] = "1";
+  av_opt_map["lag-in-frames"] = "1"; // was: rc_lookahead
   av_opt_map["error-resilient"] = "1";
 
   for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr)

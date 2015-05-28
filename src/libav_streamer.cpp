@@ -56,7 +56,7 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
   qmin_ = request.get_query_param_value_or_default<int>("qmin", 1);
   qmax_ = request.get_query_param_value_or_default<int>("qmax", 40);
-  gop_ = request.get_query_param_value_or_default<int>("gop", 5);
+  gop_ = request.get_query_param_value_or_default<int>("gop", 64);
 
 }
 
@@ -153,13 +153,13 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->delay = 0;
 
   video_stream_->time_base.num = 1;
-  video_stream_->time_base.den = 10;
+  video_stream_->time_base.den = 1000;
 
   codec_context_->time_base.num = 1;
-  codec_context_->time_base.den = 10;
+  codec_context_->time_base.den = 1;
   codec_context_->gop_size = gop_;
   codec_context_->pix_fmt = PIX_FMT_YUV420P;
-  codec_context_->max_b_frames = 0;
+  codec_context_->max_b_frames = 1;
 
   // Quality settings
   codec_context_->qmin = qmin_;
