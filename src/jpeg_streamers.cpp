@@ -5,8 +5,8 @@ namespace web_video_server
 {
 
 MjpegStreamer::MjpegStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it) :
-    ImageStreamer(request, connection, it)
+                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+    ImageStreamer(request, connection, nh)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 
@@ -42,9 +42,9 @@ void MjpegStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
 boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                                     async_web_server_cpp::HttpConnectionPtr connection,
-                                                                    image_transport::ImageTransport it)
+                                                                    ros::NodeHandle& nh)
 {
-  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, it));
+  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, nh));
 }
 
 std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest &request)
@@ -58,8 +58,8 @@ std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpReq
 
 JpegSnapshotStreamer::JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                           image_transport::ImageTransport it) :
-    ImageStreamer(request, connection, it)
+                                           ros::NodeHandle& nh) :
+    ImageStreamer(request, connection, nh)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }

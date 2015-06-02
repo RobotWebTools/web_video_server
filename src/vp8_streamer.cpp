@@ -40,8 +40,8 @@ namespace web_video_server
 {
 
 Vp8Streamer::Vp8Streamer(const async_web_server_cpp::HttpRequest& request,
-                         async_web_server_cpp::HttpConnectionPtr connection, image_transport::ImageTransport it) :
-    LibavStreamer(request, connection, it, "webm", "libvpx", "video/webm")
+                         async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+    LibavStreamer(request, connection, nh, "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
@@ -84,9 +84,9 @@ Vp8StreamerType::Vp8StreamerType() :
 
 boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
                                                                   async_web_server_cpp::HttpConnectionPtr connection,
-                                                                  image_transport::ImageTransport it)
+                                                                  ros::NodeHandle& nh)
 {
-  return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, it));
+  return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, nh));
 }
 
 }

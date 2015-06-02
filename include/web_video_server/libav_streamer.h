@@ -24,7 +24,7 @@ class LibavStreamer : public ImageStreamer
 {
 public:
   LibavStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-                image_transport::ImageTransport it, const std::string &format_name, const std::string &codec_name,
+                ros::NodeHandle& nh, const std::string &format_name, const std::string &codec_name,
                 const std::string &content_type);
 
   ~LibavStreamer();
@@ -63,7 +63,7 @@ public:
 
   boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                    async_web_server_cpp::HttpConnectionPtr connection,
-                                                   image_transport::ImageTransport it);
+                                                   ros::NodeHandle& nh);
 
   std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 

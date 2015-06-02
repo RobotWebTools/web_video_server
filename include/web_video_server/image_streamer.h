@@ -14,7 +14,7 @@ class ImageStreamer
 {
 public:
   ImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-                image_transport::ImageTransport it);
+                ros::NodeHandle& it);
 
   void start();
 
@@ -51,7 +51,7 @@ class ImageStreamerType
 public:
   virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                                           image_transport::ImageTransport it) = 0;
+                                                           ros::NodeHandle& nh) = 0;
 
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest &request) = 0;
 };

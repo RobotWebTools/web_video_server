@@ -35,7 +35,7 @@ static void ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
 }
 
 WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh) :
-    nh_(nh), image_transport_(nh), handler_group_(
+    nh_(nh), handler_group_(
         async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
   cleanup_timer_ = nh.createTimer(ros::Duration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
@@ -104,8 +104,7 @@ void WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &requ
   std::string type = request.get_query_param_value_or_default("type", "mjpeg");
   if (stream_types_.find(type) != stream_types_.end())
   {
-    boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request, connection,
-                                                                                     image_transport_);
+    boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request, connection, nh_);
     streamer->start();
     boost::mutex::scoped_lock lock(subscriber_mutex_);
     image_subscribers_.push_back(streamer);
@@ -121,7 +120,7 @@ void WebVideoServer::handle_snapshot(const async_web_server_cpp::HttpRequest &re
                                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                      const char* end)
 {
-  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, image_transport_));
+  boost::shared_ptr<ImageStreamer> streamer(new JpegSnapshotStreamer(request, connection, nh_));
   streamer->start();
 
   boost::mutex::scoped_lock lock(subscriber_mutex_);
