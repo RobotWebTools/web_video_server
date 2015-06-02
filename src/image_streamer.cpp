@@ -12,11 +12,13 @@ ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
+  default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
 }
 
 void ImageStreamer::start()
 {
-  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this);
+  image_transport::TransportHints hints(default_transport_);
+  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this, hints);
 }
 
 void ImageStreamer::initialize(const cv::Mat &)

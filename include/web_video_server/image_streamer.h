@@ -38,6 +38,7 @@ protected:
   int output_width_;
   int output_height_;
   bool invert_;
+  std::string default_transport_;
 private:
   image_transport::ImageTransport it_;
   bool initialized_;
