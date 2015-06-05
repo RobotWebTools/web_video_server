@@ -20,7 +20,7 @@ extern "C"
 namespace web_video_server
 {
 
-class LibavStreamer : public ImageStreamer
+class LibavStreamer : public ImageTransportImageStreamer
 {
 public:
   LibavStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,

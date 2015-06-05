@@ -6,26 +6,32 @@ namespace web_video_server
 
 ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
                              async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
-    request_(request), connection_(connection), it_(nh), inactive_(false), initialized_(false)
+    request_(request), connection_(connection), nh_(nh), inactive_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
+}
+
+ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request,
+                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+  ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
+{
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
 }
 
-void ImageStreamer::start()
+void ImageTransportImageStreamer::start()
 {
   image_transport::TransportHints hints(default_transport_);
-  image_sub_ = it_.subscribe(topic_, 1, &ImageStreamer::imageCallback, this, hints);
+  image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, hints);
 }
 
-void ImageStreamer::initialize(const cv::Mat &)
+void ImageTransportImageStreamer::initialize(const cv::Mat &)
 {
 }
 
-void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
+void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
 {
   if (inactive_)
     return;
@@ -120,11 +126,6 @@ void ImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
     inactive_ = true;
     return;
   }
-}
-
-bool ImageStreamer::isInactive()
-{
-  return inactive_;
 }
 
 }
