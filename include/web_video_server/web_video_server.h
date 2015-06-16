@@ -35,16 +35,16 @@ public:
    */
   void spin();
 
-  void handle_stream(const async_web_server_cpp::HttpRequest &request,
+  bool handle_stream(const async_web_server_cpp::HttpRequest &request,
                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_stream_viewer(const async_web_server_cpp::HttpRequest &request,
+  bool handle_stream_viewer(const async_web_server_cpp::HttpRequest &request,
                             async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_snapshot(const async_web_server_cpp::HttpRequest &request,
+  bool handle_snapshot(const async_web_server_cpp::HttpRequest &request,
                        async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_list_streams(const async_web_server_cpp::HttpRequest &request,
+  bool handle_list_streams(const async_web_server_cpp::HttpRequest &request,
                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
 private:
