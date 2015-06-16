@@ -2,7 +2,6 @@
 #define WEB_VIDEO_SERVER_H_
 
 #include <ros/ros.h>
-#include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <vector>
 #include "web_video_server/image_streamer.h"
@@ -36,23 +35,22 @@ public:
    */
   void spin();
 
-  void handle_stream(const async_web_server_cpp::HttpRequest &request,
+  bool handle_stream(const async_web_server_cpp::HttpRequest &request,
                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_stream_viewer(const async_web_server_cpp::HttpRequest &request,
+  bool handle_stream_viewer(const async_web_server_cpp::HttpRequest &request,
                             async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_snapshot(const async_web_server_cpp::HttpRequest &request,
+  bool handle_snapshot(const async_web_server_cpp::HttpRequest &request,
                        async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
-  void handle_list_streams(const async_web_server_cpp::HttpRequest &request,
+  bool handle_list_streams(const async_web_server_cpp::HttpRequest &request,
                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
 private:
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
-  image_transport::ImageTransport image_transport_;
   ros::Timer cleanup_timer_;
   int ros_threads_;
   int port_;
