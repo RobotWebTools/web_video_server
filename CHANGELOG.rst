@@ -2,6 +2,18 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.4 (2015-08-18)
+------------------
+* Merge pull request #16 from mitchellwills/compressed
+  Adds support for streaming ROS compressed image topics without the need to reencode them
+* Switch to checkout async_web_server_cpp from source
+* Upgrade for change in signature of async_web_server_cpp request handler
+* Added ros compressed video streamer type
+  This directly passes the ros compressed frame data to the http socket without reencoding it
+* Switched from passing image transport to passing node handle to streamer constructors
+* Added default transport parameter for regular image streamers
+* Contributors: Mitchell Wills, Russell Toris
+
 0.0.3 (2015-05-07)
 ------------------
 * added verbose flag
