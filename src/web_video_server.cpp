@@ -73,7 +73,6 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
     ROS_ERROR("Exception when creating the web server! %s:%d", address_.c_str(), port_);
     throw;
   }
-
 }
 
 WebVideoServer::~WebVideoServer()
