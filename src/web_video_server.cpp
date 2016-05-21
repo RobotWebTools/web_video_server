@@ -61,10 +61,18 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
                                    boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2, _3, _4));
   handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
 
-  server_.reset(
-      new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
-                                           boost::bind(ros_connection_logger, handler_group_, _1, _2, _3, _4),
-                                           server_threads));
+  try
+  {
+    server_.reset(
+        new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
+                                             boost::bind(ros_connection_logger, handler_group_, _1, _2, _3, _4),
+                                             server_threads));
+  }
+  catch(boost::exception& e)
+  {
+    ROS_ERROR("Exception when creating the web server! %s:%d", address_.c_str(), port_);
+    throw;
+  }
 }
 
 WebVideoServer::~WebVideoServer()
