@@ -2,6 +2,15 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#23 <https://github.com/RobotWebTools/web_video_server/issues/23>`_ from iki-wgt/develop
+  More information when server creation is failed
+* Removed empty line
+* More detailed exception message
+  Programm behavior is not changed since the exception is rethrown.
+* Contributors: BennyRe, Russell Toris
+
 0.0.4 (2015-08-18)
 ------------------
 * Merge pull request #16 from mitchellwills/compressed
