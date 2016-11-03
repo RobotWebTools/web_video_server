@@ -234,6 +234,23 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
     }
     connection->write("</li>");
   }
+  connection->write("</ul>");
+  // Add the rest of the image topics that don't have camera_info.
+  connection->write("<ul>");
+  std::vector<std::string>::iterator image_topic_itr = image_topics.begin();
+  for (; image_topic_itr != image_topics.end();) {
+    connection->write("<li><a href=\"/stream_viewer?topic=");
+    connection->write(*image_topic_itr);
+    connection->write("\">");
+    connection->write(*image_topic_itr);
+    connection->write("</a> (");
+    connection->write("<a href=\"/snapshot?topic=");
+    connection->write(*image_topic_itr);
+    connection->write("\">Snapshot</a>)");
+    connection->write("</li>");
+
+    image_topic_itr = image_topics.erase(image_topic_itr);
+  }
   connection->write("</ul></body></html>");
   return true;
 }
