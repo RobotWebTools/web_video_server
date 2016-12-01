@@ -53,8 +53,12 @@ public:
   ~Vp8Streamer();
 protected:
   virtual void initializeEncoder();
-private:
+  // codec options
   std::string quality_;
+  int bitrate_;
+  int qmin_;
+  int qmax_;
+  int gop_;
 };
 
 class Vp8StreamerType : public LibavStreamerType
