@@ -94,7 +94,11 @@ LibavStreamer::~LibavStreamer()
 }
 
 // allocates and initializes an AVFrame
+#if (LIBAVUTIL_VERSION_MAJOR < 52)
+AVFrame* createVideoFrame(PixelFormat pix_fmt, int width, int height)
+#else
 AVFrame* createVideoFrame(AVPixelFormat pix_fmt, int width, int height)
+#endif
 {
   AVFrame *frame = av_frame_alloc();
   if (!frame)
