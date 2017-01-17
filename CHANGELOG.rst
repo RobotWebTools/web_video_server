@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.6 (2017-01-17)
+------------------
 * Fixed topic list to display all image topics, fixing Issue `#18 <https://github.com/RobotWebTools/web_video_server/issues/18>`_.
 * Contributors: Eric
 
