@@ -28,11 +28,14 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
   try
   {
     forward(request, connection, begin, end);
+    return true;
   }
   catch (std::exception &e)
   {
     ROS_WARN_STREAM("Error Handling Request: " << e.what());
+    return false;
   }
+  return false;
 }
 
 WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh) :
