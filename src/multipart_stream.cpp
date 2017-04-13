@@ -18,7 +18,7 @@ void MultipartStream::sendInitialHeader() {
 
 void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size) {
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.toSec());
+  std::snprintf(stamp, sizeof(stamp), "%.06lf", time.toSec());
   boost::shared_ptr<std::vector<async_web_server_cpp::HttpHeader> > headers(
       new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));

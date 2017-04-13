@@ -58,7 +58,7 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.toSec());
+  std::snprintf(stamp, sizeof(stamp), "%.06lf", time.toSec());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close").header(
       "Server", "web_video_server").header("Cache-Control",
                                            "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0").header(

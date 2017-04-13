@@ -39,10 +39,11 @@ protected:
   AVCodecContext* codec_context_;
   AVStream* video_stream_;
 
+  AVDictionary* opt_;   // container format options
+
 private:
   AVFrame* frame_;
-  AVPicture* picture_;
-  AVPicture* tmp_picture_;
+  AVFrame* bgr_frame_;
   struct SwsContext* sws_context_;
   ros::Time first_image_timestamp_;
   boost::mutex encode_mutex_;
@@ -50,10 +51,8 @@ private:
   std::string format_name_;
   std::string codec_name_;
   std::string content_type_;
-  int bitrate_;
-  int qmin_;
-  int qmax_;
-  int gop_;
+
+  uint8_t* io_buffer_;  // custom IO buffer
 };
 
 class LibavStreamerType : public ImageStreamerType

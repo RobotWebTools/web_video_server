@@ -43,7 +43,11 @@ Vp8Streamer::Vp8Streamer(const async_web_server_cpp::HttpRequest& request,
                          async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
     LibavStreamer(request, connection, nh, "webm", "libvpx", "video/webm")
 {
-  quality_ = request.get_query_param_value_or_default("quality", "realtime");
+  quality_ = request.get_query_param_value_or_default("quality", "realtime"); // no observable difference to "good"
+  bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
+  qmin_ = request.get_query_param_value_or_default<int>("qmin", -1);
+  qmax_ = request.get_query_param_value_or_default<int>("qmax", -1);
+  gop_ = request.get_query_param_value_or_default<int>("gop", -1);
 }
 Vp8Streamer::~Vp8Streamer()
 {
@@ -51,6 +55,21 @@ Vp8Streamer::~Vp8Streamer()
 
 void Vp8Streamer::initializeEncoder()
 {
+  // Codec options
+  av_opt_set(codec_context_->priv_data, "end-usage", "cbr", 0); // cbr sliiightly faster (maybe) than vbr and cq
+  av_opt_set_int(codec_context_->priv_data, "cpu-used", 4, 0);  // higher means less cpu load, lower quality and lower latency (no difference for 4+)
+  codec_context_->bit_rate = bitrate_;
+  if (gop_ != -1)
+    codec_context_->gop_size = gop_;
+  //codec_context_->max_b_frames = 0;
+
+  // Quality settings
+  if (qmin_ != -1)
+    codec_context_->qmin = qmin_;
+  if (qmax_ != -1)
+    codec_context_->qmax = qmax_;
+
+  // Advanced codec tuning (TODO: the following does not seem to have any effect)
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
   av_opt_map["quality"] = quality_;
@@ -73,7 +92,7 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
-  codec_context_->rc_buffer_aggressivity = 0.5;
+  codec_context_->rc_buffer_aggressivity = 0.5;   // TODO: deprecated
   codec_context_->frame_skip_threshold = 10;
 }
 
