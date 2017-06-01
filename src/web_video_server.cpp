@@ -97,8 +97,8 @@ void WebVideoServer::cleanup_inactive_streams()
   if (lock)
   {
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
-    itr_type new_end = std::remove_if(image_subscribers_.begin(), image_subscribers_.end(),
-                                      boost::bind(&ImageStreamer::isInactive, _1));
+    itr_type new_end = std::partition(image_subscribers_.begin(), image_subscribers_.end(),
+                                      !boost::bind(&ImageStreamer::isInactive, _1));
     if (__verbose)
     {
       for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
