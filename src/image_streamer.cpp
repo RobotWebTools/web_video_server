@@ -19,6 +19,7 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
+  frames_to_skip_ = request.get_query_param_value_or_default<int>("skip_frames", -1);
 }
 
 void ImageTransportImageStreamer::start()
@@ -35,6 +36,15 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
 {
   if (inactive_)
     return;
+  
+  if ( frames_to_skip_ )
+  {
+    if ( ++frames_skipped_ < frames_to_skip_ ) 
+    {
+      return;
+    }
+    frames_skipped_ = 0;
+  }
 
   cv::Mat img;
   try
