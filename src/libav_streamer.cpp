@@ -72,7 +72,7 @@ LibavStreamer::~LibavStreamer()
     av_free(frame_);
     frame_ = NULL;
 #else
-    avcodec_free_frame(&frame_);
+    av_frame_free(&frame_);
 #endif
   }
   if (format_context_)
@@ -305,7 +305,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   av_free(pkt.data);
 #endif
 
-  av_free_packet(&pkt);
+  av_packet_unref(&pkt);
 
   connection_->write_and_clear(encoded_frame);
 }
