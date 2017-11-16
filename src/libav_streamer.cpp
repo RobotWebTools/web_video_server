@@ -49,7 +49,7 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
                              const std::string &format_name, const std::string &codec_name,
                              const std::string &content_type) :
     ImageTransportImageStreamer(request, connection, nh), output_format_(0), format_context_(0), codec_(0), codec_context_(0), video_stream_(
-        0), frame_(0), picture_(0), tmp_picture_(0), sws_context_(0), first_image_timestamp_(0), format_name_(
+        0), frame_(0), sws_context_(0), first_image_timestamp_(0), format_name_(
         format_name), codec_name_(codec_name), content_type_(content_type)
 {
 
@@ -77,17 +77,6 @@ LibavStreamer::~LibavStreamer()
   }
   if (format_context_)
     avformat_free_context(format_context_);
-  if (picture_)
-  {
-    avpicture_free(picture_);
-    delete picture_;
-    picture_ = NULL;
-  }
-  if (tmp_picture_)
-  {
-    delete tmp_picture_;
-    tmp_picture_ = NULL;
-  }
   if (sws_context_)
     sws_freeContext(sws_context_);
 }
@@ -174,18 +163,10 @@ void LibavStreamer::initialize(const cv::Mat &img)
   }
 
   // Allocate frame buffers
-  frame_ = avcodec_alloc_frame();
-  tmp_picture_ = new AVPicture;
-  picture_ = new AVPicture;
-  int ret = avpicture_alloc(picture_, codec_context_->pix_fmt, output_width_, output_height_);
-  if (ret < 0)
-  {
-    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::internal_server_error)(request_,
-                                                                                                         connection_,
-                                                                                                         NULL, NULL);
-    throw std::runtime_error("Could not allocate picture frame");
-  }
-  *((AVPicture *)frame_) = *picture_;
+  frame_ = av_frame_alloc();
+  av_image_alloc(frame_->data, frame_->linesize, output_width_, output_height_,
+          codec_context_->pix_fmt, 1);
+
 
   output_format_->flags |= AVFMT_NOFILE;
 
@@ -243,7 +224,9 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 #else
   AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 #endif
-  avpicture_fill(tmp_picture_, img.data, input_coding_format, output_width_, output_height_);
+  AVFrame *raw_frame = av_frame_alloc();
+  av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
+                       img.data, input_coding_format, output_width_, output_height_, 0);
 
   // Convert from opencv to libav
   if (!sws_context_)
@@ -257,8 +240,12 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
     }
   }
 
-  int ret = sws_scale(sws_context_, (const uint8_t * const *)tmp_picture_->data, tmp_picture_->linesize, 0,
-                      output_height_, picture_->data, picture_->linesize);
+
+  int ret = sws_scale(sws_context_,
+          (const uint8_t * const *)raw_frame->data, raw_frame->linesize, 0,
+          output_height_, frame_->data, frame_->linesize);
+
+  av_frame_free(&raw_frame);
 
   // Encode the frame
   AVPacket pkt;
