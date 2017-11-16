@@ -73,8 +73,7 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
-  codec_context_->rc_buffer_aggressivity = 0.5;
-  codec_context_->frame_skip_threshold = 10;
+  av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
 }
 
 Vp8StreamerType::Vp8StreamerType() :
