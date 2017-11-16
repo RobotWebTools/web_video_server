@@ -289,7 +289,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
       pkt.pts = 1;
     pkt.dts = AV_NOPTS_VALUE;
 
-    if (codec_context_->coded_frame->key_frame)
+    if (pkt.flags&AV_PKT_FLAG_KEY)
       pkt.flags |= AV_PKT_FLAG_KEY;
 
     pkt.stream_index = video_stream_->index;
