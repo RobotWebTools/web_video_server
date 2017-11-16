@@ -257,12 +257,23 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   pkt.data = (uint8_t*)av_malloc(buf_size);
   pkt.size = avcodec_encode_video(codec_context_, pkt.data, buf_size, frame_);
   got_packet = pkt.size > 0;
-#else
+#elif (LIBAVCODEC_VERSION_MAJOR < 57)
   pkt.data = NULL; // packet data will be allocated by the encoder
   pkt.size = 0;
   if (avcodec_encode_video2(codec_context_, &pkt, frame_, &got_packet) < 0)
   {
+     throw std::runtime_error("Error encoding video frame");
+  }
+#else
+  pkt.data = NULL; // packet data will be allocated by the encoder
+  pkt.size = 0;
+  if (avcodec_send_frame(codec_context_, frame_) < 0)
+  {
     throw std::runtime_error("Error encoding video frame");
+  }
+  if (avcodec_receive_packet(codec_context_, &pkt) < 0)
+  {
+    throw std::runtime_error("Error retrieving encoded packet");
   }
 #endif
 
