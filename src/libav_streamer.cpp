@@ -151,7 +151,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->time_base.num = 1;
   codec_context_->time_base.den = 1;
   codec_context_->gop_size = gop_;
-  codec_context_->pix_fmt = PIX_FMT_YUV420P;
+  codec_context_->pix_fmt = AV_PIX_FMT_YUV420P;
   codec_context_->max_b_frames = 0;
 
   // Quality settings
@@ -241,7 +241,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 #if (LIBAVUTIL_VERSION_MAJOR < 52)
   PixelFormat input_coding_format = PIX_FMT_BGR24;
 #else
-  AVPixelFormat input_coding_format = PIX_FMT_BGR24;
+  AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 #endif
   avpicture_fill(tmp_picture_, img.data, input_coding_format, output_width_, output_height_);
 
