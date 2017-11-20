@@ -15,6 +15,7 @@ extern "C"
 #include <libswscale/swscale.h>
 #include <libavutil/opt.h>
 #include <libavutil/mathematics.h>
+#include <libavutil/imgutils.h>
 }
 
 namespace web_video_server
@@ -41,8 +42,6 @@ protected:
 
 private:
   AVFrame* frame_;
-  AVPicture* picture_;
-  AVPicture* tmp_picture_;
   struct SwsContext* sws_context_;
   ros::Time first_image_timestamp_;
   boost::mutex encode_mutex_;
