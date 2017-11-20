@@ -2,6 +2,24 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Ffmpeg 3 (`#43 <https://github.com/RobotWebTools/web_video_server/issues/43>`_)
+  * Correct use of deprecated parameters
+  codec_context\_->rc_buffer_aggressivity marked as "currently useless", so removed
+  codec_context\_->frame_skip_threshold access through new priv_data api
+  * New names for pixel formats
+  * AVPicture is deprecated, use AVFrame
+  * Switch to non-deprecated free functions
+  * Use new encoding api for newer versions
+  * codec_context is deprecated, use packet flags
+* Update travis configuration to test against kinetic (`#44 <https://github.com/RobotWebTools/web_video_server/issues/44>`_)
+* fixed misuse of remove_if (`#35 <https://github.com/RobotWebTools/web_video_server/issues/35>`_)
+* Merge pull request `#33 <https://github.com/RobotWebTools/web_video_server/issues/33>`_ from achim-k/patch-1
+  web_video_server: fix bool function not returning
+  This fix is required when compiling the package with `clang`. Otherwise a SIGILL (Illegal instruction) is triggered.
+* Contributors: Hans-Joachim Krauch, Jan, Jihoon Lee, russelhowe
+
 0.0.6 (2017-01-17)
 ------------------
 * Fixed topic list to display all image topics, fixing Issue `#18 <https://github.com/RobotWebTools/web_video_server/issues/18>`_.
