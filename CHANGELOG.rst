@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.0.7 (2017-11-20)
+------------------
 * Ffmpeg 3 (`#43 <https://github.com/RobotWebTools/web_video_server/issues/43>`_)
   * Correct use of deprecated parameters
   codec_context\_->rc_buffer_aggressivity marked as "currently useless", so removed
