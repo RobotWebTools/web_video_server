@@ -51,7 +51,11 @@ private:
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
+#if ROS_VERSION_MINIMUM(1, 13, 1)
+  ros::SteadyTimer cleanup_timer_;
+#else
   ros::Timer cleanup_timer_;
+#endif
   int ros_threads_;
   int port_;
   std::string address_;
