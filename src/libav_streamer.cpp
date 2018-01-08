@@ -328,7 +328,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   {
     encoded_frame.clear();
   }
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+#if LIBAVCODEC_VERSION_INT < 54
   av_free(pkt.data);
 #endif
 
