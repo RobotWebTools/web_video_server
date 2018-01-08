@@ -68,7 +68,7 @@ LibavStreamer::~LibavStreamer()
     avcodec_close(codec_context_);
   if (frame_)
   {
-#if (LIBAVCODEC_VERSION_MAJOR < 54)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
     av_free(frame_);
     frame_ = NULL;
 #else
@@ -163,7 +163,11 @@ void LibavStreamer::initialize(const cv::Mat &img)
   }
 
   // Allocate frame buffers
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+  frame_ = avcodec_alloc_frame();
+#else
   frame_ = av_frame_alloc();
+#endif
   av_image_alloc(frame_->data, frame_->linesize, output_width_, output_height_,
           codec_context_->pix_fmt, 1);
 
@@ -219,14 +223,22 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
     first_image_timestamp_ = time;
   }
   std::vector<uint8_t> encoded_frame;
-#if (LIBAVUTIL_VERSION_MAJOR < 52)
+#if (LIBAVUTIL_VERSION_MAJOR < 53)
   PixelFormat input_coding_format = PIX_FMT_BGR24;
 #else
   AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 #endif
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+  AVPicture *raw_frame = new AVPicture;
+  avpicture_fill(raw_frame, img.data, input_coding_format, output_width_, output_height_);
+#else
   AVFrame *raw_frame = av_frame_alloc();
   av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
                        img.data, input_coding_format, output_width_, output_height_, 0);
+#endif
+
+
 
   // Convert from opencv to libav
   if (!sws_context_)
@@ -245,7 +257,11 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
           (const uint8_t * const *)raw_frame->data, raw_frame->linesize, 0,
           output_height_, frame_->data, frame_->linesize);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+  delete raw_frame;
+#else
   av_frame_free(&raw_frame);
+#endif
 
   // Encode the frame
   AVPacket pkt;
@@ -312,11 +328,15 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   {
     encoded_frame.clear();
   }
-#if (LIBAVCODEC_VERSION_MAJOR < 54)
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
   av_free(pkt.data);
 #endif
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
+  av_free_packet(&pkt);
+#else
   av_packet_unref(&pkt);
+#endif
 
   connection_->write_and_clear(encoded_frame);
 }
