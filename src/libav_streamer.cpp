@@ -75,10 +75,24 @@ LibavStreamer::~LibavStreamer()
     av_frame_free(&frame_);
 #endif
   }
+  if (io_buffer_)
+    delete io_buffer_;
+  if (format_context_->pb)
+    av_free(format_context_->pb);
   if (format_context_)
     avformat_free_context(format_context_);
   if (sws_context_)
     sws_freeContext(sws_context_);
+}
+
+// output callback for ffmpeg IO context
+static int dispatch_output_packet(void* opaque, uint8_t* buffer, int buffer_size)
+{
+  async_web_server_cpp::HttpConnectionPtr connection = *((async_web_server_cpp::HttpConnectionPtr*) opaque);
+  std::vector<uint8_t> encoded_frame;
+  encoded_frame.assign(buffer, buffer + buffer_size);
+  connection->write_and_clear(encoded_frame);
+  return 0; // TODO: can this fail?
 }
 
 void LibavStreamer::initialize(const cv::Mat &img)
@@ -101,6 +115,22 @@ void LibavStreamer::initialize(const cv::Mat &img)
     throw std::runtime_error("Error looking up output format");
   }
   format_context_->oformat = output_format_;
+
+  // Set up custom IO callback.
+  size_t io_buffer_size = 3 * 1024;    // 3M seen elsewhere and adjudged good
+  io_buffer_ = new unsigned char[io_buffer_size];
+  AVIOContext* io_ctx = avio_alloc_context(io_buffer_, io_buffer_size, AVIO_FLAG_WRITE, &connection_, NULL, dispatch_output_packet, NULL);
+  if (!io_ctx)
+  {
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::internal_server_error)(request_,
+                                                                                                         connection_,
+                                                                                                         NULL, NULL);
+    throw std::runtime_error("Error setting up IO context");
+  }
+  io_ctx->seekable = 0;                       // no seeking, it's a stream
+  format_context_->pb = io_ctx;
+  output_format_->flags |= AVFMT_FLAG_CUSTOM_IO;
+  output_format_->flags |= AVFMT_NOFILE;
 
   // Load codec
   if (codec_name_.empty()) // use default codec if none specified
@@ -127,7 +157,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   // Set options
   avcodec_get_context_defaults3(codec_context_, codec_);
 
-  codec_context_->codec_id = output_format_->video_codec;
+  codec_context_->codec_id = codec_->id;
   codec_context_->bit_rate = bitrate_;
 
   codec_context_->width = output_width_;
@@ -171,7 +201,9 @@ void LibavStreamer::initialize(const cv::Mat &img)
   av_image_alloc(frame_->data, frame_->linesize, output_width_, output_height_,
           codec_context_->pix_fmt, 1);
 
-
+  frame_->width = output_width_;
+  frame_->height = output_height_;
+  frame_->format = codec_context_->pix_fmt;
   output_format_->flags |= AVFMT_NOFILE;
 
   // Generate header
@@ -182,24 +214,6 @@ void LibavStreamer::initialize(const cv::Mat &img)
   av_dict_set(&format_context_->metadata, "author", "ROS web_video_server", 0);
   av_dict_set(&format_context_->metadata, "title", topic_.c_str(), 0);
 
-  if (avio_open_dyn_buf(&format_context_->pb) >= 0)
-  {
-    if (avformat_write_header(format_context_, NULL) < 0)
-    {
-      async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::internal_server_error)(request_,
-                                                                                                           connection_,
-                                                                                                           NULL, NULL);
-      throw std::runtime_error("Error openning dynamic buffer");
-    }
-    header_size = avio_close_dyn_buf(format_context_->pb, &header_raw_buffer);
-
-    // copy header buffer to vector
-    header_buffer.resize(header_size);
-    memcpy(&header_buffer[0], header_raw_buffer, header_size);
-
-    av_free(header_raw_buffer);
-  }
-
   // Send response headers
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close").header(
       "Server", "web_video_server").header("Cache-Control",
@@ -208,7 +222,13 @@ void LibavStreamer::initialize(const cv::Mat &img)
       "Content-type", content_type_).header("Access-Control-Allow-Origin", "*").write(connection_);
 
   // Send video stream header
-  connection_->write_and_clear(header_buffer);
+  if (avformat_write_header(format_context_, NULL) < 0)
+  {
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::internal_server_error)(request_,
+                                                                                                         connection_,
+                                                                                                         NULL, NULL);
+    throw std::runtime_error("Error openning dynamic buffer");
+  }
 }
 
 void LibavStreamer::initializeEncoder()
@@ -235,7 +255,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 #else
   AVFrame *raw_frame = av_frame_alloc();
   av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
-                       img.data, input_coding_format, output_width_, output_height_, 0);
+                       img.data, input_coding_format, output_width_, output_height_, 1);
 #endif
 
 
@@ -310,18 +330,9 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
     pkt.stream_index = video_stream_->index;
 
-    if (avio_open_dyn_buf(&format_context_->pb) >= 0)
+    if (av_write_frame(format_context_, &pkt))
     {
-      if (av_write_frame(format_context_, &pkt))
-      {
-        throw std::runtime_error("Error when writing frame");
-      }
-      size = avio_close_dyn_buf(format_context_->pb, &output_buf);
-
-      encoded_frame.resize(size);
-      memcpy(&encoded_frame[0], output_buf, size);
-
-      av_free(output_buf);
+      throw std::runtime_error("Error when writing frame");
     }
   }
   else

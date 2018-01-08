@@ -53,6 +53,8 @@ private:
   int qmin_;
   int qmax_;
   int gop_;
+
+  uint8_t* io_buffer_;  // custom IO buffer
 };
 
 class LibavStreamerType : public ImageStreamerType
