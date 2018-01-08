@@ -225,8 +225,12 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 #endif
   AVFrame *raw_frame = av_frame_alloc();
-  av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
-                       img.data, input_coding_format, output_width_, output_height_, 0);
+
+  // Use avpicture_fill instead of av_image_fill_arrays for avconv support
+  avpicture_fill((AVPicture *)raw_frame, img.data, input_coding_format,
+                 output_width_, output_height_);
+  //av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
+  //                     img.data, input_coding_format, output_width_, output_height_, 0);
 
   // Convert from opencv to libav
   if (!sws_context_)
