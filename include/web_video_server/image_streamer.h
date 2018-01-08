@@ -61,7 +61,9 @@ protected:
 private:
   image_transport::ImageTransport it_;
   bool initialized_;
-
+  int frames_to_skip_;
+  int frames_skipped_;
+  
   void imageCallback(const sensor_msgs::ImageConstPtr &msg);
 };
 
