@@ -51,7 +51,7 @@ private:
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
-  ros::SteadyTimer cleanup_timer_;
+  ros::Timer cleanup_timer_;
   int ros_threads_;
   int port_;
   std::string address_;
