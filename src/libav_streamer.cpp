@@ -50,7 +50,7 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
                              const std::string &content_type) :
     ImageTransportImageStreamer(request, connection, nh), output_format_(0), format_context_(0), codec_(0), codec_context_(0), video_stream_(
         0), frame_(0), sws_context_(0), first_image_timestamp_(0), format_name_(
-        format_name), codec_name_(codec_name), content_type_(content_type)
+        format_name), codec_name_(codec_name), content_type_(content_type), opt_(0), io_buffer_(0)
 {
 
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
@@ -222,7 +222,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
       "Content-type", content_type_).header("Access-Control-Allow-Origin", "*").write(connection_);
 
   // Send video stream header
-  if (avformat_write_header(format_context_, NULL) < 0)
+  if (avformat_write_header(format_context_, &opt_) < 0)
   {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::internal_server_error)(request_,
                                                                                                          connection_,

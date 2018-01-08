@@ -40,6 +40,8 @@ protected:
   AVCodecContext* codec_context_;
   AVStream* video_stream_;
 
+  AVDictionary* opt_;   // container format options
+
 private:
   AVFrame* frame_;
   struct SwsContext* sws_context_;
