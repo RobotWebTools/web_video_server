@@ -24,6 +24,14 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
 void ImageTransportImageStreamer::start()
 {
   image_transport::TransportHints hints(default_transport_);
+  ros::master::V_TopicInfo master_topics;
+  ros::master::getTopics(master_topics);
+  inactive_ = true;
+  for (size_t it = 0; it<master_topics.size(); it++){
+    if(master_topics[it].name == topic_){
+      inactive_ = false;
+    }
+  }
   image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, hints);
 }
 
