@@ -40,6 +40,8 @@ protected:
   AVCodecContext* codec_context_;
   AVStream* video_stream_;
 
+  AVDictionary* opt_;   // container format options
+
 private:
   AVFrame* frame_;
   struct SwsContext* sws_context_;
@@ -53,6 +55,8 @@ private:
   int qmin_;
   int qmax_;
   int gop_;
+
+  uint8_t* io_buffer_;  // custom IO buffer
 };
 
 class LibavStreamerType : public ImageStreamerType
