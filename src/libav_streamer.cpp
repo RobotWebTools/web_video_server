@@ -77,10 +77,11 @@ LibavStreamer::~LibavStreamer()
   }
   if (io_buffer_)
     delete io_buffer_;
-  if (format_context_->pb)
-    av_free(format_context_->pb);
-  if (format_context_)
+  if (format_context_) {
+    if (format_context_->pb)
+      av_free(format_context_->pb);
     avformat_free_context(format_context_);
+  }
   if (sws_context_)
     sws_freeContext(sws_context_);
 }
