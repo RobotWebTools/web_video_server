@@ -4,12 +4,16 @@
 #include <ros/ros.h>
 #include <async_web_server_cpp/http_connection.hpp>
 
+#include <queue>
+
 namespace web_video_server
 {
 
 class MultipartStream {
 public:
-  MultipartStream(async_web_server_cpp::HttpConnectionPtr& connection, const std::string& boundry="boundarydonotcross");
+  MultipartStream(async_web_server_cpp::HttpConnectionPtr& connection,
+                  const std::string& boundry="boundarydonotcross",
+                  std::size_t max_queue_size=1);
 
   void sendInitialHeader();
   void sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size);
@@ -19,8 +23,13 @@ public:
 		async_web_server_cpp::HttpConnection::ResourcePtr resource);
 
 private:
+  bool isBusy();
+
+private:
+  const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
   std::string boundry_;
+  std::queue<boost::weak_ptr<const void> > pending_footers_;
 };
 
 }
