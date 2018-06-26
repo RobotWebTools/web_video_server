@@ -51,7 +51,7 @@ private:
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
-#if ROS_VERSION_MINIMUM(1, 13, 1)
+#if ROS_VERSION_MINIMUM(1, 13, 1) || defined USE_STEADY_TIMER
   ros::SteadyTimer cleanup_timer_;
 #else
   ros::Timer cleanup_timer_;
