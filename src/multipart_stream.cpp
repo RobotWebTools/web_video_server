@@ -4,8 +4,12 @@
 namespace web_video_server
 {
 
-MultipartStream::MultipartStream(async_web_server_cpp::HttpConnectionPtr& connection, const std::string& boundry)
-  : connection_(connection), boundry_(boundry) {}
+MultipartStream::MultipartStream(
+    async_web_server_cpp::HttpConnectionPtr& connection,
+    const std::string& boundry,
+    std::size_t max_queue_size)
+  : connection_(connection), boundry_(boundry), max_queue_size_(max_queue_size)
+{}
 
 void MultipartStream::sendInitialHeader() {
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close").header(
@@ -29,23 +33,38 @@ void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& t
 }
 
 void MultipartStream::sendPartFooter() {
-  connection_->write("\r\n--"+boundry_+"\r\n");
+  boost::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
+  connection_->write(boost::asio::buffer(*str), str);
+  if (max_queue_size_ > 0) pending_footers_.push(str);
 }
 
 void MultipartStream::sendPartAndClear(const ros::Time &time, const std::string& type,
 				       std::vector<unsigned char> &data) {
-  sendPartHeader(time, type, data.size());
-  connection_->write_and_clear(data);
-  sendPartFooter();
+  if (!isBusy())
+  {
+    sendPartHeader(time, type, data.size());
+    connection_->write_and_clear(data);
+    sendPartFooter();
+  }
 }
 
 void MultipartStream::sendPart(const ros::Time &time, const std::string& type,
 			       const boost::asio::const_buffer &buffer,
 			       async_web_server_cpp::HttpConnection::ResourcePtr resource) {
-  sendPartHeader(time, type, boost::asio::buffer_size(buffer));
-  connection_->write(buffer, resource);
-  sendPartFooter();
+  if (!isBusy())
+  {
+    sendPartHeader(time, type, boost::asio::buffer_size(buffer));
+    connection_->write(buffer, resource);
+    sendPartFooter();
+  }
 }
 
+bool MultipartStream::isBusy() {
+  while (!pending_footers_.empty() && pending_footers_.front().expired())
+  {
+    pending_footers_.pop();
+  }
+  return !(max_queue_size_ == 0 || pending_footers_.size() < max_queue_size_);
+}
 
 }
