@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.0 (2018-07-01)
+------------------
 * Avoid queuing of images on slow ethernet connection (`#64 <https://github.com/RobotWebTools/web_video_server/issues/64>`_)
 * use SteadyTimer (if available) for cleaning up inactive streams (`#63 <https://github.com/RobotWebTools/web_video_server/issues/63>`_)
   * use SteadyTimer for cleaning up inactive streams
