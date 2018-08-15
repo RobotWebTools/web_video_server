@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
   <name>web_video_server</name>
   <version>0.1.0</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
@@ -22,10 +22,10 @@
   <build_depend>async_web_server_cpp</build_depend>
   <build_depend>ffmpeg</build_depend>
 
-  <run_depend>roscpp</run_depend>
-  <run_depend>roslib</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>image_transport</run_depend>
-  <run_depend>async_web_server_cpp</run_depend>
-  <run_depend>ffmpeg</run_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>roslib</exec_depend>
+  <exec_depend>cv_bridge</exec_depend>
+  <exec_depend>image_transport</exec_depend>
+  <exec_depend>async_web_server_cpp</exec_depend>
+  <exec_depend>ffmpeg</exec_depend>
 </package>
