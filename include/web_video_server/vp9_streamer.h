@@ -13,7 +13,7 @@ class Vp9Streamer : public LibavStreamer
 {
 public:
   Vp9Streamer(const async_web_server_cpp::HttpRequest& request, async_web_server_cpp::HttpConnectionPtr connection,
-              ros::NodeHandle& nh);
+              rclcpp::Node::SharedPtr nh);
   ~Vp9Streamer();
 protected:
   virtual void initializeEncoder();
@@ -25,7 +25,7 @@ public:
   Vp9StreamerType();
   virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest& request,
                                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                                           ros::NodeHandle& nh);
+                                                           rclcpp::Node::SharedPtr nh);
 };
 
 }

@@ -25,14 +25,14 @@ class LibavStreamer : public ImageTransportImageStreamer
 {
 public:
   LibavStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-                ros::NodeHandle& nh, const std::string &format_name, const std::string &codec_name,
+                rclcpp::Node::SharedPtr nh, const std::string &format_name, const std::string &codec_name,
                 const std::string &content_type);
 
   ~LibavStreamer();
 
 protected:
   virtual void initializeEncoder();
-  virtual void sendImage(const cv::Mat&, const ros::Time& time);
+  virtual void sendImage(const cv::Mat&, const rclcpp::Time& time);
   virtual void initialize(const cv::Mat&);
   AVOutputFormat* output_format_;
   AVFormatContext* format_context_;
@@ -45,7 +45,7 @@ protected:
 private:
   AVFrame* frame_;
   struct SwsContext* sws_context_;
-  ros::Time first_image_timestamp_;
+  rclcpp::Time first_image_timestamp_;
   boost::mutex encode_mutex_;
 
   std::string format_name_;
@@ -66,7 +66,7 @@ public:
 
   boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                    async_web_server_cpp::HttpConnectionPtr connection,
-                                                   ros::NodeHandle& nh);
+                                                   rclcpp::Node::SharedPtr nh);
 
   std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 

@@ -4,7 +4,7 @@ namespace web_video_server
 {
 
 Vp9Streamer::Vp9Streamer(const async_web_server_cpp::HttpRequest& request,
-                         async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+                         async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
     LibavStreamer(request, connection, nh, "webm", "libvpx-vp9", "video/webm")
 {
 }
@@ -30,7 +30,7 @@ Vp9StreamerType::Vp9StreamerType() :
 
 boost::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
                                                                   async_web_server_cpp::HttpConnectionPtr connection,
-                                                                  ros::NodeHandle& nh)
+                                                                  rclcpp::Node::SharedPtr nh)
 {
   return boost::shared_ptr<ImageStreamer>(new Vp9Streamer(request, connection, nh));
 }

@@ -4,7 +4,7 @@ namespace web_video_server
 {
 
 RosCompressedStreamer::RosCompressedStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
   ImageStreamer(request, connection, nh), stream_(connection)
 {
   stream_.sendInitialHeader();
@@ -12,10 +12,11 @@ RosCompressedStreamer::RosCompressedStreamer(const async_web_server_cpp::HttpReq
 
 void RosCompressedStreamer::start() {
   std::string compressed_topic = topic_ + "/compressed";
-  image_sub_ = nh_.subscribe(compressed_topic, 1, &RosCompressedStreamer::imageCallback, this);
+  image_sub_ = nh_->create_subscription<sensor_msgs::msg::CompressedImage>(
+    compressed_topic, std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1), 1);
 }
 
-void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageConstPtr &msg) {
+void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg) {
   try {
     std::string content_type;
     if(msg->format.find("jpeg") != std::string::npos) {
@@ -25,28 +26,30 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageCons
       content_type = "image/png";
     }
     else {
-      ROS_WARN_STREAM("Unknown ROS compressed image format: " << msg->format);
+      RCLCPP_WARN(nh_->get_logger(), "Unknown ROS compressed image format: %s", msg->format.c_str());
       return;
     }
 
-    stream_.sendPart(msg->header.stamp, content_type, boost::asio::buffer(msg->data), msg);
+    stream_.sendPart(rclcpp::Time(msg->header.stamp), content_type, boost::asio::buffer(msg->data), msg);
   }
   catch (boost::system::system_error &e)
   {
     // happens when client disconnects
-    ROS_DEBUG("system_error exception: %s", e.what());
+    RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (std::exception &e)
   {
-    ROS_ERROR_THROTTLE(30, "exception: %s", e.what());
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (...)
   {
-    ROS_ERROR_THROTTLE(30, "exception");
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "exception");
     inactive_ = true;
     return;
   }
@@ -55,7 +58,7 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageCons
 
 boost::shared_ptr<ImageStreamer> RosCompressedStreamerType::create_streamer(const async_web_server_cpp::HttpRequest &request,
 										 async_web_server_cpp::HttpConnectionPtr connection,
-										 ros::NodeHandle& nh)
+										 rclcpp::Node::SharedPtr nh)
 {
   return boost::shared_ptr<ImageStreamer>(new RosCompressedStreamer(request, connection, nh));
 }

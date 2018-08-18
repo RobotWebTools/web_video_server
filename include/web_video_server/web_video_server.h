@@ -1,7 +1,7 @@
 #ifndef WEB_VIDEO_SERVER_H_
 #define WEB_VIDEO_SERVER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <vector>
 #include "web_video_server/image_streamer.h"
@@ -23,7 +23,7 @@ public:
    * @brief  Constructor
    * @return
    */
-  WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh);
+  WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::SharedPtr &private_nh);
 
   /**
    * @brief  Destructor - Cleans up
@@ -50,12 +50,8 @@ public:
 private:
   void cleanup_inactive_streams();
 
-  ros::NodeHandle nh_;
-#if ROS_VERSION_MINIMUM(1, 13, 1) || defined USE_STEADY_TIMER
-  ros::SteadyTimer cleanup_timer_;
-#else
-  ros::Timer cleanup_timer_;
-#endif
+  rclcpp::Node::SharedPtr nh_;
+  rclcpp::WallTimer<rclcpp::VoidCallbackType> cleanup_timer_;
   int ros_threads_;
   int port_;
   std::string address_;

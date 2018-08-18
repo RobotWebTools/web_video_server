@@ -1,7 +1,7 @@
 #ifndef MULTIPART_STREAM_H_
 #define MULTIPART_STREAM_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <async_web_server_cpp/http_connection.hpp>
 
 #include <queue>
@@ -16,10 +16,10 @@ public:
                   std::size_t max_queue_size=1);
 
   void sendInitialHeader();
-  void sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size);
+  void sendPartHeader(const rclcpp::Time &time, const std::string& type, size_t payload_size);
   void sendPartFooter();
-  void sendPartAndClear(const ros::Time &time, const std::string& type, std::vector<unsigned char> &data);
-  void sendPart(const ros::Time &time, const std::string& type, const boost::asio::const_buffer &buffer,
+  void sendPartAndClear(const rclcpp::Time &time, const std::string& type, std::vector<unsigned char> &data);
+  void sendPart(const rclcpp::Time &time, const std::string& type, const boost::asio::const_buffer &buffer,
 		async_web_server_cpp::HttpConnection::ResourcePtr resource);
 
 private:
@@ -29,7 +29,7 @@ private:
   const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
   std::string boundry_;
-  std::queue<boost::weak_ptr<const void> > pending_footers_;
+  std::queue<std::weak_ptr<const void> > pending_footers_;
 };
 
 }
