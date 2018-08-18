@@ -13,18 +13,16 @@
   <url type="bugtracker">https://github.com/RobotWebTools/web_video_server/issues</url>
   <url type="repository">https://github.com/RobotWebTools/web_video_server</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <build_depend>roscpp</build_depend>
-  <build_depend>roslib</build_depend>
+  <build_depend>rclcpp</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>async_web_server_cpp</build_depend>
   <build_depend>ffmpeg</build_depend>
   <build_depend>sensor_msgs</build_depend>
 
-  <exec_depend>roscpp</exec_depend>
-  <exec_depend>roslib</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
   <exec_depend>cv_bridge</exec_depend>
   <exec_depend>image_transport</exec_depend>
   <exec_depend>async_web_server_cpp</exec_depend>
