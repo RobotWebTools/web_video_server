@@ -13,7 +13,7 @@
   <url type="bugtracker">https://github.com/RobotWebTools/web_video_server/issues</url>
   <url type="repository">https://github.com/RobotWebTools/web_video_server</url>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
   <build_depend>rclcpp</build_depend>
   <build_depend>cv_bridge</build_depend>

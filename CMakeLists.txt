@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(web_video_server)
 
-find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_ros REQUIRED)
 
 find_package(async_web_server_cpp REQUIRED)
 find_package(cv_bridge REQUIRED)
