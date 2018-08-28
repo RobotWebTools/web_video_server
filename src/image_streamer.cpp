@@ -23,7 +23,7 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
 
 void ImageTransportImageStreamer::start()
 {
-  image_transport::TransportHints hints(default_transport_);
+  image_transport::TransportHints hints(nh_, default_transport_);
   auto tnat = nh_->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -37,9 +37,7 @@ void ImageTransportImageStreamer::start()
       break;
     }
   }
-  rmw_qos_profile_t custom_qos = rmw_qos_profile_default;
-  custom_qos.depth = 1;
-  image_sub_ = it_.subscribe(topic_, &ImageTransportImageStreamer::imageCallback, this, default_transport_, custom_qos);
+  image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, &hints);
 }
 
 void ImageTransportImageStreamer::initialize(const cv::Mat &)
