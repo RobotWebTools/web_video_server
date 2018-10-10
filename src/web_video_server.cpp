@@ -44,7 +44,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
     nh_(nh), handler_group_(
         async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
-#if ROS_VERSION_MINIMUM(1, 13, 1) || defined USE_STEADY_TIMER
+#if ROS_HAS_STEADYTIMER || defined USE_STEADY_TIMER
   cleanup_timer_ = nh.createSteadyTimer(ros::WallDuration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
 #else
   cleanup_timer_ = nh.createTimer(ros::Duration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));

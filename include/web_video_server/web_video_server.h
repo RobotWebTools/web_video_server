@@ -9,6 +9,8 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
 
+#define ROS_HAS_STEADYTIMER (ROS_VERSION_MINIMUM(1, 13, 1) || ((ROS_VERSION_MINOR == 12) && (ROS_VERSION_PATCH >= 8)))
+
 namespace web_video_server
 {
 
@@ -51,7 +53,7 @@ private:
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;
-#if ROS_VERSION_MINIMUM(1, 13, 1) || defined USE_STEADY_TIMER
+#if ROS_HAS_STEADYTIMER || defined USE_STEADY_TIMER
   ros::SteadyTimer cleanup_timer_;
 #else
   ros::Timer cleanup_timer_;
