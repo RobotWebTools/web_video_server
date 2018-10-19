@@ -47,7 +47,9 @@ add_executable(${PROJECT_NAME}
   src/vp9_streamer.cpp
   src/multipart_stream.cpp
   src/ros_compressed_streamer.cpp
-  src/jpeg_streamers.cpp)
+  src/jpeg_streamers.cpp
+  src/png_streamers.cpp
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}

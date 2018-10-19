@@ -8,6 +8,7 @@
 #include "web_video_server/web_video_server.h"
 #include "web_video_server/ros_compressed_streamer.h"
 #include "web_video_server/jpeg_streamers.h"
+#include "web_video_server/png_streamers.h"
 #include "web_video_server/vp8_streamer.h"
 #include "web_video_server/h264_streamer.h"
 #include "web_video_server/vp9_streamer.h"
@@ -61,6 +62,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("ros_threads", ros_threads_, 2);
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
+  stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
   stream_types_["ros_compressed"] = boost::shared_ptr<ImageStreamerType>(new RosCompressedStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
   stream_types_["h264"] = boost::shared_ptr<ImageStreamerType>(new H264StreamerType());
