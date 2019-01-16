@@ -113,6 +113,7 @@ void WebVideoServer::spin()
   server_->run();
   RCLCPP_INFO(nh_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
   rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::executor::create_default_executor_arguments(), ros_threads_);
+  spinner.add_node(nh_);
   spinner.spin();
   server_->stop();
 }
