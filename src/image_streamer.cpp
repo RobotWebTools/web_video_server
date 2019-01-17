@@ -28,7 +28,9 @@ void ImageTransportImageStreamer::start()
   ros::master::getTopics(available_topics);
   inactive_ = true;
   for (size_t it = 0; it<available_topics.size(); it++){
-    if(available_topics[it].name == topic_){
+    std::string available_topic_name = available_topics[it].name;
+    if(available_topic_name == topic_ || (available_topic_name.find("/") == 0 &&
+                                          available_topic_name.substr(1) == topic_)) {
       inactive_ = false;
     }
   }
