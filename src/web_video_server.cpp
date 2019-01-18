@@ -1,6 +1,7 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <chrono>
 #include <vector>
 #include <sensor_msgs/image_encodings.hpp>
 #include <opencv2/opencv.hpp>
@@ -12,6 +13,8 @@
 #include "web_video_server/h264_streamer.h"
 #include "web_video_server/vp9_streamer.h"
 #include "async_web_server_cpp/http_reply.hpp"
+
+using namespace std::chrono_literals;
 
 namespace web_video_server
 {
@@ -44,8 +47,7 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
 
 WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::SharedPtr &private_nh) :
     nh_(nh), handler_group_(
-        async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
-    cleanup_timer_(std::chrono::milliseconds(500), boost::bind(&WebVideoServer::cleanup_inactive_streams, this))
+        async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
   rclcpp::Parameter parameter;
   if (private_nh->get_parameter("port", parameter)) {
@@ -106,6 +108,12 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::Shared
 
 WebVideoServer::~WebVideoServer()
 {
+}
+
+void WebVideoServer::setup_cleanup_inactive_streams()
+{
+  std::function<void()> callback = std::bind(&WebVideoServer::cleanup_inactive_streams, this);
+  cleanup_timer_ = nh_->create_wall_timer(500ms, callback);
 }
 
 void WebVideoServer::spin()
@@ -295,6 +303,7 @@ int main(int argc, char **argv)
   auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server");
 
   web_video_server::WebVideoServer server(nh, private_nh);
+  server.setup_cleanup_inactive_streams();
   server.spin();
 
   return (0);

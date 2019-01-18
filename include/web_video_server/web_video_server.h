@@ -35,6 +35,8 @@ public:
    */
   void spin();
 
+  void setup_cleanup_inactive_streams();
+
   bool handle_stream(const async_web_server_cpp::HttpRequest &request,
                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
@@ -51,7 +53,7 @@ private:
   void cleanup_inactive_streams();
 
   rclcpp::Node::SharedPtr nh_;
-  rclcpp::WallTimer<rclcpp::VoidCallbackType> cleanup_timer_;
+  rclcpp::WallTimer<rclcpp::VoidCallbackType>::SharedPtr cleanup_timer_;
   int ros_threads_;
   int port_;
   std::string address_;
