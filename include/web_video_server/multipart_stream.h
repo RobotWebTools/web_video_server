@@ -9,6 +9,11 @@
 namespace web_video_server
 {
 
+struct PendingFooter {
+	ros::Time timestamp;
+	boost::weak_ptr<std::string> contents;
+};
+
 class MultipartStream {
 public:
   MultipartStream(async_web_server_cpp::HttpConnectionPtr& connection,
@@ -17,7 +22,7 @@ public:
 
   void sendInitialHeader();
   void sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size);
-  void sendPartFooter();
+  void sendPartFooter(const ros::Time &time);
   void sendPartAndClear(const ros::Time &time, const std::string& type, std::vector<unsigned char> &data);
   void sendPart(const ros::Time &time, const std::string& type, const boost::asio::const_buffer &buffer,
 		async_web_server_cpp::HttpConnection::ResourcePtr resource);
@@ -29,7 +34,7 @@ private:
   const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
   std::string boundry_;
-  std::queue<boost::weak_ptr<const void> > pending_footers_;
+  std::queue<PendingFooter> pending_footers_;
 };
 
 }
