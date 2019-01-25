@@ -19,6 +19,8 @@ namespace web_video_server
 
 static bool __verbose;
 
+static std::string __default_stream_type;
+
 static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler forward,
                                   const async_web_server_cpp::HttpRequest &request,
                                   async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
@@ -60,6 +62,8 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("server_threads", server_threads, 1);
 
   private_nh.param("ros_threads", ros_threads_, 2);
+
+  private_nh.param<std::string>("default_stream_type", __default_stream_type, "mjpeg");
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
@@ -124,7 +128,7 @@ bool WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &requ
                                    async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                    const char* end)
 {
-  std::string type = request.get_query_param_value_or_default("type", "mjpeg");
+  std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
   if (stream_types_.find(type) != stream_types_.end())
   {
     boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request, connection, nh_);
