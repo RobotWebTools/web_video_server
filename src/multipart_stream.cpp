@@ -33,9 +33,10 @@ void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& t
 }
 
 void MultipartStream::sendPartFooter(const ros::Time &time) {
-  //boost::shared_ptr<PendingFooter> pf(new PendingFooter{time, std::string("\r\n--"+boundry_+"\r\n")});
   boost::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
-  PendingFooter pf{time, str};
+  PendingFooter pf;
+  pf.timestamp = time;
+  pf.contents = str;
   connection_->write(boost::asio::buffer(*str), str);
   if (max_queue_size_ > 0) pending_footers_.push(pf);
 }
@@ -68,8 +69,8 @@ bool MultipartStream::isBusy() {
     if (pending_footers_.front().contents.expired()) {
       pending_footers_.pop();
     } else {
-      auto frontTime = pending_footers_.front().timestamp;
-      if ((currentTime - frontTime).toSec() > 0.5) {
+      ros::Time footerTime = pending_footers_.front().timestamp;
+      if ((currentTime - footerTime).toSec() > 0.5) {
         pending_footers_.pop();
       } else {
         break;

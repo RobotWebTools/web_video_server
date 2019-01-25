@@ -10,8 +10,8 @@ namespace web_video_server
 {
 
 struct PendingFooter {
-	ros::Time timestamp;
-	boost::weak_ptr<std::string> contents;
+  ros::Time timestamp;
+  boost::weak_ptr<std::string> contents;
 };
 
 class MultipartStream {
