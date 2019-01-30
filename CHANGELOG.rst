@@ -2,6 +2,24 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add "default_stream_type" parameter (`#84 <https://github.com/RobotWebTools/web_video_server/issues/84>`_)
+  This allows users to specify default stream type in their .launch files. Using a "ros_compressed" stream type sometimes
+  results in a much lower resource consumption, and having it set as a default is much nicer for end users.
+* Add a workaround for MultipartStream constant busy state (`#83 <https://github.com/RobotWebTools/web_video_server/issues/83>`_)
+  * Add a workaround for MultipartStream constant busy state
+  * Remove C++11 features
+* lax rule for topic name (`#77 <https://github.com/RobotWebTools/web_video_server/issues/77>`_)
+* Add PngStreamer (`#74 <https://github.com/RobotWebTools/web_video_server/issues/74>`_)
+* fix SteadyTimer check for backported ROS versions (`#71 <https://github.com/RobotWebTools/web_video_server/issues/71>`_)
+  i.e. on current kinetic
+* Pkg format 2 (`#68 <https://github.com/RobotWebTools/web_video_server/issues/68>`_)
+  * use package format 2
+  * add missing dependency on sensor_msgs
+* fixed undeclared CODEC_FLAG_GLOBAL_HEADER (`#65 <https://github.com/RobotWebTools/web_video_server/issues/65>`_)
+* Contributors: Andreas Klintberg, Dirk Thomas, Felix Ruess, Kazuto Murase, Viktor Kunovski, sfalexrog
+
 0.1.0 (2018-07-01)
 ------------------
 * Avoid queuing of images on slow ethernet connection (`#64 <https://github.com/RobotWebTools/web_video_server/issues/64>`_)
