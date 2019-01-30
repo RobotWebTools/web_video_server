@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>web_video_server</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 
   <maintainer email="rctoris@wpi.edu">Russell Toris</maintainer>

@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.2.0 (2019-01-30)
+------------------
 * Add "default_stream_type" parameter (`#84 <https://github.com/RobotWebTools/web_video_server/issues/84>`_)
   This allows users to specify default stream type in their .launch files. Using a "ros_compressed" stream type sometimes
   results in a much lower resource consumption, and having it set as a default is much nicer for end users.
