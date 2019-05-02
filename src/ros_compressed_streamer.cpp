@@ -10,6 +10,10 @@ RosCompressedStreamer::RosCompressedStreamer(const async_web_server_cpp::HttpReq
   stream_.sendInitialHeader();
 }
 
+void RosCompressedStreamer::restreamFrame(double max_age)
+{
+}
+
 void RosCompressedStreamer::start() {
   std::string compressed_topic = topic_ + "/compressed";
   image_sub_ = nh_.subscribe(compressed_topic, 1, &RosCompressedStreamer::imageCallback, this);

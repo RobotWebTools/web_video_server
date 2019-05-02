@@ -1,5 +1,6 @@
 #include "web_video_server/image_streamer.h"
 #include <cv_bridge/cv_bridge.h>
+#include <iostream>
 
 namespace web_video_server
 {
@@ -11,6 +12,10 @@ ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
 
+ImageStreamer::~ImageStreamer()
+{
+}
+
 ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request,
                              async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
   ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
@@ -19,6 +24,10 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
+}
+
+ImageTransportImageStreamer::~ImageTransportImageStreamer()
+{
 }
 
 void ImageTransportImageStreamer::start()
@@ -39,6 +48,37 @@ void ImageTransportImageStreamer::start()
 
 void ImageTransportImageStreamer::initialize(const cv::Mat &)
 {
+}
+
+void ImageTransportImageStreamer::restreamFrame(double max_age)
+{
+  if (inactive_ || !initialized_ )
+    return;
+  try {
+    if ( last_frame + ros::Duration(max_age) < ros::Time::now() ) {
+      boost::mutex::scoped_lock lock(send_mutex_);
+      sendImage(output_size_image, ros::Time::now() ); // don't update last_frame, it may remain an old value.
+    }
+  }
+  catch (boost::system::system_error &e)
+  {
+    // happens when client disconnects
+    ROS_DEBUG("system_error exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (std::exception &e)
+  {
+    ROS_ERROR_THROTTLE(30, "exception: %s", e.what());
+    inactive_ = true;
+    return;
+  }
+  catch (...)
+  {
+    ROS_ERROR_THROTTLE(30, "exception");
+    inactive_ = true;
+    return;
+  }
 }
 
 void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
@@ -84,7 +124,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
       cv::flip(img, img, true);
     }
 
-    cv::Mat output_size_image;
+    boost::mutex::scoped_lock lock(send_mutex_); // protects output_size_image
     if (output_width_ != input_width || output_height_ != input_height)
     {
       cv::Mat img_resized;
@@ -102,7 +142,9 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
       initialize(output_size_image);
       initialized_ = true;
     }
-    sendImage(output_size_image, msg->header.stamp);
+
+    last_frame = ros::Time::now();
+    sendImage(output_size_image, last_frame );
 
   }
   catch (cv_bridge::Exception &e)

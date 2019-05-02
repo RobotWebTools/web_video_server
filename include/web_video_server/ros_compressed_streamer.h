@@ -19,7 +19,7 @@ public:
 
 private:
   void imageCallback(const sensor_msgs::CompressedImageConstPtr &msg);
-
+  virtual void restreamFrame(double max_age);
   MultipartStream stream_;
   ros::Subscriber image_sub_;
 };

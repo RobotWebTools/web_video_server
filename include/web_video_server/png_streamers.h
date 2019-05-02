@@ -15,7 +15,7 @@ class PngStreamer : public ImageTransportImageStreamer
 public:
   PngStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
               ros::NodeHandle& nh);
-
+  ~PngStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
 
@@ -38,7 +38,7 @@ class PngSnapshotStreamer : public ImageTransportImageStreamer
 public:
   PngSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
                       async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh);
-
+  ~PngSnapshotStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
 

@@ -18,12 +18,18 @@ public:
 		ros::NodeHandle& nh);
 
   virtual void start() = 0;
+  virtual ~ImageStreamer();
 
   bool isInactive()
   {
     return inactive_;
   }
   ;
+
+  /**
+   * Restreams the last received image frame if older than max_age.
+   */
+  virtual void restreamFrame(double max_age) = 0;
 
   std::string getTopic()
   {
@@ -45,12 +51,12 @@ class ImageTransportImageStreamer : public ImageStreamer
 public:
   ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
 			      ros::NodeHandle& nh);
-
+  virtual ~ImageTransportImageStreamer();
   virtual void start();
 
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
-
+  virtual void restreamFrame(double max_age);
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -58,6 +64,11 @@ protected:
   int output_height_;
   bool invert_;
   std::string default_transport_;
+
+  ros::Time last_frame;
+  cv::Mat output_size_image;
+  boost::mutex send_mutex_;
+
 private:
   image_transport::ImageTransport it_;
   bool initialized_;

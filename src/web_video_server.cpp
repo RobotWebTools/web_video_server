@@ -62,6 +62,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("server_threads", server_threads, 1);
 
   private_nh.param("ros_threads", ros_threads_, 2);
+  private_nh.param("publish_rate", publish_rate_, -1.0);
 
   private_nh.param<std::string>("default_stream_type", __default_stream_type, "mjpeg");
 
@@ -100,9 +101,34 @@ void WebVideoServer::spin()
 {
   server_->run();
   ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
-  ros::MultiThreadedSpinner spinner(ros_threads_);
-  spinner.spin();
+
+  ros::AsyncSpinner spinner(ros_threads_);
+  spinner.start();
+
+  if ( publish_rate_ > 0 ) {
+    ros::Rate r(publish_rate_);
+
+    while( ros::ok() ) {
+      this->restreamFrames( 1.0 / publish_rate_ );
+      r.sleep();
+    }
+  } else {
+    ros::waitForShutdown();
+  }
+
   server_->stop();
+}
+
+void WebVideoServer::restreamFrames( double max_age )
+{
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
+
+  typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
+
+  for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr)
+    {
+      (*itr)->restreamFrame( max_age );
+    }
 }
 
 void WebVideoServer::cleanup_inactive_streams()
@@ -189,7 +215,7 @@ bool WebVideoServer::handle_stream_viewer(const async_web_server_cpp::HttpReques
     // Fallback for topics without corresponding compressed topics
     if (type == std::string("ros_compressed"))
     {
-      
+
       std::string compressed_topic_name = topic + "/compressed";
       ros::master::V_TopicInfo topics;
       ros::master::getTopics(topics);

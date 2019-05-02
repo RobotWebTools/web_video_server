@@ -15,7 +15,7 @@ class MjpegStreamer : public ImageTransportImageStreamer
 public:
   MjpegStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
                 ros::NodeHandle& nh);
-
+  ~MjpegStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
 
@@ -38,7 +38,7 @@ class JpegSnapshotStreamer : public ImageTransportImageStreamer
 public:
   JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
                        async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh);
-
+  ~JpegSnapshotStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
 
