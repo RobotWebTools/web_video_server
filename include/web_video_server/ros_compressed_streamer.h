@@ -15,13 +15,21 @@ class RosCompressedStreamer : public ImageStreamer
 public:
   RosCompressedStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
 			ros::NodeHandle& nh);
+  ~RosCompressedStreamer();
+
   virtual void start();
+  virtual void restreamFrame(double max_age);
+
+protected:
+  virtual void sendImage(const sensor_msgs::CompressedImageConstPtr &msg, const ros::Time &time);
 
 private:
   void imageCallback(const sensor_msgs::CompressedImageConstPtr &msg);
-  virtual void restreamFrame(double max_age);
   MultipartStream stream_;
   ros::Subscriber image_sub_;
+  ros::Time last_frame;
+  sensor_msgs::CompressedImageConstPtr last_msg;
+  boost::mutex send_mutex_;
 };
 
 class RosCompressedStreamerType : public ImageStreamerType
