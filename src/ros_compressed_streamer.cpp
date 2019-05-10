@@ -10,12 +10,30 @@ RosCompressedStreamer::RosCompressedStreamer(const async_web_server_cpp::HttpReq
   stream_.sendInitialHeader();
 }
 
+RosCompressedStreamer::~RosCompressedStreamer()
+{
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+}
+
 void RosCompressedStreamer::start() {
   std::string compressed_topic = topic_ + "/compressed";
   image_sub_ = nh_.subscribe(compressed_topic, 1, &RosCompressedStreamer::imageCallback, this);
 }
 
-void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageConstPtr &msg) {
+void RosCompressedStreamer::restreamFrame(double max_age)
+{
+  if (inactive_ || (last_msg == 0))
+    return;
+
+  if ( last_frame + ros::Duration(max_age) < ros::Time::now() ) {
+    boost::mutex::scoped_lock lock(send_mutex_);
+    sendImage(last_msg, ros::Time::now() ); // don't update last_frame, it may remain an old value.
+  }
+}
+
+void RosCompressedStreamer::sendImage(const sensor_msgs::CompressedImageConstPtr &msg,
+                                      const ros::Time &time) {
   try {
     std::string content_type;
     if(msg->format.find("jpeg") != std::string::npos) {
@@ -29,7 +47,7 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageCons
       return;
     }
 
-    stream_.sendPart(msg->header.stamp, content_type, boost::asio::buffer(msg->data), msg);
+    stream_.sendPart(time, content_type, boost::asio::buffer(msg->data), msg);
   }
   catch (boost::system::system_error &e)
   {
@@ -50,6 +68,14 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageCons
     inactive_ = true;
     return;
   }
+}
+
+
+void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageConstPtr &msg) {
+  boost::mutex::scoped_lock lock(send_mutex_); // protects last_msg and last_frame
+  last_msg = msg;
+  last_frame = ros::Time(msg->header.stamp.sec, msg->header.stamp.nsec);
+  sendImage(last_msg, last_frame);
 }
 
 
