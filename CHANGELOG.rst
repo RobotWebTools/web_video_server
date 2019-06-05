@@ -2,6 +2,15 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Restream buffered frames with minimum publish rate (`#88 <https://github.com/RobotWebTools/web_video_server/issues/88>`_)
+  * Restream buffered frames with minimum publish rate
+  * Implement restreaming for ros_compressed_streamer
+* Update travis config (`#89 <https://github.com/RobotWebTools/web_video_server/issues/89>`_)
+* Fall back to mjpeg if ros_compressed is unavailable (`#87 <https://github.com/RobotWebTools/web_video_server/issues/87>`_)
+* Contributors: Jihoon Lee, Viktor Kunovski, sfalexrog
+
 0.2.0 (2019-01-30)
 ------------------
 * Add "default_stream_type" parameter (`#84 <https://github.com/RobotWebTools/web_video_server/issues/84>`_)
