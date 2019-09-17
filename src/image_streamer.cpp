@@ -23,7 +23,7 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
 
 void ImageTransportImageStreamer::start()
 {
-  image_transport::TransportHints hints(nh_, default_transport_);
+  image_transport::TransportHints hints(nh_.get(), default_transport_);
   auto tnat = nh_->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
