@@ -9,6 +9,7 @@
 #include "web_video_server/web_video_server.h"
 #include "web_video_server/ros_compressed_streamer.h"
 #include "web_video_server/jpeg_streamers.h"
+#include "web_video_server/png_streamers.h"
 #include "web_video_server/vp8_streamer.h"
 #include "web_video_server/h264_streamer.h"
 #include "web_video_server/vp9_streamer.h"
@@ -20,6 +21,8 @@ namespace web_video_server
 {
 
 static bool __verbose;
+
+static std::string __default_stream_type;
 
 static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler forward,
                                   const async_web_server_cpp::HttpRequest &request,
@@ -79,8 +82,20 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::Shared
   } else {
     ros_threads_ = 2;
   }
+  if (private_nh->get_parameter("publish_rate", parameter)) {
+    publish_rate_ = parameter.as_double();
+  } else {
+    publish_rate_ = -1.0;
+  }
+
+  if (private_nh->get_parameter("default_stream_type", parameter)) {
+    __default_stream_type = parameter.as_string();
+  } else {
+    __default_stream_type = "mjpeg";
+  }
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
+  stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
   stream_types_["ros_compressed"] = boost::shared_ptr<ImageStreamerType>(new RosCompressedStreamerType());
   stream_types_["vp8"] = boost::shared_ptr<ImageStreamerType>(new Vp8StreamerType());
   stream_types_["h264"] = boost::shared_ptr<ImageStreamerType>(new H264StreamerType());
@@ -122,8 +137,23 @@ void WebVideoServer::spin()
   RCLCPP_INFO(nh_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
   rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::executor::create_default_executor_arguments(), ros_threads_);
   spinner.add_node(nh_);
+  if ( publish_rate_ > 0 ) {
+    nh_->create_wall_timer(1s / publish_rate_, [this](){restreamFrames(1.0 / publish_rate_);});
+  }
   spinner.spin();
   server_->stop();
+}
+
+void WebVideoServer::restreamFrames( double max_age )
+{
+  boost::mutex::scoped_lock lock(subscriber_mutex_);
+
+  typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
+
+  for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr)
+    {
+      (*itr)->restreamFrame( max_age );
+    }
 }
 
 void WebVideoServer::cleanup_inactive_streams()
@@ -149,9 +179,33 @@ bool WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &requ
                                    async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                    const char* end)
 {
-  std::string type = request.get_query_param_value_or_default("type", "mjpeg");
+  std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
   if (stream_types_.find(type) != stream_types_.end())
   {
+    std::string topic = request.get_query_param_value_or_default("topic", "");
+    // Fallback for topics without corresponding compressed topics
+    if (type == std::string("ros_compressed"))
+    {
+      std::string compressed_topic_name = topic + "/compressed";
+      auto tnat = nh_->get_topic_names_and_types();
+      bool did_find_compressed_topic = false;
+      for (auto topic_and_types : tnat) {
+        if (topic_and_types.second.size() > 1) {
+          // explicitly avoid topics with more than one type
+          break;
+        }
+        auto & topic_name = topic_and_types.first;
+        if(topic_name == compressed_topic_name || (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name)){
+          did_find_compressed_topic = true;
+          break;
+        }
+      }
+      if (!did_find_compressed_topic)
+      {
+        RCLCPP_WARN(nh_->get_logger(), "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
+        type = "mjpeg";
+      }
+    }
     boost::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request, connection, nh_);
     streamer->start();
     boost::mutex::scoped_lock lock(subscriber_mutex_);
@@ -181,10 +235,34 @@ bool WebVideoServer::handle_stream_viewer(const async_web_server_cpp::HttpReques
                                           async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                           const char* end)
 {
-  std::string type = request.get_query_param_value_or_default("type", "mjpeg");
+  std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
   if (stream_types_.find(type) != stream_types_.end())
   {
     std::string topic = request.get_query_param_value_or_default("topic", "");
+    // Fallback for topics without corresponding compressed topics
+    if (type == std::string("ros_compressed"))
+    {
+
+      std::string compressed_topic_name = topic + "/compressed";
+      auto tnat = nh_->get_topic_names_and_types();
+      bool did_find_compressed_topic = false;
+      for (auto topic_and_types : tnat) {
+        if (topic_and_types.second.size() > 1) {
+          // explicitly avoid topics with more than one type
+          break;
+        }
+        auto & topic_name = topic_and_types.first;
+        if(topic_name == compressed_topic_name || (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name)){
+          did_find_compressed_topic = true;
+          break;
+        }
+      }
+      if (!did_find_compressed_topic)
+      {
+        RCLCPP_WARN(nh_->get_logger(), "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
+        type = "mjpeg";
+      }
+    }
 
     async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close").header(
         "Server", "web_video_server").header("Content-type", "text/html;").write(connection);

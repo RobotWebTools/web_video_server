@@ -5,10 +5,11 @@ namespace web_video_server
 {
 
 MultipartStream::MultipartStream(
+    std::function<rclcpp::Time()> get_now,
     async_web_server_cpp::HttpConnectionPtr& connection,
     const std::string& boundry,
     std::size_t max_queue_size)
-  : connection_(connection), boundry_(boundry), max_queue_size_(max_queue_size)
+  : get_now_(get_now), connection_(connection), boundry_(boundry), max_queue_size_(max_queue_size)
 {}
 
 void MultipartStream::sendInitialHeader() {
@@ -32,10 +33,13 @@ void MultipartStream::sendPartHeader(const rclcpp::Time &time, const std::string
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
-void MultipartStream::sendPartFooter() {
+void MultipartStream::sendPartFooter(const rclcpp::Time &time) {
   std::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
+  PendingFooter pf;
+  pf.timestamp = time;
+  pf.contents = str;
   connection_->write(boost::asio::buffer(*str), str);
-  if (max_queue_size_ > 0) pending_footers_.push(str);
+  if (max_queue_size_ > 0) pending_footers_.push(pf);
 }
 
 void MultipartStream::sendPartAndClear(const rclcpp::Time &time, const std::string& type,
@@ -44,7 +48,7 @@ void MultipartStream::sendPartAndClear(const rclcpp::Time &time, const std::stri
   {
     sendPartHeader(time, type, data.size());
     connection_->write_and_clear(data);
-    sendPartFooter();
+    sendPartFooter(time);
   }
 }
 
@@ -55,14 +59,24 @@ void MultipartStream::sendPart(const rclcpp::Time &time, const std::string& type
   {
     sendPartHeader(time, type, boost::asio::buffer_size(buffer));
     connection_->write(buffer, resource);
-    sendPartFooter();
+    sendPartFooter(time);
   }
 }
 
 bool MultipartStream::isBusy() {
-  while (!pending_footers_.empty() && pending_footers_.front().expired())
+  rclcpp::Time currentTime = get_now_();
+  while (!pending_footers_.empty())
   {
-    pending_footers_.pop();
+    if (pending_footers_.front().contents.expired()) {
+      pending_footers_.pop();
+    } else {
+      rclcpp::Time footerTime = pending_footers_.front().timestamp;
+      if ((currentTime - footerTime).seconds() > 0.5) {
+        pending_footers_.pop();
+      } else {
+        break;
+      }
+    }
   }
   return !(max_queue_size_ == 0 || pending_footers_.size() < max_queue_size_);
 }
