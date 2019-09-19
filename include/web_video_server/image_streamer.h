@@ -19,12 +19,18 @@ public:
 		rclcpp::Node::SharedPtr nh);
 
   virtual void start() = 0;
+  virtual ~ImageStreamer();
 
   bool isInactive()
   {
     return inactive_;
   }
   ;
+
+  /**
+   * Restreams the last received image frame if older than max_age.
+   */
+  virtual void restreamFrame(double max_age) = 0;
 
   std::string getTopic()
   {
@@ -46,12 +52,13 @@ class ImageTransportImageStreamer : public ImageStreamer
 public:
   ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
 			      rclcpp::Node::SharedPtr nh);
+  virtual ~ImageTransportImageStreamer();
 
   virtual void start();
 
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time &time) = 0;
-
+  virtual void restreamFrame(double max_age);
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -59,6 +66,11 @@ protected:
   int output_height_;
   bool invert_;
   std::string default_transport_;
+
+  rclcpp::Time last_frame;
+  cv::Mat output_size_image;
+  boost::mutex send_mutex_;
+
 private:
   image_transport::ImageTransport it_;
   bool initialized_;

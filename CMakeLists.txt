@@ -49,7 +49,9 @@ add_executable(${PROJECT_NAME}
   src/vp9_streamer.cpp
   src/multipart_stream.cpp
   src/ros_compressed_streamer.cpp
-  src/jpeg_streamers.cpp)
+  src/jpeg_streamers.cpp
+  src/png_streamers.cpp
+)
 
 ament_target_dependencies(${PROJECT_NAME}
   async_web_server_cpp cv_bridge image_transport rclcpp sensor_msgs)

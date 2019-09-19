@@ -5,9 +5,15 @@ namespace web_video_server
 
 RosCompressedStreamer::RosCompressedStreamer(const async_web_server_cpp::HttpRequest &request,
                              async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-  ImageStreamer(request, connection, nh), stream_(connection)
+  ImageStreamer(request, connection, nh), stream_(std::bind(&rclcpp::Node::now, nh), connection)
 {
   stream_.sendInitialHeader();
+}
+
+RosCompressedStreamer::~RosCompressedStreamer()
+{
+  this->inactive_ = true;
+  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
 void RosCompressedStreamer::start() {
@@ -16,7 +22,19 @@ void RosCompressedStreamer::start() {
     compressed_topic, std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1), 1);
 }
 
-void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg) {
+void RosCompressedStreamer::restreamFrame(double max_age)
+{
+  if (inactive_ || (last_msg == 0))
+    return;
+
+  if ( last_frame + rclcpp::Duration(max_age) < nh_->now() ) {
+    boost::mutex::scoped_lock lock(send_mutex_);
+    sendImage(last_msg, nh_->now() ); // don't update last_frame, it may remain an old value.
+  }
+}
+
+void RosCompressedStreamer::sendImage(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+                                      const rclcpp::Time &time) {
   try {
     std::string content_type;
     if(msg->format.find("jpeg") != std::string::npos) {
@@ -30,7 +48,7 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImag
       return;
     }
 
-    stream_.sendPart(rclcpp::Time(msg->header.stamp), content_type, boost::asio::buffer(msg->data), msg);
+    stream_.sendPart(time, content_type, boost::asio::buffer(msg->data), msg);
   }
   catch (boost::system::system_error &e)
   {
@@ -53,6 +71,14 @@ void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImag
     inactive_ = true;
     return;
   }
+}
+
+
+void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg) {
+  boost::mutex::scoped_lock lock(send_mutex_); // protects last_msg and last_frame
+  last_msg = msg;
+  last_frame = rclcpp::Time(msg->header.stamp.sec, msg->header.stamp.nanosec);
+  sendImage(last_msg, last_frame);
 }
 
 
