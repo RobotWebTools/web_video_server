@@ -49,7 +49,7 @@ static int ffmpeg_boost_mutex_lock_manager(void **mutex, enum AVLockOp op)
 }
 
 LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh,
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh,
                              const std::string &format_name, const std::string &codec_name,
                              const std::string &content_type) :
     ImageTransportImageStreamer(request, connection, nh), output_format_(0), format_context_(0), codec_(0), codec_context_(0), video_stream_(
@@ -240,10 +240,10 @@ void LibavStreamer::initializeEncoder()
 {
 }
 
-void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
-  if (first_image_timestamp_.isZero())
+  if (0 == first_image_timestamp_.nanoseconds())
   {
     first_image_timestamp_ = time;
   }
@@ -323,7 +323,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
     std::size_t size;
     uint8_t *output_buf;
 
-    double seconds = (time - first_image_timestamp_).toSec();
+    double seconds = (time - first_image_timestamp_).seconds();
     // Encode video at 1/0.95 to minimize delay
     pkt.pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt.pts <= 0)
@@ -365,7 +365,7 @@ LibavStreamerType::LibavStreamerType(const std::string &format_name, const std::
 
 boost::shared_ptr<ImageStreamer> LibavStreamerType::create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                                     async_web_server_cpp::HttpConnectionPtr connection,
-                                                                    ros::NodeHandle& nh)
+                                                                    rclcpp::Node::SharedPtr nh)
 {
   return boost::shared_ptr<ImageStreamer>(
       new LibavStreamer(request, connection, nh, format_name_, codec_name_, content_type_));

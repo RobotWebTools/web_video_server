@@ -4,7 +4,7 @@ namespace web_video_server
 {
 
 H264Streamer::H264Streamer(const async_web_server_cpp::HttpRequest& request,
-                         async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+                         async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
     LibavStreamer(request, connection, nh, "mp4", "libx264", "video/mp4")
 {
   /* possible quality presets:
@@ -41,7 +41,7 @@ H264StreamerType::H264StreamerType() :
 
 boost::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
                                                                   async_web_server_cpp::HttpConnectionPtr connection,
-                                                                  ros::NodeHandle& nh)
+                                                                  rclcpp::Node::SharedPtr nh)
 {
   return boost::shared_ptr<ImageStreamer>(new H264Streamer(request, connection, nh));
 }

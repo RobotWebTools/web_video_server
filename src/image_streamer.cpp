@@ -5,14 +5,14 @@ namespace web_video_server
 {
 
 ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
     request_(request), connection_(connection), nh_(nh), inactive_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
 
 ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh) :
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
   ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
@@ -23,23 +23,28 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
 
 void ImageTransportImageStreamer::start()
 {
-  image_transport::TransportHints hints(default_transport_);
-  ros::master::V_TopicInfo available_topics;
-  ros::master::getTopics(available_topics);
+  image_transport::TransportHints hints(nh_.get(), default_transport_);
+  auto tnat = nh_->get_topic_names_and_types();
   inactive_ = true;
-  for (size_t it = 0; it<available_topics.size(); it++){
-    if(available_topics[it].name == topic_){
+  for (auto topic_and_types : tnat) {
+    if (topic_and_types.second.size() > 1) {
+      // explicitly avoid topics with more than one type
+      break;
+    }
+    auto & topic_name = topic_and_types.first;
+    if(topic_name == topic_){
       inactive_ = false;
+      break;
     }
   }
-  image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, hints);
+  image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, &hints);
 }
 
 void ImageTransportImageStreamer::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr &msg)
+void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg)
 {
   if (inactive_)
     return;
@@ -105,32 +110,36 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
   }
   catch (cv_bridge::Exception &e)
   {
-    ROS_ERROR_THROTTLE(30, "cv_bridge exception: %s", e.what());
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (cv::Exception &e)
   {
-    ROS_ERROR_THROTTLE(30, "cv_bridge exception: %s", e.what());
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (boost::system::system_error &e)
   {
     // happens when client disconnects
-    ROS_DEBUG("system_error exception: %s", e.what());
+    RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (std::exception &e)
   {
-    ROS_ERROR_THROTTLE(30, "exception: %s", e.what());
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (...)
   {
-    ROS_ERROR_THROTTLE(30, "exception");
+    // TODO THROTTLE with 30
+    RCLCPP_ERROR(nh_->get_logger(), "exception");
     inactive_ = true;
     return;
   }

@@ -1,8 +1,9 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <chrono>
 #include <vector>
-#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/image_encodings.hpp>
 #include <opencv2/opencv.hpp>
 
 #include "web_video_server/web_video_server.h"
@@ -12,6 +13,8 @@
 #include "web_video_server/h264_streamer.h"
 #include "web_video_server/vp9_streamer.h"
 #include "async_web_server_cpp/http_reply.hpp"
+
+using namespace std::chrono_literals;
 
 namespace web_video_server
 {
@@ -25,7 +28,8 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
 {
   if (__verbose)
   {
-    ROS_INFO_STREAM("Handling Request: " << request.uri);
+    // TODO reenable
+    // RCLCPP_INFO(nh->get_logger(), "Handling Request: %s", request.uri.c_str());
   }
   try
   {
@@ -34,31 +38,47 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
   }
   catch (std::exception &e)
   {
-    ROS_WARN_STREAM("Error Handling Request: " << e.what());
+    // TODO reenable
+    // RCLCPP_WARN(nh->get_logger(), "Error Handling Request: %s", e.what());
     return false;
   }
   return false;
 }
 
-WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh) :
+WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::SharedPtr &private_nh) :
     nh_(nh), handler_group_(
         async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
-#if ROS_VERSION_MINIMUM(1, 13, 1) || defined USE_STEADY_TIMER
-  cleanup_timer_ = nh.createSteadyTimer(ros::WallDuration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
-#else
-  cleanup_timer_ = nh.createTimer(ros::Duration(0.5), boost::bind(&WebVideoServer::cleanup_inactive_streams, this));
-#endif
+  rclcpp::Parameter parameter;
+  if (private_nh->get_parameter("port", parameter)) {
+    port_ = parameter.as_int();
+  } else {
+    port_ = 8080;
+  }
+  if (private_nh->get_parameter("verbose", parameter)) {
+    __verbose = parameter.as_bool();
+  } else {
+    __verbose = true;
+  }
 
-  private_nh.param("port", port_, 8080);
-  private_nh.param("verbose", __verbose, true);
-
-  private_nh.param<std::string>("address", address_, "0.0.0.0");
+  if (private_nh->get_parameter("address", parameter)) {
+    address_ = parameter.as_string();
+  } else {
+    address_ = "0.0.0.0";
+  }
 
   int server_threads;
-  private_nh.param("server_threads", server_threads, 1);
+  if (private_nh->get_parameter("server_threads", parameter)) {
+    server_threads = parameter.as_int();
+  } else {
+    server_threads = 1;
+  }
 
-  private_nh.param("ros_threads", ros_threads_, 2);
+  if (private_nh->get_parameter("ros_threads", parameter)) {
+    ros_threads_ = parameter.as_int();
+  } else {
+    ros_threads_ = 2;
+  }
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["ros_compressed"] = boost::shared_ptr<ImageStreamerType>(new RosCompressedStreamerType());
@@ -81,7 +101,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   }
   catch(boost::exception& e)
   {
-    ROS_ERROR("Exception when creating the web server! %s:%d", address_.c_str(), port_);
+    RCLCPP_ERROR(nh_->get_logger(), "Exception when creating the web server! %s:%d", address_.c_str(), port_);
     throw;
   }
 }
@@ -90,11 +110,18 @@ WebVideoServer::~WebVideoServer()
 {
 }
 
+void WebVideoServer::setup_cleanup_inactive_streams()
+{
+  std::function<void()> callback = std::bind(&WebVideoServer::cleanup_inactive_streams, this);
+  cleanup_timer_ = nh_->create_wall_timer(500ms, callback);
+}
+
 void WebVideoServer::spin()
 {
   server_->run();
-  ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
-  ros::MultiThreadedSpinner spinner(ros_threads_);
+  RCLCPP_INFO(nh_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
+  rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::executor::create_default_executor_arguments(), ros_threads_);
+  spinner.add_node(nh_);
   spinner.spin();
   server_->stop();
 }
@@ -111,7 +138,7 @@ void WebVideoServer::cleanup_inactive_streams()
     {
       for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
       {
-        ROS_INFO_STREAM("Removed Stream: " << (*itr)->getTopic());
+        RCLCPP_INFO(nh_->get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
       }
     }
     image_subscribers_.erase(new_end, image_subscribers_.end());
@@ -181,24 +208,25 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
                                          async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                          const char* end)
 {
-  std::string image_message_type = ros::message_traits::datatype<sensor_msgs::Image>();
-  std::string camera_info_message_type = ros::message_traits::datatype<sensor_msgs::CameraInfo>();
-
-  ros::master::V_TopicInfo topics;
-  ros::master::getTopics(topics);
-  ros::master::V_TopicInfo::iterator it;
   std::vector<std::string> image_topics;
   std::vector<std::string> camera_info_topics;
-  for (it = topics.begin(); it != topics.end(); ++it)
-  {
-    const ros::master::TopicInfo &topic = *it;
-    if (topic.datatype == image_message_type)
-    {
-      image_topics.push_back(topic.name);
+  auto tnat = nh_->get_topic_names_and_types();
+  for (auto topic_and_types : tnat) {
+    if (topic_and_types.second.size() > 1) {
+      // explicitly avoid topics with more than one type
+      break;
     }
-    else if (topic.datatype == camera_info_message_type)
+    auto & topic_name = topic_and_types.first;
+    auto & topic_type = topic_and_types.second[0];  // explicitly take the first
+    // TODO debugging
+    fprintf(stderr, "topic_type: %s\n", topic_type.c_str());
+    if (topic_type == "sensor_msgs/Image")
     {
-      camera_info_topics.push_back(topic.name);
+      image_topics.push_back(topic_name);
+    }
+    else if (topic_type == "sensor_msgs/CameraInfo")
+    {
+      camera_info_topics.push_back(topic_name);
     }
   }
 
@@ -270,12 +298,12 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "web_video_server");
-
-  ros::NodeHandle nh;
-  ros::NodeHandle private_nh("~");
+  rclcpp::init(argc, argv);
+  auto nh = std::make_shared<rclcpp::Node>("web_video_server");
+  auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server");
 
   web_video_server::WebVideoServer server(nh, private_nh);
+  server.setup_cleanup_inactive_streams();
   server.spin();
 
   return (0);

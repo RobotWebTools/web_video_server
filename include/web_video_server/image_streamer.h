@@ -1,8 +1,9 @@
 #ifndef IMAGE_STREAMER_H_
 #define IMAGE_STREAMER_H_
 
-#include <ros/ros.h>
+#include <rclcpp/rclcpp.hpp>
 #include <image_transport/image_transport.h>
+#include <image_transport/transport_hints.h>
 #include <opencv2/opencv.hpp>
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -15,7 +16,7 @@ class ImageStreamer
 public:
   ImageStreamer(const async_web_server_cpp::HttpRequest &request,
 		async_web_server_cpp::HttpConnectionPtr connection,
-		ros::NodeHandle& nh);
+		rclcpp::Node::SharedPtr nh);
 
   virtual void start() = 0;
 
@@ -33,7 +34,7 @@ public:
 protected:
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
-  ros::NodeHandle nh_;
+  rclcpp::Node::SharedPtr nh_;
   bool inactive_;
   image_transport::Subscriber image_sub_;
   std::string topic_;
@@ -44,12 +45,12 @@ class ImageTransportImageStreamer : public ImageStreamer
 {
 public:
   ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-			      ros::NodeHandle& nh);
+			      rclcpp::Node::SharedPtr nh);
 
   virtual void start();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
+  virtual void sendImage(const cv::Mat &, const rclcpp::Time &time) = 0;
 
   virtual void initialize(const cv::Mat &);
 
@@ -62,7 +63,7 @@ private:
   image_transport::ImageTransport it_;
   bool initialized_;
 
-  void imageCallback(const sensor_msgs::ImageConstPtr &msg);
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg);
 };
 
 class ImageStreamerType
@@ -70,7 +71,7 @@ class ImageStreamerType
 public:
   virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                                           ros::NodeHandle& nh) = 0;
+                                                           rclcpp::Node::SharedPtr nh) = 0;
 
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest &request) = 0;
 };

@@ -1,10 +1,14 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(web_video_server)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport async_web_server_cpp sensor_msgs)
+find_package(ament_cmake_ros REQUIRED)
+
+find_package(async_web_server_cpp REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(sensor_msgs REQUIRED)
+
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 
@@ -14,14 +18,13 @@ pkg_check_modules(avformat libavformat REQUIRED)
 pkg_check_modules(avutil libavutil REQUIRED)
 pkg_check_modules(swscale libswscale REQUIRED)
 
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+
 ###################################################
 ## Declare things to be passed to other projects ##
 ###################################################
-
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package()
 
 ###########
 ## Build ##
@@ -29,7 +32,6 @@ catkin_package()
 
 ## Specify additional locations of header files
 include_directories(include
-  ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${avcodec_INCLUDE_DIRS}
   ${avformat_INCLUDE_DIRS}
@@ -49,9 +51,11 @@ add_executable(${PROJECT_NAME}
   src/ros_compressed_streamer.cpp
   src/jpeg_streamers.cpp)
 
+ament_target_dependencies(${PROJECT_NAME}
+  async_web_server_cpp cv_bridge image_transport rclcpp sensor_msgs)
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
-  ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
   ${avcodec_LIBRARIES}
@@ -60,18 +64,18 @@ target_link_libraries(${PROJECT_NAME}
   ${swscale_LIBRARIES}
 )
 
+ament_package()
+
 #############
 ## Install ##
 #############
 
 ## Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY include/
-   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION include/${PROJECT_NAME}
    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )

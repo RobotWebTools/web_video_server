@@ -20,10 +20,10 @@ void MultipartStream::sendInitialHeader() {
   connection_->write("--"+boundry_+"\r\n");
 }
 
-void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size) {
+void MultipartStream::sendPartHeader(const rclcpp::Time &time, const std::string& type, size_t payload_size) {
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.toSec());
-  boost::shared_ptr<std::vector<async_web_server_cpp::HttpHeader> > headers(
+  sprintf(stamp, "%.06lf", time.seconds());
+  std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader> > headers(
       new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
@@ -33,12 +33,12 @@ void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& t
 }
 
 void MultipartStream::sendPartFooter() {
-  boost::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
+  std::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
   connection_->write(boost::asio::buffer(*str), str);
   if (max_queue_size_ > 0) pending_footers_.push(str);
 }
 
-void MultipartStream::sendPartAndClear(const ros::Time &time, const std::string& type,
+void MultipartStream::sendPartAndClear(const rclcpp::Time &time, const std::string& type,
 				       std::vector<unsigned char> &data) {
   if (!isBusy())
   {
@@ -48,7 +48,7 @@ void MultipartStream::sendPartAndClear(const ros::Time &time, const std::string&
   }
 }
 
-void MultipartStream::sendPart(const ros::Time &time, const std::string& type,
+void MultipartStream::sendPart(const rclcpp::Time &time, const std::string& type,
 			       const boost::asio::const_buffer &buffer,
 			       async_web_server_cpp::HttpConnection::ResourcePtr resource) {
   if (!isBusy())
