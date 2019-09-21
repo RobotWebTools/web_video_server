@@ -2,6 +2,10 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming release
+-------------------
+* Port to ROS 2
+
 0.2.1 (2019-06-05)
 ------------------
 * Restream buffered frames with minimum publish rate (`#88 <https://github.com/RobotWebTools/web_video_server/issues/88>`_)
