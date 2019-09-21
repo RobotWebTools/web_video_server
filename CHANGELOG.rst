@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming release
--------------------
+1.0.0 (2019-09-20)
+------------------
 * Port to ROS 2
 
 0.2.1 (2019-06-05)
