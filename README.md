@@ -7,6 +7,7 @@ This node combines the capabilities of [ros_web_video](https://github.com/RobotW
 For full documentation, see [the ROS wiki](http://ros.org/wiki/web_video_server).
 
 [Doxygen](http://docs.ros.org/indigo/api/web_video_server/html/) files can be found on the ROS wiki.
+[mjpegcanvasjs](https://github.com/rctoris/mjpegcanvasjs) can be used to display a MJPEG stream from the ROS web_video_server
 
 This project is released as part of the [Robot Web Tools](http://robotwebtools.org/) effort.
 
