@@ -112,10 +112,9 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
     int input_width = img.cols;
     int input_height = img.rows;
 
-    if (output_width_ == -1)
-      output_width_ = input_width;
-    if (output_height_ == -1)
-      output_height_ = input_height;
+    
+    output_width_ = input_width;
+    output_height_ = input_height;
 
     if (invert_)
     {
@@ -144,8 +143,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
     }
 
     last_frame = ros::Time::now();
-    sendImage(output_size_image, last_frame );
-
+    sendImage(output_size_image, msg->header.stamp);
   }
   catch (cv_bridge::Exception &e)
   {
