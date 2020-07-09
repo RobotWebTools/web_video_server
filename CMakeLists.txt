@@ -4,7 +4,7 @@ project(web_video_server)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport async_web_server_cpp sensor_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport async_web_server_cpp sensor_msgs dynamic_reconfigure)
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 
