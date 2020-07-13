@@ -19,6 +19,7 @@ public:
   ~PngStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
 
 private:
   MultipartStream stream_;
@@ -42,6 +43,7 @@ public:
   ~PngSnapshotStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
 
 private:
   int quality_;

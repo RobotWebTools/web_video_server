@@ -55,6 +55,7 @@ public:
   virtual void start();
 
 protected:
+  virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
   virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
   virtual void restreamFrame(double max_age);
   virtual void initialize(const cv::Mat &);
