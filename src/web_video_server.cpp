@@ -298,11 +298,11 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
     auto & topic_type = topic_and_types.second[0];  // explicitly take the first
     // TODO debugging
     fprintf(stderr, "topic_type: %s\n", topic_type.c_str());
-    if (topic_type == "sensor_msgs/Image")
+    if (topic_type == "sensor_msgs/msg/Image")
     {
       image_topics.push_back(topic_name);
     }
-    else if (topic_type == "sensor_msgs/CameraInfo")
+    else if (topic_type == "sensor_msgs/msg/CameraInfo")
     {
       camera_info_topics.push_back(topic_name);
     }
