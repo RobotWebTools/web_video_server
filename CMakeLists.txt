@@ -66,8 +66,6 @@ target_link_libraries(${PROJECT_NAME}
   ${swscale_LIBRARIES}
 )
 
-ament_package()
-
 #############
 ## Install ##
 #############
@@ -81,3 +79,5 @@ install(DIRECTORY include/${PROJECT_NAME}/
    DESTINATION include/${PROJECT_NAME}
    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 )
+
+ament_package()

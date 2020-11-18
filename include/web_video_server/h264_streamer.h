@@ -1,7 +1,7 @@
 #ifndef H264_STREAMERS_H_
 #define H264_STREAMERS_H_
 
-#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.hpp>
 #include "web_video_server/libav_streamer.h"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"

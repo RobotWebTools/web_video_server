@@ -135,7 +135,7 @@ void WebVideoServer::spin()
 {
   server_->run();
   RCLCPP_INFO(nh_->get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
-  rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::executor::create_default_executor_arguments(), ros_threads_);
+  rclcpp::executors::MultiThreadedExecutor spinner(rclcpp::ExecutorOptions(), ros_threads_);
   spinner.add_node(nh_);
   if ( publish_rate_ > 0 ) {
     nh_->create_wall_timer(1s / publish_rate_, [this](){restreamFrames(1.0 / publish_rate_);});
@@ -298,11 +298,11 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
     auto & topic_type = topic_and_types.second[0];  // explicitly take the first
     // TODO debugging
     fprintf(stderr, "topic_type: %s\n", topic_type.c_str());
-    if (topic_type == "sensor_msgs/Image")
+    if (topic_type == "sensor_msgs/msg/Image")
     {
       image_topics.push_back(topic_name);
     }
-    else if (topic_type == "sensor_msgs/CameraInfo")
+    else if (topic_type == "sensor_msgs/msg/CameraInfo")
     {
       camera_info_topics.push_back(topic_name);
     }

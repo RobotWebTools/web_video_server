@@ -28,4 +28,8 @@
   <exec_depend>async_web_server_cpp</exec_depend>
   <exec_depend>ffmpeg</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
 </package>
