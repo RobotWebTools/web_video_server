@@ -77,7 +77,7 @@ void RosCompressedStreamer::sendImage(const sensor_msgs::msg::CompressedImage::C
 void RosCompressedStreamer::imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg) {
   boost::mutex::scoped_lock lock(send_mutex_); // protects last_msg and last_frame
   last_msg = msg;
-  last_frame = rclcpp::Time(msg->header.stamp.sec, msg->header.stamp.nanosec);
+  last_frame = rclcpp::Time(msg->header.stamp);
   sendImage(last_msg, last_frame);
 }
 
