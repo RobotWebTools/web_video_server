@@ -2,8 +2,8 @@
 #define IMAGE_STREAMER_H_
 
 #include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.h>
-#include <image_transport/transport_hints.h>
+#include <image_transport/image_transport.hpp>
+#include <image_transport/transport_hints.hpp>
 #include <opencv2/opencv.hpp>
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"

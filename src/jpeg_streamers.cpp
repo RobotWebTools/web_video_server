@@ -21,7 +21,7 @@ MjpegStreamer::~MjpegStreamer()
 void MjpegStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 {
   std::vector<int> encode_params;
-  encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+  encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
   std::vector<uchar> encoded_buffer;
@@ -63,7 +63,7 @@ JpegSnapshotStreamer::~JpegSnapshotStreamer()
 void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 {
   std::vector<int> encode_params;
-  encode_params.push_back(CV_IMWRITE_JPEG_QUALITY);
+  encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
   std::vector<uchar> encoded_buffer;
