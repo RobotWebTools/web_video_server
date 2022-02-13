@@ -377,8 +377,12 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
+
+  rclcpp::NodeOptions options;
+  options.automatically_declare_parameters_from_overrides(true);
+
   auto nh = std::make_shared<rclcpp::Node>("web_video_server");
-  auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server");
+  auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server", options);
 
   web_video_server::WebVideoServer server(nh, private_nh);
   server.setup_cleanup_inactive_streams();
