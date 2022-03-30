@@ -2,6 +2,7 @@
 #define JPEG_STREAMERS_H_
 
 #include <image_transport/image_transport.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include "web_video_server/image_streamer.h"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"

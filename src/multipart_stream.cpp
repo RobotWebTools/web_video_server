@@ -17,7 +17,8 @@ void MultipartStream::sendInitialHeader() {
       "Server", "web_video_server").header("Cache-Control",
                                            "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0").header(
       "Pragma", "no-cache").header("Content-type", "multipart/x-mixed-replace;boundary="+boundry_).header(
-      "Access-Control-Allow-Origin", "*").write(connection_);
+      "Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,HEAD,OPTIONS").header(
+      "Access-Control-Allow-Headers", "Origin, Authorization, Accept, Content-Type").header("Access-Control-Max-Age", "3600").write(connection_);
   connection_->write("--"+boundry_+"\r\n");
 }
 
@@ -28,6 +29,10 @@ void MultipartStream::sendPartHeader(const rclcpp::Time &time, const std::string
       new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
+  headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Allow-Origin", "*"));
+  headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,HEAD,OPTIONS"));
+  headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Allow-Headers", "Origin, Authorization, Accept, Content-Type"));
+  headers->push_back(async_web_server_cpp::HttpHeader("Access-Control-Max-Age", "3600"));
   headers->push_back(
       async_web_server_cpp::HttpHeader("Content-Length", boost::lexical_cast<std::string>(payload_size)));
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);

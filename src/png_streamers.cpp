@@ -21,7 +21,11 @@ PngStreamer::~PngStreamer()
 void PngStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 {
   std::vector<int> encode_params;
+#if CV_VERSION_MAJOR >= 3
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+#else
+  encode_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+#endif
   encode_params.push_back(quality_);
 
   std::vector<uchar> encoded_buffer;
@@ -63,7 +67,11 @@ PngSnapshotStreamer::~PngSnapshotStreamer()
 void PngSnapshotStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 {
   std::vector<int> encode_params;
+#if CV_VERSION_MAJOR >= 3
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
+#else
+  encode_params.push_back(CV_IMWRITE_PNG_COMPRESSION);
+#endif
   encode_params.push_back(quality_);
 
   std::vector<uchar> encoded_buffer;
