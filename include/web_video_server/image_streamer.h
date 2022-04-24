@@ -74,6 +74,10 @@ private:
   bool initialized_;
 
   void imageCallback(const sensor_msgs::ImageConstPtr &msg);
+
+  
+  float min_v_ = NAN, max_v_ = NAN;
+  int colormap_ = -1;
 };
 
 class ImageStreamerType
