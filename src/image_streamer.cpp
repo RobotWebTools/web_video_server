@@ -63,7 +63,7 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   if (inactive_ || !initialized_ )
     return;
   try {
-    if ( last_frame + ros::Duration(max_age) < ros::Time::now() ) {
+    if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
       sendImage(output_size_image, ros::Time::now() ); // don't update last_frame, it may remain an old value.
     }
@@ -154,7 +154,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
       initialized_ = true;
     }
 
-    last_frame = ros::Time::now();
+    last_frame = ros::WallTime::now();
     sendImage(output_size_image, msg->header.stamp);
   }
   catch (cv_bridge::Exception &e)

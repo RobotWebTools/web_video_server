@@ -65,7 +65,7 @@ protected:
   bool invert_;
   std::string default_transport_;
 
-  ros::Time last_frame;
+  ros::WallTime last_frame;
   cv::Mat output_size_image;
   boost::mutex send_mutex_;
 

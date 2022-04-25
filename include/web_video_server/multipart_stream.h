@@ -10,7 +10,7 @@ namespace web_video_server
 {
 
 struct PendingFooter {
-  ros::Time timestamp;
+  ros::WallTime timestamp;
   boost::weak_ptr<std::string> contents;
 };
 
