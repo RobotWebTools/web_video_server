@@ -49,6 +49,9 @@ public:
   bool handle_list_streams(const async_web_server_cpp::HttpRequest &request,
                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
+  bool handle_list_streams_json(const async_web_server_cpp::HttpRequest &request,
+                           async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+
 private:
   void restreamFrames(double max_age);
   void cleanup_inactive_streams();
