@@ -33,6 +33,11 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
   try
   {
     forward(request, connection, begin, end);
+    if (__verbose)
+    {
+      ROS_INFO_STREAM("Request forwarded: " << request.uri);
+    }
+
     return true;
   }
   catch (std::exception &e)
@@ -64,6 +69,9 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   private_nh.param("ros_threads", ros_threads_, 2);
   private_nh.param("publish_rate", publish_rate_, -1.0);
 
+  if(__verbose) {
+      ROS_INFO_STREAM("Starting with args server threads: " << server_threads << " ros_threads: " << ros_threads_);
+  }
   private_nh.param<std::string>("default_stream_type", __default_stream_type, "mjpeg");
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
@@ -101,7 +109,7 @@ WebVideoServer::~WebVideoServer()
 void WebVideoServer::spin()
 {
   server_->run();
-  ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
+    ROS_INFO_STREAM("Waiting For connections on " << address_ << ":" << port_);
 
   ros::AsyncSpinner spinner(ros_threads_);
   spinner.start();
@@ -184,6 +192,10 @@ bool WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &requ
     streamer->start();
     boost::mutex::scoped_lock lock(subscriber_mutex_);
     image_subscribers_.push_back(streamer);
+      if (__verbose)
+      {
+          ROS_INFO_STREAM("Serving " << image_subscribers_.size() << " streams");
+      }
   }
   else
   {
