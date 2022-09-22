@@ -58,7 +58,7 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   if (inactive_ || !initialized_ )
     return;
   try {
-    if ( last_frame + rclcpp::Duration(max_age) < nh_->now() ) {
+    if ( last_frame + rclcpp::Duration::from_seconds(max_age) < nh_->now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
       sendImage(output_size_image, nh_->now() ); // don't update last_frame, it may remain an old value.
     }

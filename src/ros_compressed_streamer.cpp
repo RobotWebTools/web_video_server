@@ -27,7 +27,7 @@ void RosCompressedStreamer::restreamFrame(double max_age)
   if (inactive_ || (last_msg == 0))
     return;
 
-  if ( last_frame + rclcpp::Duration(max_age) < nh_->now() ) {
+  if ( last_frame + rclcpp::Duration::from_seconds(max_age) < nh_->now() ) {
     boost::mutex::scoped_lock lock(send_mutex_);
     sendImage(last_msg, nh_->now() ); // don't update last_frame, it may remain an old value.
   }

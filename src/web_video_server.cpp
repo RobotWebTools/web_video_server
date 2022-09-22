@@ -16,6 +16,7 @@
 #include "async_web_server_cpp/http_reply.hpp"
 
 using namespace std::chrono_literals;
+using namespace boost::placeholders;
 
 namespace web_video_server
 {
