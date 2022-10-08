@@ -60,16 +60,24 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
   qmin_ = request.get_query_param_value_or_default<int>("qmin", 10);
   qmax_ = request.get_query_param_value_or_default<int>("qmax", 42);
-  gop_ = request.get_query_param_value_or_default<int>("gop", 250);
+  gop_ = request.get_query_param_value_or_default<int>("gop", 25);
 
+#if ( LIBAVCODEC_VERSION_INT  < AV_VERSION_INT(58,9,100) )
   av_lockmgr_register(&ffmpeg_boost_mutex_lock_manager);
   av_register_all();
+#endif
 }
 
 LibavStreamer::~LibavStreamer()
 {
   if (codec_context_)
+  {
+#if ( LIBAVCODEC_VERSION_INT  < AV_VERSION_INT(58,9,100) )
     avcodec_close(codec_context_);
+#else
+    avcodec_free_context(&codec_context_);
+#endif
+  }
   if (frame_)
   {
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
@@ -134,6 +142,7 @@ void LibavStreamer::initialize(const cv::Mat &img)
   }
   io_ctx->seekable = 0;                       // no seeking, it's a stream
   format_context_->pb = io_ctx;
+  format_context_->max_interleave_delta = 0;
   output_format_->flags |= AVFMT_FLAG_CUSTOM_IO;
   output_format_->flags |= AVFMT_NOFILE;
 
@@ -157,7 +166,11 @@ void LibavStreamer::initialize(const cv::Mat &img)
                                                                                                          NULL, NULL);
     throw std::runtime_error("Error creating video stream");
   }
+#if ( LIBAVCODEC_VERSION_INT  < AV_VERSION_INT(58,9,100) )
   codec_context_ = video_stream_->codec;
+#else
+  codec_context_ = avcodec_alloc_context3(codec_);
+#endif
 
   // Set options
   avcodec_get_context_defaults3(codec_context_, codec_);
@@ -182,11 +195,14 @@ void LibavStreamer::initialize(const cv::Mat &img)
   codec_context_->qmin = qmin_;
   codec_context_->qmax = qmax_;
 
+#if ( LIBAVCODEC_VERSION_INT  >= AV_VERSION_INT(58,9,100) )
+  avcodec_parameters_from_context(video_stream_->codecpar, codec_context_);
+#endif
+
   initializeEncoder();
 
-  // Some formats want stream headers to be separate
-  if (format_context_->oformat->flags & AVFMT_GLOBALHEADER)
-    codec_context_->flags |= CODEC_FLAG_GLOBAL_HEADER;
+  codec_context_->flags |= AV_CODEC_FLAG_LOW_DELAY;
+  codec_context_->max_b_frames = 0;
 
   // Open Codec
   if (avcodec_open2(codec_context_, codec_, NULL) < 0)
@@ -306,15 +322,29 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
      throw std::runtime_error("Error encoding video frame");
   }
 #else
-  pkt.data = NULL; // packet data will be allocated by the encoder
-  pkt.size = 0;
-  if (avcodec_send_frame(codec_context_, frame_) < 0)
+  ret = avcodec_send_frame(codec_context_, frame_);
+  if (ret == AVERROR_EOF)
+  {
+    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_send_frame() encoder flushed");
+  }
+  else if (ret == AVERROR(EAGAIN))
+  {
+    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_send_frame() need output read out");
+  }
+  if (ret < 0)
   {
     throw std::runtime_error("Error encoding video frame");
   }
-  if (avcodec_receive_packet(codec_context_, &pkt) < 0)
+  ret = avcodec_receive_packet(codec_context_, &pkt);
+  got_packet = pkt.size > 0;
+  if (ret == AVERROR_EOF)
   {
-    throw std::runtime_error("Error retrieving encoded packet");
+    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_recieve_packet() encoder flushed");
+  }
+  else if (ret == AVERROR(EAGAIN))
+  {
+    RCLCPP_DEBUG(nh_->get_logger(), "avcodec_recieve_packet() need more input");
+    got_packet = 0;
   }
 #endif
 
