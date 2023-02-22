@@ -5,6 +5,7 @@
 #include <image_transport/image_transport.hpp>
 #include <image_transport/transport_hints.hpp>
 #include <opencv2/opencv.hpp>
+#include "web_video_server/utils.h"
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 
@@ -66,6 +67,7 @@ protected:
   int output_height_;
   bool invert_;
   std::string default_transport_;
+  std::string qos_profile_name_;
 
   rclcpp::Time last_frame;
   cv::Mat output_size_image;

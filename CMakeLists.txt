@@ -51,6 +51,7 @@ add_executable(${PROJECT_NAME}
   src/ros_compressed_streamer.cpp
   src/jpeg_streamers.cpp
   src/png_streamers.cpp
+  src/utils.cpp
 )
 
 ament_target_dependencies(${PROJECT_NAME}
