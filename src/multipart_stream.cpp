@@ -15,9 +15,10 @@ void MultipartStream::sendInitialHeader() {
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok).header("Connection", "close").header(
       "Server", "web_video_server").header("Cache-Control",
                                            "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0").header(
-      "Pragma", "no-cache").header("Content-type", "multipart/x-mixed-replace;boundary="+boundry_).header(
-      "Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,HEAD,OPTIONS").header(
-      "Access-Control-Allow-Headers", "Origin, Authorization, Accept, Content-Type").header("Access-Control-Max-Age", "3600").write(connection_);
+      "Pragma", "no-cache").header("Content-type", "multipart/x-mixed-replace;boundary="+boundry_)
+    .header("Access-Control-Allow-Origin", "*").header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,HEAD,OPTIONS")
+    .header("Access-Control-Allow-Headers", "Origin, Authorization, Accept, Content-Type")
+    .header("Access-Control-Max-Age", "3600").write(connection_);
   connection_->write("--"+boundry_+"\r\n");
 }
 
@@ -40,7 +41,7 @@ void MultipartStream::sendPartHeader(const ros::Time &time, const std::string& t
 void MultipartStream::sendPartFooter(const ros::Time &time) {
   boost::shared_ptr<std::string> str(new std::string("\r\n--"+boundry_+"\r\n"));
   PendingFooter pf;
-  pf.timestamp = time;
+  pf.timestamp = ros::WallTime::now();
   pf.contents = str;
   connection_->write(boost::asio::buffer(*str), str);
   if (max_queue_size_ > 0) pending_footers_.push(pf);
@@ -68,13 +69,13 @@ void MultipartStream::sendPart(const ros::Time &time, const std::string& type,
 }
 
 bool MultipartStream::isBusy() {
-  ros::Time currentTime = ros::Time::now();
+  auto currentTime = ros::WallTime::now();
   while (!pending_footers_.empty())
   {
     if (pending_footers_.front().contents.expired()) {
       pending_footers_.pop();
     } else {
-      ros::Time footerTime = pending_footers_.front().timestamp;
+      auto footerTime = pending_footers_.front().timestamp;
       if ((currentTime - footerTime).toSec() > 0.5) {
         pending_footers_.pop();
       } else {
