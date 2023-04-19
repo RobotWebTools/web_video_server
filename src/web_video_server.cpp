@@ -305,6 +305,9 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
           connection->write("\">");
           connection->write(image_topic_itr->substr(base_topic.size()));
           connection->write("</a> (");
+          connection->write("<a href=\"/stream?topic=");
+          connection->write(*image_topic_itr);
+          connection->write("\">Stream</a>) (");
           connection->write("<a href=\"/snapshot?topic=");
           connection->write(*image_topic_itr);
           connection->write("\">Snapshot</a>)");
@@ -331,6 +334,9 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
     connection->write("\">");
     connection->write(*image_topic_itr);
     connection->write("</a> (");
+    connection->write("<a href=\"/stream?topic=");
+    connection->write(*image_topic_itr);
+    connection->write("\">Stream</a>) (");
     connection->write("<a href=\"/snapshot?topic=");
     connection->write(*image_topic_itr);
     connection->write("\">Snapshot</a>)");
