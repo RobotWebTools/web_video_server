@@ -73,17 +73,24 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   stream_types_["h264"] = boost::shared_ptr<ImageStreamerType>(new H264StreamerType());
   stream_types_["vp9"] = boost::shared_ptr<ImageStreamerType>(new Vp9StreamerType());
 
-  handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
-  handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this, _1, _2, _3, _4));
+  handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this,
+      boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
+  handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this,
+      boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
   handler_group_.addHandlerForPath("/stream_viewer",
-                                   boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2, _3, _4));
-  handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
+                                   boost::bind(&WebVideoServer::handle_stream_viewer, this,
+                                               boost::placeholders::_1, boost::placeholders::_2,
+                                               boost::placeholders::_3, boost::placeholders::_4));
+  handler_group_.addHandlerForPath("/snapshot", boost::bind(&WebVideoServer::handle_snapshot, this,
+      boost::placeholders::_1, boost::placeholders::_2, boost::placeholders::_3, boost::placeholders::_4));
 
   try
   {
     server_.reset(
         new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
-                                             boost::bind(ros_connection_logger, handler_group_, _1, _2, _3, _4),
+                                             boost::bind(ros_connection_logger, handler_group_,
+                                                         boost::placeholders::_1, boost::placeholders::_2,
+                                                         boost::placeholders::_3, boost::placeholders::_4),
                                              server_threads));
   }
   catch(boost::exception& e)
@@ -138,7 +145,7 @@ void WebVideoServer::cleanup_inactive_streams()
   {
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
     itr_type new_end = std::partition(image_subscribers_.begin(), image_subscribers_.end(),
-                                      !boost::bind(&ImageStreamer::isInactive, _1));
+                                      !boost::bind(&ImageStreamer::isInactive, boost::placeholders::_1));
     if (__verbose)
     {
       for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
