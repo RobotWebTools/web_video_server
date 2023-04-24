@@ -1,6 +1,8 @@
 #include "web_video_server/png_streamers.h"
 #include "async_web_server_cpp/http_reply.hpp"
 
+#include <cv_bridge/cv_bridge.h>
+
 namespace web_video_server
 {
 
@@ -17,6 +19,21 @@ PngStreamer::~PngStreamer()
   this->inactive_ = true;
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
+
+cv::Mat PngStreamer::decodeImage(const sensor_msgs::ImageConstPtr& msg)
+{
+  // Handle alpha values since PNG supports it
+  if (sensor_msgs::image_encodings::hasAlpha(msg->encoding))
+  {
+    return cv_bridge::toCvCopy(msg, "bgra8")->image;
+  }
+  else
+  {
+    // Use the normal decode otherwise
+    return ImageTransportImageStreamer::decodeImage(msg);
+  }
+}
+
 
 void PngStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 {
@@ -62,6 +79,20 @@ PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+}
+
+cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::ImageConstPtr& msg)
+{
+  // Handle alpha values since PNG supports it
+  if (sensor_msgs::image_encodings::hasAlpha(msg->encoding))
+  {
+    return cv_bridge::toCvCopy(msg, "bgra8")->image;
+  }
+  else
+  {
+    // Use the normal decode otherwise
+    return ImageTransportImageStreamer::decodeImage(msg);
+  }
 }
 
 void PngSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
