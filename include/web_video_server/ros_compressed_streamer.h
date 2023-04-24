@@ -25,11 +25,16 @@ protected:
 
 private:
   void imageCallback(const sensor_msgs::CompressedImageConstPtr &msg);
+  void updateImageParameters();
   MultipartStream stream_;
   ros::Subscriber image_sub_;
   ros::Time last_frame;
   sensor_msgs::CompressedImageConstPtr last_msg;
   boost::mutex send_mutex_;
+
+  int jpeg_quality_;
+  int png_level_;
+  std::string format_;
 };
 
 class RosCompressedStreamerType : public ImageStreamerType
