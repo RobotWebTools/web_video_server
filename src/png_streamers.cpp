@@ -67,6 +67,7 @@ PngSnapshotStreamer::~PngSnapshotStreamer()
 void PngSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 {
   std::vector<int> encode_params;
+  ROS_INFO_STREAM("PNG sendImage");
 #if CV_VERSION_MAJOR >= 3
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
 #else
@@ -96,4 +97,9 @@ void PngSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   inactive_ = true;
 }
 
+boost::shared_ptr<ImageStreamer> PngSnapshotType::create_snapshot(const async_web_server_cpp::HttpRequest &request,
+                                         async_web_server_cpp::HttpConnectionPtr connection,
+                                         ros::NodeHandle& nh){
+  return boost::shared_ptr<ImageStreamer>(new PngSnapshotStreamer(request, connection, nh));
+}
 }

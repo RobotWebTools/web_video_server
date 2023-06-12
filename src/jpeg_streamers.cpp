@@ -96,4 +96,10 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   inactive_ = true;
 }
 
+boost::shared_ptr<ImageStreamer> JpegSnapshotType::create_snapshot(const async_web_server_cpp::HttpRequest &request,
+                                         async_web_server_cpp::HttpConnectionPtr connection,
+                                         ros::NodeHandle& nh){
+  return boost::shared_ptr<ImageStreamer>(new JpegSnapshotStreamer(request, connection, nh));
+}
+
 }

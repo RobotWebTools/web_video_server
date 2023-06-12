@@ -47,6 +47,12 @@ private:
   int quality_;
 };
 
+class PngSnapshotType : public ImageSnapshotType{
+public:
+  boost::shared_ptr<ImageStreamer> create_snapshot(const async_web_server_cpp::HttpRequest &request,
+                                                   async_web_server_cpp::HttpConnectionPtr connection,
+                                                   ros::NodeHandle& nh);
+};
 }
 
 #endif
