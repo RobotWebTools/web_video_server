@@ -67,7 +67,6 @@ PngSnapshotStreamer::~PngSnapshotStreamer()
 void PngSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 {
   std::vector<int> encode_params;
-  ROS_INFO_STREAM("PNG sendImage");
 #if CV_VERSION_MAJOR >= 3
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
 #else
@@ -77,6 +76,7 @@ void PngSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
 
   std::vector<uchar> encoded_buffer;
   cv::imencode(".png", img, encoded_buffer, encode_params);
+  
 
   char stamp[20];
   sprintf(stamp, "%.06lf", time.toSec());

@@ -91,6 +91,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
   {
     if (msg->encoding.find("F") != std::string::npos)
     {
+      
       // scale floating point images
       cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
       cv::Mat_<float> float_image = float_image_bridge;
@@ -102,6 +103,9 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
         float_image *= (255 / max_val);
       }
       img = float_image;
+    }
+    else if(msg->encoding.find("mono16") != std::string::npos){
+      img = cv_bridge::toCvCopy(msg, msg->encoding)->image;
     }
     else
     {
@@ -115,7 +119,6 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
     
     output_width_ = input_width;
     output_height_ = input_height;
-
     if (invert_)
     {
       // Rotate 180 degrees

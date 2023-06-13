@@ -54,7 +54,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
 #endif
 
   private_nh.param("port", port_, 8080);
-  private_nh.param("verbose", __verbose, true);
+  private_nh.param("verbose", __verbose, false);
 
   private_nh.param<std::string>("address", address_, "0.0.0.0");
 
@@ -76,6 +76,7 @@ WebVideoServer::WebVideoServer(ros::NodeHandle &nh, ros::NodeHandle &private_nh)
   // follow same code structure for snapshot_types
   snapshot_types_["mjpeg"] = boost::shared_ptr<ImageSnapshotType>(new JpegSnapshotType());
   snapshot_types_["png"] = boost::shared_ptr<ImageSnapshotType>(new PngSnapshotType());
+  //snapshot_types_["tiff"] = boost::shared_ptr<ImageSnapshotType>(new TiffSnapshotType());
 
   handler_group_.addHandlerForPath("/", boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
   handler_group_.addHandlerForPath("/stream", boost::bind(&WebVideoServer::handle_stream, this, _1, _2, _3, _4));
@@ -201,10 +202,7 @@ bool WebVideoServer::handle_snapshot(const async_web_server_cpp::HttpRequest &re
                                      const char* end)
 {
   std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
-  if (snapshot_types_.find(type) != snapshot_types_.end()){
-   ROS_INFO_STREAM("Creating snapshot streamer of type " << type); 
-  }
-  else{
+  if (snapshot_types_.find(type) == snapshot_types_.end()){
     ROS_INFO_STREAM("Could not find " << type << " snapshot streamer, falling back to jpeg");
     type = "mjpeg";
   }
