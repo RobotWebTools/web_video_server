@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>web_video_server</name>
+  <name>web_video_server_png</name>
   <version>0.2.2</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 

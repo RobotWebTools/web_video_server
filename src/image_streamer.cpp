@@ -89,6 +89,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
   cv::Mat img;
   try
   {
+    ROS_INFO_STREAM("Encoding: " << msg->encoding);
     if (msg->encoding.find("F") != std::string::npos)
     {
       
@@ -105,6 +106,9 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
       img = float_image;
     }
     else if(msg->encoding.find("mono16") != std::string::npos){
+      img = cv_bridge::toCvCopy(msg, msg->encoding)->image;
+    }
+    else if(msg->encoding.find("16UC1") != std::string::npos){
       img = cv_bridge::toCvCopy(msg, msg->encoding)->image;
     }
     else

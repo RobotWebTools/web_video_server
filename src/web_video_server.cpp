@@ -356,8 +356,10 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "web_video_server");
-
+  ros::init(argc, argv, "web_video_server_png");
+  ROS_INFO("*************************");
+  ROS_INFO("WEB VIDEO SERVER PNG MODE");
+  ROS_INFO("*************************");
   ros::NodeHandle nh;
   ros::NodeHandle private_nh("~");
 
