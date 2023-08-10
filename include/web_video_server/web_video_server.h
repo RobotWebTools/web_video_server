@@ -16,24 +16,19 @@ namespace web_video_server
  * @class WebVideoServer
  * @brief
  */
-class WebVideoServer
+class WebVideoServer : public rclcpp::Node
 {
 public:
   /**
    * @brief  Constructor
    * @return
    */
-  WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::SharedPtr &private_nh);
+  WebVideoServer(const std::string& nodeName);
 
   /**
    * @brief  Destructor - Cleans up
    */
   virtual ~WebVideoServer();
-
-  /**
-   * @brief  Starts the server and spins
-   */
-  void spin();
 
   void setup_cleanup_inactive_streams();
 
