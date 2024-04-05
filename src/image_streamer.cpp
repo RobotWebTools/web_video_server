@@ -1,5 +1,5 @@
 #include "web_video_server/image_streamer.h"
-#include <cv_bridge/cv_bridge.h>
+#include <cv_bridge/cv_bridge.hpp>
 #include <iostream>
 
 namespace web_video_server
