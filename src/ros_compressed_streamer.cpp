@@ -18,8 +18,10 @@ RosCompressedStreamer::~RosCompressedStreamer()
 }
 
 void RosCompressedStreamer::start() {
+  const std::string compressed_topic = topic_ + "/compressed";
+
   // Get QoS profile from query parameter
-  RCLCPP_INFO(nh_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(), qos_profile_name_.c_str());
+  RCLCPP_INFO(nh_->get_logger(), "Streaming topic %s with QoS profile %s", compressed_topic.c_str(), qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
@@ -30,7 +32,6 @@ void RosCompressedStreamer::start() {
   }
 
   // Create subscriber
-  const std::string compressed_topic = topic_ + "/compressed";
   const auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.value().history, 1), qos_profile.value());
   image_sub_ = nh_->create_subscription<sensor_msgs::msg::CompressedImage>(
       compressed_topic, qos, std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1));

@@ -60,9 +60,8 @@ void ImageTransportImageStreamer::start()
   }
 
   // Create subscriber
-  using std::placeholders::_1;
   image_sub_ = image_transport::create_subscription(
-      nh_.get(), topic_, std::bind(&ImageTransportImageStreamer::imageCallback, this, _1),
+      nh_.get(), topic_, std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
       default_transport_, qos_profile.value());
 }
 
