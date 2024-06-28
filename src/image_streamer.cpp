@@ -24,6 +24,7 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
+  qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
 ImageTransportImageStreamer::~ImageTransportImageStreamer()
@@ -46,7 +47,22 @@ void ImageTransportImageStreamer::start()
       break;
     }
   }
-  image_sub_ = it_.subscribe(topic_, 1, &ImageTransportImageStreamer::imageCallback, this, &hints);
+
+  // Get QoS profile from query parameter
+  RCLCPP_INFO(nh_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(), qos_profile_name_.c_str());
+  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
+  if (!qos_profile) {
+    qos_profile = rmw_qos_profile_default;
+    RCLCPP_ERROR(
+      nh_->get_logger(),
+      "Invalid QoS profile %s specified. Using default profile.",
+      qos_profile_name_.c_str());
+  }
+
+  // Create subscriber
+  image_sub_ = image_transport::create_subscription(
+      nh_.get(), topic_, std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
+      default_transport_, qos_profile.value());
 }
 
 void ImageTransportImageStreamer::initialize(const cv::Mat &)
