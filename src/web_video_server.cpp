@@ -57,7 +57,7 @@ WebVideoServer::WebVideoServer(const std::string& nodeName) :
 {
   declare_parameter("port", rclcpp::PARAMETER_INTEGER);
   declare_parameter("verbose", rclcpp::PARAMETER_BOOL);
-  declare_parameter("my_doaddressuble_array", rclcpp::PARAMETER_STRING);
+  declare_parameter("address", rclcpp::PARAMETER_STRING);
   declare_parameter("server_threads", rclcpp::PARAMETER_INTEGER);
   declare_parameter("ros_threads", rclcpp::PARAMETER_INTEGER);
   declare_parameter("publish_rate", rclcpp::PARAMETER_DOUBLE);
