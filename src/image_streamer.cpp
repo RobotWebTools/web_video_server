@@ -38,7 +38,7 @@ void ImageTransportImageStreamer::start()
   inactive_ = true;
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
-      // explicitly avoid topics with more than one type
+      // skip over topics with more than one type
       continue;
     }
     auto & topic_name = topic_and_types.first;

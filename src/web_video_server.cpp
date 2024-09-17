@@ -192,7 +192,7 @@ bool WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &requ
       bool did_find_compressed_topic = false;
       for (auto topic_and_types : tnat) {
         if (topic_and_types.second.size() > 1) {
-          // explicitly avoid topics with more than one type
+          // skip over topics with more than one type
           continue;
         }
         auto & topic_name = topic_and_types.first;
@@ -249,7 +249,7 @@ bool WebVideoServer::handle_stream_viewer(const async_web_server_cpp::HttpReques
       bool did_find_compressed_topic = false;
       for (auto topic_and_types : tnat) {
         if (topic_and_types.second.size() > 1) {
-          // explicitly avoid topics with more than one type
+          // skip over topics with more than one type
           continue;
         }
         auto & topic_name = topic_and_types.first;
@@ -292,7 +292,7 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
   auto tnat = nh_->get_topic_names_and_types();
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
-      // explicitly avoid topics with more than one type
+      // skip over topics with more than one type
       continue;
     }
     auto & topic_name = topic_and_types.first;
