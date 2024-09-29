@@ -4,7 +4,7 @@
   <version>1.0.0</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 
-  <maintainer email="rctoris@wpi.edu">Russell Toris</maintainer>
+  <maintainer email="blazej@fictionlab.pl">Błażej Sowa</maintainer>
   <author email="mwills@wpi.edu">Mitchell Wills</author>
 
   <license>BSD</license>
