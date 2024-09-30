@@ -2,7 +2,13 @@
 #define WEB_VIDEO_SERVER_H_
 
 #include <rclcpp/rclcpp.hpp>
+
+#ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include <cv_bridge/cv_bridge.h>
+#else
+#include <cv_bridge/cv_bridge.hpp>
+#endif
+
 #include <vector>
 #include "web_video_server/image_streamer.h"
 #include "async_web_server_cpp/http_server.hpp"
