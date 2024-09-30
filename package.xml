@@ -1,17 +1,19 @@
 <?xml version="1.0"?>
-<package format="2">
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>web_video_server</name>
   <version>1.0.0</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 
   <maintainer email="blazej@fictionlab.pl">Błażej Sowa</maintainer>
-  <author email="mwills@wpi.edu">Mitchell Wills</author>
 
   <license>BSD</license>
 
   <url type="website">http://ros.org/wiki/web_video_server</url>
   <url type="bugtracker">https://github.com/RobotWebTools/web_video_server/issues</url>
   <url type="repository">https://github.com/RobotWebTools/web_video_server</url>
+
+  <author email="mwills@wpi.edu">Mitchell Wills</author>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
 
