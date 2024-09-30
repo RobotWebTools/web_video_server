@@ -29,12 +29,7 @@ LibavStreamer::~LibavStreamer()
     avcodec_close(codec_context_);
   if (frame_)
   {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-    av_free(frame_);
-    frame_ = NULL;
-#else
     av_frame_free(&frame_);
-#endif
   }
   if (io_buffer_)
     delete io_buffer_;
@@ -157,11 +152,8 @@ void LibavStreamer::initialize(const cv::Mat &img)
   }
 
   // Allocate frame buffers
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  frame_ = avcodec_alloc_frame();
-#else
   frame_ = av_frame_alloc();
-#endif
+
   av_image_alloc(frame_->data, frame_->linesize, output_width_, output_height_,
           codec_context_->pix_fmt, 1);
 
@@ -207,22 +199,12 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
     first_image_timestamp_ = time;
   }
   std::vector<uint8_t> encoded_frame;
-#if (LIBAVUTIL_VERSION_MAJOR < 53)
-  PixelFormat input_coding_format = PIX_FMT_BGR24;
-#else
-  AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
-#endif
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  AVPicture *raw_frame = new AVPicture;
-  avpicture_fill(raw_frame, img.data, input_coding_format, output_width_, output_height_);
-#else
+  AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
+
   AVFrame *raw_frame = av_frame_alloc();
   av_image_fill_arrays(raw_frame->data, raw_frame->linesize,
                        img.data, input_coding_format, output_width_, output_height_, 1);
-#endif
-
-
 
   // Convert from opencv to libav
   if (!sws_context_)
@@ -241,29 +223,11 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
           (const uint8_t * const *)raw_frame->data, raw_frame->linesize, 0,
           output_height_, frame_->data, frame_->linesize);
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  delete raw_frame;
-#else
   av_frame_free(&raw_frame);
-#endif
 
   // Encode the frame
   AVPacket* pkt = av_packet_alloc();
-  int got_packet;
 
-#if (LIBAVCODEC_VERSION_MAJOR < 54)
-  int buf_size = 6 * output_width_ * output_height_;
-  pkt.data = (uint8_t*)av_malloc(buf_size);
-  pkt.size = avcodec_encode_video(codec_context_, pkt.data, buf_size, frame_);
-  got_packet = pkt.size > 0;
-#elif (LIBAVCODEC_VERSION_MAJOR < 57)
-  pkt.data = NULL; // packet data will be allocated by the encoder
-  pkt.size = 0;
-  if (avcodec_encode_video2(codec_context_, &pkt, frame_, &got_packet) < 0)
-  {
-     throw std::runtime_error("Error encoding video frame");
-  }
-#else
   if (avcodec_send_frame(codec_context_, frame_) < 0)
   {
     throw std::runtime_error("Error encoding video frame");
@@ -272,10 +236,8 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   {
     throw std::runtime_error("Error retrieving encoded packet");
   }
-  got_packet = pkt->size > 0;
-#endif
 
-  if (got_packet)
+  if (pkt->size > 0)
   {
     std::size_t size;
     uint8_t *output_buf;
@@ -301,15 +263,8 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   {
     encoded_frame.clear();
   }
-#if LIBAVCODEC_VERSION_INT < 54
-  av_free(pkt.data);
-#endif
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55,28,1)
-  av_free_packet(&pkt);
-#else
   av_packet_unref(pkt);
-#endif
 
   connection_->write_and_clear(encoded_frame);
 }
