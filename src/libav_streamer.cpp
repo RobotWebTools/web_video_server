@@ -27,11 +27,7 @@ LibavStreamer::~LibavStreamer()
 {
   if (codec_context_)
   {
-    #if ( LIBAVCODEC_VERSION_INT  < AV_VERSION_INT(58,9,100) )
-    avcodec_close(codec_context_);
-    #else
     avcodec_free_context(&codec_context_);
-    #endif
   }
   if (frame_)
   {
