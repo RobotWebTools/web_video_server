@@ -30,6 +30,10 @@ endif()
 ## Build ##
 ###########
 
+if(${cv_bridge_VERSION} VERSION_LESS "3.3.0")
+  add_compile_definitions(CV_BRIDGE_USES_OLD_HEADERS)
+endif()
+
 ## Specify additional locations of header files
 include_directories(include
   ${Boost_INCLUDE_DIRS}

@@ -1,5 +1,11 @@
 #include "web_video_server/image_streamer.h"
+
+#ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include <cv_bridge/cv_bridge.h>
+#else
+#include <cv_bridge/cv_bridge.hpp>
+#endif
+
 #include <iostream>
 
 namespace web_video_server
