@@ -55,10 +55,15 @@ add_executable(${PROJECT_NAME}
 )
 
 ament_target_dependencies(${PROJECT_NAME}
-  async_web_server_cpp cv_bridge image_transport rclcpp sensor_msgs)
+  sensor_msgs
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
+  async_web_server_cpp::async_web_server_cpp
+  cv_bridge::cv_bridge
+  image_transport::image_transport
+  rclcpp::rclcpp
   ${Boost_LIBRARIES}
   ${OpenCV_LIBS}
   ${avcodec_LIBRARIES}
