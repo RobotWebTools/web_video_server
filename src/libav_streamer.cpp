@@ -202,7 +202,6 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   {
     first_image_timestamp_ = time;
   }
-  std::vector<uint8_t> encoded_frame;
 
   AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 
@@ -280,14 +279,8 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
       throw std::runtime_error("Error when writing frame");
     }
   }
-  else
-  {
-    encoded_frame.clear();
-  }
 
   av_packet_unref(pkt);
-
-  connection_->write_and_clear(encoded_frame);
 }
 
 LibavStreamerType::LibavStreamerType(const std::string &format_name, const std::string &codec_name,
