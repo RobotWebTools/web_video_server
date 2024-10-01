@@ -235,17 +235,14 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   ret = avcodec_send_frame(codec_context_, frame_);
   if (ret == AVERROR_EOF)
   {
-    std::cerr << "avcodec_send_frame() encoder flushed\n";
-    // ROS_DEBUG_STREAM("avcodec_send_frame() encoder flushed");
+    RCLCPP_DEBUG_STREAM(nh_->get_logger(), "avcodec_send_frame() encoder flushed\n"); 
   }
   else if (ret == AVERROR(EAGAIN))
   {
-    std::cerr << "avcodec_send_frame() need output read out\n";
-    // ROS_DEBUG_STREAM("avcodec_send_frame() need output read out");
+    RCLCPP_DEBUG_STREAM(nh_->get_logger(), "avcodec_send_frame() need output read out\n"); 
   }
   if (ret < 0)
   {
-    // std::cerr << "Error encoding video frame\n";
     throw std::runtime_error("Error encoding video frame");
   }
 
@@ -253,13 +250,11 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   bool got_packet = pkt->size > 0;
   if (ret == AVERROR_EOF)
   {
-    std::cerr << "avcodec_recieve_packet() encoder flushed\n";
-    // ROS_DEBUG_STREAM("avcodec_recieve_packet() encoder flushed");
+    RCLCPP_DEBUG_STREAM(nh_->get_logger(), "avcodec_receive_packet() encoder flushed\n"); 
   }
   else if (ret == AVERROR(EAGAIN))
   {
-    std::cerr << "avcodec_recieve_packet() need more input\n";
-    // ROS_DEBUG_STREAM("avcodec_recieve_packet() need more input");
+    RCLCPP_DEBUG_STREAM(nh_->get_logger(), "avcodec_receive_packet() needs more input\n"); 
     got_packet = false;
   }
 
