@@ -34,7 +34,6 @@ protected:
   virtual void initializeEncoder();
   virtual void sendImage(const cv::Mat&, const rclcpp::Time& time);
   virtual void initialize(const cv::Mat&);
-  AVOutputFormat output_format_;
   AVFormatContext* format_context_;
   const AVCodec* codec_;
   AVCodecContext* codec_context_;
