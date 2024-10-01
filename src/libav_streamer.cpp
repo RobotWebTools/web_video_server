@@ -256,7 +256,7 @@ void LibavStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
     pkt->pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt->pts <= 0)
       pkt->pts = 1;
-    pkt->dts = AV_NOPTS_VALUE;
+    pkt->dts = pkt->pts;
 
     if (pkt->flags&AV_PKT_FLAG_KEY)
       pkt->flags |= AV_PKT_FLAG_KEY;
