@@ -6,13 +6,13 @@
 #include <sensor_msgs/image_encodings.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "web_video_server/web_video_server.h"
-#include "web_video_server/ros_compressed_streamer.h"
-#include "web_video_server/jpeg_streamers.h"
-#include "web_video_server/png_streamers.h"
-#include "web_video_server/vp8_streamer.h"
-#include "web_video_server/h264_streamer.h"
-#include "web_video_server/vp9_streamer.h"
+#include "web_video_server/web_video_server.hpp"
+#include "web_video_server/ros_compressed_streamer.hpp"
+#include "web_video_server/jpeg_streamers.hpp"
+#include "web_video_server/png_streamers.hpp"
+#include "web_video_server/vp8_streamer.hpp"
+#include "web_video_server/h264_streamer.hpp"
+#include "web_video_server/vp9_streamer.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 
 using namespace std::chrono_literals;

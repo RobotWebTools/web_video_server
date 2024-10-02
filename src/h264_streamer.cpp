@@ -1,4 +1,4 @@
-#include "web_video_server/h264_streamer.h"
+#include "web_video_server/h264_streamer.hpp"
 
 namespace web_video_server
 {

@@ -1,21 +1,21 @@
-#ifndef PNG_STREAMERS_H_
-#define PNG_STREAMERS_H_
+#ifndef JPEG_STREAMERS_H_
+#define JPEG_STREAMERS_H_
 
 #include <image_transport/image_transport.hpp>
-#include "web_video_server/image_streamer.h"
+#include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
-#include "web_video_server/multipart_stream.h"
+#include "web_video_server/multipart_stream.hpp"
 
 namespace web_video_server
 {
 
-class PngStreamer : public ImageTransportImageStreamer
+class MjpegStreamer : public ImageTransportImageStreamer
 {
 public:
-  PngStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-              rclcpp::Node::SharedPtr node);
-  ~PngStreamer();
+  MjpegStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
+                rclcpp::Node::SharedPtr node);
+  ~MjpegStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time &time);
 
@@ -24,7 +24,7 @@ private:
   int quality_;
 };
 
-class PngStreamerType : public ImageStreamerType
+class MjpegStreamerType : public ImageStreamerType
 {
 public:
   boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
@@ -33,12 +33,12 @@ public:
   std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 };
 
-class PngSnapshotStreamer : public ImageTransportImageStreamer
+class JpegSnapshotStreamer : public ImageTransportImageStreamer
 {
 public:
-  PngSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
-                      async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
-  ~PngSnapshotStreamer();
+  JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
+                       async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
+  ~JpegSnapshotStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time &time);
 

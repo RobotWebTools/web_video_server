@@ -1,4 +1,4 @@
-#include "web_video_server/ros_compressed_streamer.h"
+#include "web_video_server/ros_compressed_streamer.hpp"
 
 namespace web_video_server
 {
