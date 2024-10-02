@@ -4,14 +4,14 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - develop
+      - ros1*
   pull_request:
     branches:
-      - develop
+      - ros1*
 
 jobs:
   industrial_ci:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
