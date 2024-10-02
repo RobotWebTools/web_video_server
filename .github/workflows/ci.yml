@@ -3,15 +3,15 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches:
-      - ros2
+    branches-ignore:
+      - ros1*
   pull_request:
-    branches:
-      - ros2
+    branches-ignore:
+      - ros1*
 
 jobs:
   industrial_ci:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
