@@ -4,9 +4,11 @@
 namespace web_video_server
 {
 
-MjpegStreamer::MjpegStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
-  ImageTransportImageStreamer(request, connection, node), stream_(std::bind(&rclcpp::Node::now, node), connection)
+MjpegStreamer::MjpegStreamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
+:ImageTransportImageStreamer(request, connection, node),
+  stream_(std::bind(&rclcpp::Node::now, node), connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
   stream_.sendInitialHeader();
@@ -18,7 +20,7 @@ MjpegStreamer::~MjpegStreamer()
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
-void MjpegStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
+void MjpegStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
@@ -30,14 +32,15 @@ void MjpegStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
 }
 
-boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(const async_web_server_cpp::HttpRequest &request,
-                                                                    async_web_server_cpp::HttpConnectionPtr connection,
-                                                                    rclcpp::Node::SharedPtr node)
+boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
 {
   return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, node));
 }
 
-std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest &request)
+std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
 {
   std::stringstream ss;
   ss << "<img src=\"/stream?";
@@ -46,10 +49,11 @@ std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpReq
   return ss.str();
 }
 
-JpegSnapshotStreamer::JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
-                                           async_web_server_cpp::HttpConnectionPtr connection,
-                                           rclcpp::Node::SharedPtr node) :
-    ImageTransportImageStreamer(request, connection, node)
+JpegSnapshotStreamer::JpegSnapshotStreamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
+:ImageTransportImageStreamer(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
@@ -60,7 +64,7 @@ JpegSnapshotStreamer::~JpegSnapshotStreamer()
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
-void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
+void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
@@ -72,18 +76,16 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &tim
   char stamp[20];
   sprintf(stamp, "%.06lf", time.seconds());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
-      .header("Connection", "close")
-      .header("Server", "web_video_server")
-      .header("Cache-Control",
-              "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, "
-              "max-age=0")
-      .header("X-Timestamp", stamp)
-      .header("Pragma", "no-cache")
-      .header("Content-type", "image/jpeg")
-      .header("Access-Control-Allow-Origin", "*")
-      .header("Content-Length",
-              boost::lexical_cast<std::string>(encoded_buffer.size()))
-      .write(connection_);
+  .header("Connection", "close")
+  .header("Server", "web_video_server")
+  .header("Cache-Control",
+      "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
+  .header("X-Timestamp", stamp)
+  .header("Pragma", "no-cache")
+  .header("Content-type", "image/jpeg")
+  .header("Access-Control-Allow-Origin", "*")
+  .header("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size()))
+  .write(connection_);
   connection_->write_and_clear(encoded_buffer);
   inactive_ = true;
 }

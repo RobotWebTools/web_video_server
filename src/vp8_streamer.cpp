@@ -39,9 +39,10 @@
 namespace web_video_server
 {
 
-Vp8Streamer::Vp8Streamer(const async_web_server_cpp::HttpRequest& request,
-                         async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
-    LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
+Vp8Streamer::Vp8Streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
+:LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
@@ -61,8 +62,7 @@ void Vp8Streamer::initializeEncoder()
   av_opt_map["drop_frame"] = "1";
   av_opt_map["error-resilient"] = "1";
 
-  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr)
-  {
+  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr) {
     av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
   }
 
@@ -76,14 +76,15 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
 }
 
-Vp8StreamerType::Vp8StreamerType() :
-    LibavStreamerType("webm", "libvpx", "video/webm")
+Vp8StreamerType::Vp8StreamerType()
+:LibavStreamerType("webm", "libvpx", "video/webm")
 {
 }
 
-boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
-                                                                  async_web_server_cpp::HttpConnectionPtr connection,
-                                                                  rclcpp::Node::SharedPtr node)
+boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
 {
   return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, node));
 }

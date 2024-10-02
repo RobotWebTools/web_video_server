@@ -3,9 +3,10 @@
 namespace web_video_server
 {
 
-H264Streamer::H264Streamer(const async_web_server_cpp::HttpRequest& request,
-                         async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
-    LibavStreamer(request, connection, node, "mp4", "libx264", "video/mp4")
+H264Streamer::H264Streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
+:LibavStreamer(request, connection, node, "mp4", "libx264", "video/mp4")
 {
   /* possible quality presets:
    * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
@@ -34,14 +35,15 @@ void H264Streamer::initializeEncoder()
   }
 }
 
-H264StreamerType::H264StreamerType() :
-    LibavStreamerType("mp4", "libx264", "video/mp4")
+H264StreamerType::H264StreamerType()
+:LibavStreamerType("mp4", "libx264", "video/mp4")
 {
 }
 
-boost::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(const async_web_server_cpp::HttpRequest& request,
-                                                                  async_web_server_cpp::HttpConnectionPtr connection,
-                                                                  rclcpp::Node::SharedPtr node)
+boost::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
 {
   return boost::shared_ptr<ImageStreamer>(new H264Streamer(request, connection, node));
 }

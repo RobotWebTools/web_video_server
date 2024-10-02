@@ -13,14 +13,18 @@ namespace web_video_server
 class RosCompressedStreamer : public ImageStreamer
 {
 public:
-  RosCompressedStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-			rclcpp::Node::SharedPtr node);
+  RosCompressedStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
   ~RosCompressedStreamer();
   virtual void start();
   virtual void restreamFrame(double max_age);
 
 protected:
-  virtual void sendImage(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg, const rclcpp::Time &time);
+  virtual void sendImage(
+    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+    const rclcpp::Time & time);
 
 private:
   void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
@@ -35,10 +39,11 @@ private:
 class RosCompressedStreamerType : public ImageStreamerType
 {
 public:
-  boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
-                                                   async_web_server_cpp::HttpConnectionPtr connection,
-                                                   rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
+  boost::shared_ptr<ImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
 }

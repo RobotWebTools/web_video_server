@@ -29,7 +29,7 @@ public:
    * @brief  Constructor
    * @return
    */
-  WebVideoServer(rclcpp::Node::SharedPtr &node);
+  WebVideoServer(rclcpp::Node::SharedPtr & node);
 
   /**
    * @brief  Destructor - Cleans up
@@ -43,20 +43,30 @@ public:
 
   void setup_cleanup_inactive_streams();
 
-  bool handle_request(const async_web_server_cpp::HttpRequest &request,
-                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+  bool handle_request(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
 
-  bool handle_stream(const async_web_server_cpp::HttpRequest &request,
-                     async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+  bool handle_stream(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
 
-  bool handle_stream_viewer(const async_web_server_cpp::HttpRequest &request,
-                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+  bool handle_stream_viewer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
 
-  bool handle_snapshot(const async_web_server_cpp::HttpRequest &request,
-                       async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+  bool handle_snapshot(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
 
-  bool handle_list_streams(const async_web_server_cpp::HttpRequest &request,
-                           async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+  bool handle_list_streams(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
 
 private:
   void restreamFrames(double max_age);
@@ -76,8 +86,8 @@ private:
   boost::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
-  std::vector<boost::shared_ptr<ImageStreamer> > image_subscribers_;
-  std::map<std::string, boost::shared_ptr<ImageStreamerType> > stream_types_;
+  std::vector<boost::shared_ptr<ImageStreamer>> image_subscribers_;
+  std::map<std::string, boost::shared_ptr<ImageStreamerType>> stream_types_;
   boost::mutex subscriber_mutex_;
 };
 
