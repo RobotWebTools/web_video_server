@@ -21,34 +21,6 @@ using namespace boost::placeholders;
 namespace web_video_server
 {
 
-static bool __verbose;
-
-static std::string __default_stream_type;
-
-static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler forward,
-                                  const async_web_server_cpp::HttpRequest &request,
-                                  async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
-                                  const char* end)
-{
-  if (__verbose)
-  {
-    // TODO reenable
-    // RCLCPP_INFO(node->get_logger(), "Handling Request: %s", request.uri.c_str());
-  }
-  try
-  {
-    forward(request, connection, begin, end);
-    return true;
-  }
-  catch (std::exception &e)
-  {
-    // TODO reenable
-    // RCLCPP_WARN(node->get_logger(), "Error Handling Request: %s", e.what());
-    return false;
-  }
-  return false;
-}
-
 WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node) :
     node_(node), handler_group_(
         async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
@@ -62,13 +34,13 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node) :
   node_->declare_parameter("default_stream_type", "mjpeg");
 
   node_->get_parameter("port", port_);
-  node_->get_parameter("verbose", __verbose);
+  node_->get_parameter("verbose", verbose_);
   node_->get_parameter("address", address_);
   int server_threads;
   node_->get_parameter("server_threads", server_threads);
   node_->get_parameter("ros_threads", ros_threads_);
   node_->get_parameter("publish_rate", publish_rate_);
-  node_->get_parameter("default_stream_type", __default_stream_type);
+  node_->get_parameter("default_stream_type", default_stream_type_);
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
@@ -87,7 +59,7 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node) :
   {
     server_.reset(
         new async_web_server_cpp::HttpServer(address_, boost::lexical_cast<std::string>(port_),
-                                             boost::bind(ros_connection_logger, handler_group_, _1, _2, _3, _4),
+                                             boost::bind(&WebVideoServer::handle_request, this, _1, _2, _3, _4),
                                              server_threads));
   }
   catch(boost::exception& e)
@@ -140,7 +112,7 @@ void WebVideoServer::cleanup_inactive_streams()
     typedef std::vector<boost::shared_ptr<ImageStreamer> >::iterator itr_type;
     itr_type new_end = std::partition(image_subscribers_.begin(), image_subscribers_.end(),
                                       !boost::bind(&ImageStreamer::isInactive, _1));
-    if (__verbose)
+    if (verbose_)
     {
       for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr)
       {
@@ -151,11 +123,31 @@ void WebVideoServer::cleanup_inactive_streams()
   }
 }
 
+bool WebVideoServer::handle_request(const async_web_server_cpp::HttpRequest &request,
+                                    async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
+                                    const char* end)
+{
+  if (verbose_)
+  {
+    RCLCPP_INFO(node_->get_logger(), "Handling Request: %s", request.uri.c_str());
+  }
+
+  try
+  {
+    return handler_group_(request, connection, begin, end);
+  }
+  catch (std::exception &e)
+  {
+    RCLCPP_WARN(node_->get_logger(), "Error Handling Request: %s", e.what());
+    return false;
+  }
+}
+
 bool WebVideoServer::handle_stream(const async_web_server_cpp::HttpRequest &request,
                                    async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                    const char* end)
 {
-  std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
+  std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (stream_types_.find(type) != stream_types_.end())
   {
     std::string topic = request.get_query_param_value_or_default("topic", "");
@@ -211,7 +203,7 @@ bool WebVideoServer::handle_stream_viewer(const async_web_server_cpp::HttpReques
                                           async_web_server_cpp::HttpConnectionPtr connection, const char* begin,
                                           const char* end)
 {
-  std::string type = request.get_query_param_value_or_default("type", __default_stream_type);
+  std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (stream_types_.find(type) != stream_types_.end())
   {
     std::string topic = request.get_query_param_value_or_default("topic", "");

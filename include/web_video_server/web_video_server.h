@@ -43,6 +43,9 @@ public:
 
   void setup_cleanup_inactive_streams();
 
+  bool handle_request(const async_web_server_cpp::HttpRequest &request,
+                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
+
   bool handle_stream(const async_web_server_cpp::HttpRequest &request,
                      async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
@@ -61,10 +64,15 @@ private:
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::WallTimer<rclcpp::VoidCallbackType>::SharedPtr cleanup_timer_;
+
+  // Parameters
   int ros_threads_;
   double publish_rate_;
   int port_;
   std::string address_;
+  bool verbose_;
+  std::string default_stream_type_;
+
   boost::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
