@@ -49,51 +49,26 @@ static bool ros_connection_logger(async_web_server_cpp::HttpServerRequestHandler
   return false;
 }
 
-WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr &nh, rclcpp::Node::SharedPtr &private_nh) :
+WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & nh) :
     nh_(nh), handler_group_(
         async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
 {
-  rclcpp::Parameter parameter;
-  if (private_nh->get_parameter("port", parameter)) {
-    port_ = parameter.as_int();
-  } else {
-    port_ = 8080;
-  }
-  if (private_nh->get_parameter("verbose", parameter)) {
-    __verbose = parameter.as_bool();
-  } else {
-    __verbose = true;
-  }
+  nh_->declare_parameter("port", 8080);
+  nh_->declare_parameter("verbose", true);
+  nh_->declare_parameter("address", "0.0.0.0");
+  nh_->declare_parameter("server_threads", 1);
+  nh_->declare_parameter("ros_threads", 2);
+  nh_->declare_parameter("publish_rate", -1.0);
+  nh_->declare_parameter("default_stream_type", "mjpeg");
 
-  if (private_nh->get_parameter("address", parameter)) {
-    address_ = parameter.as_string();
-  } else {
-    address_ = "0.0.0.0";
-  }
-
+  nh_->get_parameter("port", port_);
+  nh_->get_parameter("verbose", __verbose);
+  nh_->get_parameter("address", address_);
   int server_threads;
-  if (private_nh->get_parameter("server_threads", parameter)) {
-    server_threads = parameter.as_int();
-  } else {
-    server_threads = 1;
-  }
-
-  if (private_nh->get_parameter("ros_threads", parameter)) {
-    ros_threads_ = parameter.as_int();
-  } else {
-    ros_threads_ = 2;
-  }
-  if (private_nh->get_parameter("publish_rate", parameter)) {
-    publish_rate_ = parameter.as_double();
-  } else {
-    publish_rate_ = -1.0;
-  }
-
-  if (private_nh->get_parameter("default_stream_type", parameter)) {
-    __default_stream_type = parameter.as_string();
-  } else {
-    __default_stream_type = "mjpeg";
-  }
+  nh_->get_parameter("server_threads", server_threads);
+  nh_->get_parameter("ros_threads", ros_threads_);
+  nh_->get_parameter("publish_rate", publish_rate_);
+  nh_->get_parameter("default_stream_type", __default_stream_type);
 
   stream_types_["mjpeg"] = boost::shared_ptr<ImageStreamerType>(new MjpegStreamerType());
   stream_types_["png"] = boost::shared_ptr<ImageStreamerType>(new PngStreamerType());
@@ -378,10 +353,9 @@ bool WebVideoServer::handle_list_streams(const async_web_server_cpp::HttpRequest
 int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  auto nh = std::make_shared<rclcpp::Node>("web_video_server");
-  auto private_nh = std::make_shared<rclcpp::Node>("_web_video_server");
+  auto node = std::make_shared<rclcpp::Node>("web_video_server");
 
-  web_video_server::WebVideoServer server(nh, private_nh);
+  web_video_server::WebVideoServer server(node);
   server.setup_cleanup_inactive_streams();
   server.spin();
 
