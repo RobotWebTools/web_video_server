@@ -49,7 +49,7 @@ class Vp8Streamer : public LibavStreamer
 {
 public:
   Vp8Streamer(const async_web_server_cpp::HttpRequest& request, async_web_server_cpp::HttpConnectionPtr connection,
-              rclcpp::Node::SharedPtr nh);
+              rclcpp::Node::SharedPtr node);
   ~Vp8Streamer();
 protected:
   virtual void initializeEncoder();
@@ -63,7 +63,7 @@ public:
   Vp8StreamerType();
   virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest& request,
                                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                                           rclcpp::Node::SharedPtr nh);
+                                                           rclcpp::Node::SharedPtr node);
 };
 
 }

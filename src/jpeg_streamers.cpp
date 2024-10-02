@@ -5,8 +5,8 @@ namespace web_video_server
 {
 
 MjpegStreamer::MjpegStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-  ImageTransportImageStreamer(request, connection, nh), stream_(std::bind(&rclcpp::Node::now, nh), connection)
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
+  ImageTransportImageStreamer(request, connection, node), stream_(std::bind(&rclcpp::Node::now, node), connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
   stream_.sendInitialHeader();
@@ -32,9 +32,9 @@ void MjpegStreamer::sendImage(const cv::Mat &img, const rclcpp::Time &time)
 
 boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                                     async_web_server_cpp::HttpConnectionPtr connection,
-                                                                    rclcpp::Node::SharedPtr nh)
+                                                                    rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, nh));
+  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, node));
 }
 
 std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest &request)
@@ -48,8 +48,8 @@ std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpReq
 
 JpegSnapshotStreamer::JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
                                            async_web_server_cpp::HttpConnectionPtr connection,
-                                           rclcpp::Node::SharedPtr nh) :
-    ImageTransportImageStreamer(request, connection, nh)
+                                           rclcpp::Node::SharedPtr node) :
+    ImageTransportImageStreamer(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }

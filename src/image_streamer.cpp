@@ -12,8 +12,8 @@ namespace web_video_server
 {
 
 ImageStreamer::ImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-    request_(request), connection_(connection), nh_(nh), inactive_(false)
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
+    request_(request), connection_(connection), node_(node), inactive_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
@@ -23,8 +23,8 @@ ImageStreamer::~ImageStreamer()
 }
 
 ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request,
-                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh) :
-  ImageStreamer(request, connection, nh), it_(nh), initialized_(false)
+                             async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node) :
+  ImageStreamer(request, connection, node), it_(node), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -39,8 +39,8 @@ ImageTransportImageStreamer::~ImageTransportImageStreamer()
 
 void ImageTransportImageStreamer::start()
 {
-  image_transport::TransportHints hints(nh_.get(), default_transport_);
-  auto tnat = nh_->get_topic_names_and_types();
+  image_transport::TransportHints hints(node_.get(), default_transport_);
+  auto tnat = node_->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
@@ -55,19 +55,19 @@ void ImageTransportImageStreamer::start()
   }
 
   // Get QoS profile from query parameter
-  RCLCPP_INFO(nh_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(), qos_profile_name_.c_str());
+  RCLCPP_INFO(node_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(), qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
-      nh_->get_logger(),
+      node_->get_logger(),
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name_.c_str());
   }
 
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
-      nh_.get(), topic_, std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
+      node_.get(), topic_, std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
       default_transport_, qos_profile.value());
 }
 
@@ -80,29 +80,29 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   if (inactive_ || !initialized_ )
     return;
   try {
-    if ( last_frame + rclcpp::Duration::from_seconds(max_age) < nh_->now() ) {
+    if ( last_frame + rclcpp::Duration::from_seconds(max_age) < node_->now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
-      sendImage(output_size_image, nh_->now() ); // don't update last_frame, it may remain an old value.
+      sendImage(output_size_image, node_->now() ); // don't update last_frame, it may remain an old value.
     }
   }
   catch (boost::system::system_error &e)
   {
     // happens when client disconnects
-    RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (std::exception &e)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
+    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (...)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "exception");
+    RCLCPP_ERROR(node_->get_logger(), "exception");
     inactive_ = true;
     return;
   }
@@ -170,41 +170,41 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
       initialized_ = true;
     }
 
-    last_frame = nh_->now();
+    last_frame = node_->now();
     sendImage(output_size_image, msg->header.stamp);
   }
   catch (cv_bridge::Exception &e)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
+    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (cv::Exception &e)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "cv_bridge exception: %s", e.what());
+    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (boost::system::system_error &e)
   {
     // happens when client disconnects
-    RCLCPP_DEBUG(nh_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (std::exception &e)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "exception: %s", e.what());
+    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
     inactive_ = true;
     return;
   }
   catch (...)
   {
     // TODO THROTTLE with 30
-    RCLCPP_ERROR(nh_->get_logger(), "exception");
+    RCLCPP_ERROR(node_->get_logger(), "exception");
     inactive_ = true;
     return;
   }
