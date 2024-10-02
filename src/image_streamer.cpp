@@ -171,8 +171,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     }
 
     last_frame = nh_->now();
-    sendImage(output_size_image, last_frame );
-
+    sendImage(output_size_image, msg->header.stamp);
   }
   catch (cv_bridge::Exception &e)
   {
