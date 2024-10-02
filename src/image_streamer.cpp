@@ -1,4 +1,4 @@
-#include "web_video_server/image_streamer.h"
+#include "web_video_server/image_streamer.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include <cv_bridge/cv_bridge.h>

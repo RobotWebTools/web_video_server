@@ -34,7 +34,7 @@
  *
  *********************************************************************/
 
-#include "web_video_server/vp8_streamer.h"
+#include "web_video_server/vp8_streamer.hpp"
 
 namespace web_video_server
 {
