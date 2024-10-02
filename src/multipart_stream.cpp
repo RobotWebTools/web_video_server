@@ -17,8 +17,9 @@ void MultipartStream::sendInitialHeader()
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
   .header("Server", "web_video_server")
-  .header("Cache-Control",
-      "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
+  .header(
+    "Cache-Control",
+    "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
   .header("Pragma", "no-cache")
   .header("Content-type", "multipart/x-mixed-replace;boundary=" + boundry_)
   .header("Access-Control-Allow-Origin", "*")
@@ -37,7 +38,8 @@ void MultipartStream::sendPartHeader(
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
   headers->push_back(
-      async_web_server_cpp::HttpHeader("Content-Length",
+    async_web_server_cpp::HttpHeader(
+      "Content-Length",
       boost::lexical_cast<std::string>(payload_size)));
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }

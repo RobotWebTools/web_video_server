@@ -7,7 +7,7 @@ namespace web_video_server
 MjpegStreamer::MjpegStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-:ImageTransportImageStreamer(request, connection, node),
+: ImageTransportImageStreamer(request, connection, node),
   stream_(std::bind(&rclcpp::Node::now, node), connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
@@ -53,7 +53,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
-:ImageTransportImageStreamer(request, connection, node)
+: ImageTransportImageStreamer(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
@@ -78,8 +78,9 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & t
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
   .header("Server", "web_video_server")
-  .header("Cache-Control",
-      "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
+  .header(
+    "Cache-Control",
+    "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
   .header("X-Timestamp", stamp)
   .header("Pragma", "no-cache")
   .header("Content-type", "image/jpeg")

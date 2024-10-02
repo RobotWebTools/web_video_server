@@ -15,7 +15,8 @@ struct PendingFooter
   std::weak_ptr<std::string> contents;
 };
 
-class MultipartStream {
+class MultipartStream
+{
 public:
   MultipartStream(
     std::function<rclcpp::Time()> get_now,

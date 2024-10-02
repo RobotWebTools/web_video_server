@@ -14,7 +14,7 @@ namespace web_video_server
 ImageStreamer::ImageStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-:request_(request), connection_(connection), node_(node), inactive_(false)
+: request_(request), connection_(connection), node_(node), inactive_(false)
 {
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
@@ -26,7 +26,7 @@ ImageStreamer::~ImageStreamer()
 ImageTransportImageStreamer::ImageTransportImageStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-:ImageStreamer(request, connection, node), it_(node), initialized_(false)
+: ImageStreamer(request, connection, node), it_(node), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -50,15 +50,16 @@ void ImageTransportImageStreamer::start()
       continue;
     }
     auto & topic_name = topic_and_types.first;
-    if(topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
+    if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
       break;
     }
   }
 
   // Get QoS profile from query parameter
-  RCLCPP_INFO(node_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(),
-      qos_profile_name_.c_str());
+  RCLCPP_INFO(
+    node_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(),
+    qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
@@ -70,9 +71,9 @@ void ImageTransportImageStreamer::start()
 
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
-      node_.get(), topic_,
-      std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
-      default_transport_, qos_profile.value());
+    node_.get(), topic_,
+    std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
+    default_transport_, qos_profile.value());
 }
 
 void ImageTransportImageStreamer::initialize(const cv::Mat &)

@@ -6,7 +6,7 @@ namespace web_video_server
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-:ImageStreamer(request, connection, node), stream_(std::bind(&rclcpp::Node::now, node), connection)
+: ImageStreamer(request, connection, node), stream_(std::bind(&rclcpp::Node::now, node), connection)
 {
   stream_.sendInitialHeader();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -23,8 +23,9 @@ void RosCompressedStreamer::start()
   const std::string compressed_topic = topic_ + "/compressed";
 
   // Get QoS profile from query parameter
-  RCLCPP_INFO(node_->get_logger(), "Streaming topic %s with QoS profile %s",
-      compressed_topic.c_str(), qos_profile_name_.c_str());
+  RCLCPP_INFO(
+    node_->get_logger(), "Streaming topic %s with QoS profile %s",
+    compressed_topic.c_str(), qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
@@ -35,11 +36,12 @@ void RosCompressedStreamer::start()
   }
 
   // Create subscriber
-  const auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.value().history, 1),
-      qos_profile.value());
+  const auto qos = rclcpp::QoS(
+    rclcpp::QoSInitialization(qos_profile.value().history, 1),
+    qos_profile.value());
   image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
-      compressed_topic, qos,
-      std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1));
+    compressed_topic, qos,
+    std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1));
 }
 
 void RosCompressedStreamer::restreamFrame(double max_age)
@@ -60,13 +62,14 @@ void RosCompressedStreamer::sendImage(
 {
   try {
     std::string content_type;
-    if(msg->format.find("jpeg") != std::string::npos) {
+    if (msg->format.find("jpeg") != std::string::npos) {
       content_type = "image/jpeg";
-    } else if(msg->format.find("png") != std::string::npos) {
+    } else if (msg->format.find("png") != std::string::npos) {
       content_type = "image/png";
     } else {
-      RCLCPP_WARN(node_->get_logger(), "Unknown ROS compressed image format: %s",
-          msg->format.c_str());
+      RCLCPP_WARN(
+        node_->get_logger(), "Unknown ROS compressed image format: %s",
+        msg->format.c_str());
       return;
     }
 
