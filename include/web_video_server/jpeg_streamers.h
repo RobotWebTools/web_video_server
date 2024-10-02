@@ -14,7 +14,7 @@ class MjpegStreamer : public ImageTransportImageStreamer
 {
 public:
   MjpegStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-                rclcpp::Node::SharedPtr nh);
+                rclcpp::Node::SharedPtr node);
   ~MjpegStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time &time);
@@ -29,7 +29,7 @@ class MjpegStreamerType : public ImageStreamerType
 public:
   boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
                                                    async_web_server_cpp::HttpConnectionPtr connection,
-                                                   rclcpp::Node::SharedPtr nh);
+                                                   rclcpp::Node::SharedPtr node);
   std::string create_viewer(const async_web_server_cpp::HttpRequest &request);
 };
 
@@ -37,7 +37,7 @@ class JpegSnapshotStreamer : public ImageTransportImageStreamer
 {
 public:
   JpegSnapshotStreamer(const async_web_server_cpp::HttpRequest &request,
-                       async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr nh);
+                       async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
   ~JpegSnapshotStreamer();
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time &time);
