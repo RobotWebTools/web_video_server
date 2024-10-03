@@ -24,6 +24,14 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
+
+  min_v_ = request.get_query_param_value_or_default<float>("min", min_v_);
+  max_v_ = request.get_query_param_value_or_default<float>("max", max_v_);
+  colormap_ = request.get_query_param_value_or_default<int>("colormap", colormap_);
+
+  if(std::isnan(min_v_) && !std::isnan(max_v_)) {
+    min_v_ = 0;
+  }
 }
 
 ImageTransportImageStreamer::~ImageTransportImageStreamer()
@@ -55,7 +63,7 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   if (inactive_ || !initialized_ )
     return;
   try {
-    if ( last_frame + ros::Duration(max_age) < ros::Time::now() ) {
+    if ( last_frame + ros::WallDuration(max_age) < ros::WallTime::now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
       sendImage(output_size_image, ros::Time::now() ); // don't update last_frame, it may remain an old value.
     }
@@ -89,19 +97,23 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
   cv::Mat img;
   try
   {
-    if (msg->encoding.find("F") != std::string::npos)
-    {
-      // scale floating point images
-      cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
-      cv::Mat_<float> float_image = float_image_bridge;
-      double max_val;
-      cv::minMaxIdx(float_image, 0, &max_val);
+    if (msg->encoding.find("16") != std::string::npos || msg->encoding.find("F") != std::string::npos) {
+      cv::Mat image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
 
-      if (max_val > 0)
-      {
-        float_image *= (255 / max_val);
+      double max_val, min_val;
+      if(std::isnan(min_v_) || std::isnan(min_v_)) {
+	cv::minMaxIdx(image_bridge, &min_val, &max_val);
+      } else {
+	min_val = min_v_;
+	max_val = max_v_; 
       }
-      img = float_image;
+
+      float scale = 255. / (max_val - min_val);
+      image_bridge.convertTo(img, CV_8U, scale, -min_val * scale);
+
+      if(colormap_ >= 0) {
+	cv::applyColorMap(img, img, colormap_);
+      }
     }
     else
     {
@@ -143,7 +155,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::ImageConstPtr
       initialized_ = true;
     }
 
-    last_frame = ros::Time::now();
+    last_frame = ros::WallTime::now();
     sendImage(output_size_image, msg->header.stamp);
   }
   catch (cv_bridge::Exception &e)
