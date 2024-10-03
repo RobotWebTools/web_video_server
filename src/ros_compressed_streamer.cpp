@@ -62,7 +62,7 @@ void RosCompressedStreamer::sendImage(
 {
   try {
     std::string content_type;
-    if(msg->format.find("jpeg") != std::string::npos ||
+    if (msg->format.find("jpeg") != std::string::npos ||
       msg->format.find("jpg") != std::string::npos)
     {
       content_type = "image/jpeg";
