@@ -15,9 +15,10 @@ namespace web_video_server
 class ImageStreamer
 {
 public:
-  ImageStreamer(const async_web_server_cpp::HttpRequest &request,
-		async_web_server_cpp::HttpConnectionPtr connection,
-		rclcpp::Node::SharedPtr node);
+  ImageStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
 
   virtual void start() = 0;
   virtual ~ImageStreamer();
@@ -26,7 +27,6 @@ public:
   {
     return inactive_;
   }
-  ;
 
   /**
    * Restreams the last received image frame if older than max_age.
@@ -37,7 +37,7 @@ public:
   {
     return topic_;
   }
-  ;
+
 protected:
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
@@ -51,14 +51,16 @@ protected:
 class ImageTransportImageStreamer : public ImageStreamer
 {
 public:
-  ImageTransportImageStreamer(const async_web_server_cpp::HttpRequest &request, async_web_server_cpp::HttpConnectionPtr connection,
-			      rclcpp::Node::SharedPtr node);
+  ImageTransportImageStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
   virtual ~ImageTransportImageStreamer();
 
   virtual void start();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time &time) = 0;
+  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time) = 0;
   virtual void restreamFrame(double max_age);
   virtual void initialize(const cv::Mat &);
 
@@ -77,17 +79,18 @@ private:
   image_transport::ImageTransport it_;
   bool initialized_;
 
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr &msg);
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 
 class ImageStreamerType
 {
 public:
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(const async_web_server_cpp::HttpRequest &request,
-                                                           async_web_server_cpp::HttpConnectionPtr connection,
-                                                           rclcpp::Node::SharedPtr node) = 0;
+  virtual boost::shared_ptr<ImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node) = 0;
 
-  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest &request) = 0;
+  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request) = 0;
 };
 
 }
