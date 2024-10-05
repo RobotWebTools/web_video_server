@@ -2,6 +2,13 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.2.2 (2021-07-23)
+------------------
+* fix vp9 and h264, support for opencv4 and ffmpeg 4 (`#103 <https://github.com/RobotWebTools/web_video_server/issues/103>`_)
+* add a mention of mjpegcanvasjs in the readme (`#100 <https://github.com/RobotWebTools/web_video_server/issues/100>`_)
+* fix multipart_stream.cpp HttpHeader values in order to solve DOMException(cross origin) CORS issue (`#92 <https://github.com/RobotWebTools/web_video_server/issues/92>`_)
+* Contributors: Gady, okapi1125, randoms
+
 0.2.1 (2019-06-05)
 ------------------
 * Restream buffered frames with minimum publish rate (`#88 <https://github.com/RobotWebTools/web_video_server/issues/88>`_)
