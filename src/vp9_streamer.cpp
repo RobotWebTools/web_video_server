@@ -44,7 +44,6 @@ Vp9Streamer::~Vp9Streamer()
 
 void Vp9Streamer::initializeEncoder()
 {
-
   // codec options set up to provide somehow reasonable performance in cost of poor quality
   // should be updated as soon as VP9 encoding matures
   av_opt_set_int(codec_context_->priv_data, "pass", 1, 0);
@@ -66,4 +65,4 @@ boost::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(
   return boost::shared_ptr<ImageStreamer>(new Vp9Streamer(request, connection, node));
 }
 
-}
+}  // namespace web_video_server

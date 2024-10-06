@@ -45,7 +45,7 @@ RosCompressedStreamer::RosCompressedStreamer(
 RosCompressedStreamer::~RosCompressedStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 void RosCompressedStreamer::start()
@@ -82,7 +82,7 @@ void RosCompressedStreamer::restreamFrame(double max_age)
 
   if (last_frame + rclcpp::Duration::from_seconds(max_age) < node_->now() ) {
     boost::mutex::scoped_lock lock(send_mutex_);
-    sendImage(last_msg, node_->now() ); // don't update last_frame, it may remain an old value.
+    sendImage(last_msg, node_->now() );  // don't update last_frame, it may remain an old value.
   }
 }
 
@@ -128,7 +128,7 @@ void RosCompressedStreamer::sendImage(
 void RosCompressedStreamer::imageCallback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
-  boost::mutex::scoped_lock lock(send_mutex_); // protects last_msg and last_frame
+  boost::mutex::scoped_lock lock(send_mutex_);  // protects last_msg and last_frame
   last_msg = msg;
   last_frame = rclcpp::Time(msg->header.stamp);
   sendImage(last_msg, last_frame);
@@ -153,5 +153,4 @@ std::string RosCompressedStreamerType::create_viewer(
   return ss.str();
 }
 
-
-}
+}  // namespace web_video_server

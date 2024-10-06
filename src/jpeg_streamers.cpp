@@ -47,7 +47,7 @@ MjpegStreamer::MjpegStreamer(
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 void MjpegStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
@@ -91,7 +91,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
+  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
@@ -104,7 +104,7 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & t
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.seconds());
+  snprintf(stamp, sizeof(stamp), "%.06lf", time.seconds());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
   .header("Server", "web_video_server")
@@ -121,4 +121,4 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & t
   inactive_ = true;
 }
 
-}
+}  // namespace web_video_server

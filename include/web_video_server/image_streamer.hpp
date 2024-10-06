@@ -28,13 +28,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IMAGE_STREAMER_H_
-#define IMAGE_STREAMER_H_
+#ifndef WEB_VIDEO_SERVER__IMAGE_STREAMER_HPP_
+#define WEB_VIDEO_SERVER__IMAGE_STREAMER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <image_transport/image_transport.hpp>
-#include <image_transport/transport_hints.hpp>
+#include <string>
+
 #include <opencv2/opencv.hpp>
+
+#include "rclcpp/rclcpp.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/transport_hints.hpp"
 #include "web_video_server/utils.hpp"
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -124,6 +127,6 @@ public:
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request) = 0;
 };
 
-}
+}  // namespace web_video_server
 
-#endif
+#endif  // WEB_VIDEO_SERVER__IMAGE_STREAMER_HPP_

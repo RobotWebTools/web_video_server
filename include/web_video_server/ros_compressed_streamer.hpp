@@ -28,10 +28,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef ROS_COMPRESSED_STREAMERS_H_
-#define ROS_COMPRESSED_STREAMERS_H_
+#ifndef WEB_VIDEO_SERVER__ROS_COMPRESSED_STREAMER_HPP_
+#define WEB_VIDEO_SERVER__ROS_COMPRESSED_STREAMER_HPP_
 
-#include <sensor_msgs/msg/compressed_image.hpp>
+#include <string>
+
+#include "sensor_msgs/msg/compressed_image.hpp"
 #include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
@@ -76,6 +78,6 @@ public:
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
-}
+}  // namespace web_video_server
 
-#endif
+#endif  // WEB_VIDEO_SERVER__ROS_COMPRESSED_STREAMER_HPP_

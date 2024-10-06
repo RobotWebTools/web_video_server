@@ -28,13 +28,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef LIBAV_STREAMERS_H_
-#define LIBAV_STREAMERS_H_
-
-#include <image_transport/image_transport.hpp>
-#include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_connection.hpp"
+#ifndef WEB_VIDEO_SERVER__LIBAV_STREAMER_HPP_
+#define WEB_VIDEO_SERVER__LIBAV_STREAMER_HPP_
 
 extern "C"
 {
@@ -47,6 +42,13 @@ extern "C"
 #include <libavutil/mathematics.h>
 #include <libavutil/imgutils.h>
 }
+
+#include <string>
+
+#include "image_transport/image_transport.hpp"
+#include "web_video_server/image_streamer.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server
 {
@@ -110,6 +112,6 @@ private:
   const std::string content_type_;
 };
 
-}
+}  // namespace web_video_server
 
-#endif
+#endif  // WEB_VIDEO_SERVER__LIBAV_STREAMER_HPP_

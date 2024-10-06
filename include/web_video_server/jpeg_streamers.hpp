@@ -28,10 +28,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef JPEG_STREAMERS_H_
-#define JPEG_STREAMERS_H_
+#ifndef WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_
+#define WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_
 
-#include <image_transport/image_transport.hpp>
+#include <string>
+
+#include "image_transport/image_transport.hpp"
 #include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
@@ -82,6 +84,6 @@ private:
   int quality_;
 };
 
-}
+}  // namespace web_video_server
 
-#endif
+#endif  // WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_

@@ -63,7 +63,7 @@ void Vp8Streamer::initializeEncoder()
   // Buffering settings
   int bufsize = 10;
   codec_context_->rc_buffer_size = bufsize;
-  codec_context_->rc_initial_buffer_occupancy = bufsize; //bitrate/3;
+  codec_context_->rc_initial_buffer_occupancy = bufsize;  // bitrate/3;
   av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
   av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
@@ -83,4 +83,4 @@ boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
   return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, node));
 }
 
-}
+}  // namespace web_video_server

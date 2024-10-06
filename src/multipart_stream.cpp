@@ -62,7 +62,7 @@ void MultipartStream::sendPartHeader(
   size_t payload_size)
 {
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.seconds());
+  snprintf(stamp, sizeof(stamp), "%.06lf", time.seconds());
   std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader>> headers(
     new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
@@ -125,4 +125,4 @@ bool MultipartStream::isBusy()
   return !(max_queue_size_ == 0 || pending_footers_.size() < max_queue_size_);
 }
 
-}
+}  // namespace web_video_server
