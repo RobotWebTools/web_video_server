@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(web_video_server)
 
+if(MSVC)
+    add_definitions(-D_WIN32_WINNT=0x0A00)
+endif()
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -8,11 +11,22 @@ find_package(catkin REQUIRED COMPONENTS roscpp roslib cv_bridge image_transport 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS thread)
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(avcodec libavcodec REQUIRED)
-pkg_check_modules(avformat libavformat REQUIRED)
-pkg_check_modules(avutil libavutil REQUIRED)
-pkg_check_modules(swscale libswscale REQUIRED)
+if(MSVC)
+  find_path( avcodec_INCLUDE_DIRS libavcodec/avcodec.h )
+  find_library( avcodec_LIBRARIES avcodec )
+  find_path( avformat_INCLUDE_DIRS libavformat/avformat.h )
+  find_library( avformat_LIBRARIES avformat )
+  find_path( avutil_INCLUDE_DIRS libavutil/avutil.h )
+  find_library( avutil_LIBRARIES avutil )
+  find_path( swscale_INCLUDE_DIRS libswscale/swscale.h )
+  find_library( swscale_LIBRARIES swscale )
+else()
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(avcodec libavcodec REQUIRED)
+  pkg_check_modules(avformat libavformat REQUIRED)
+  pkg_check_modules(avutil libavutil REQUIRED)
+  pkg_check_modules(swscale libswscale REQUIRED)
+endif()
 
 ###################################################
 ## Declare things to be passed to other projects ##
