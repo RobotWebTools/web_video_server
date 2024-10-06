@@ -94,7 +94,9 @@ if(BUILD_TESTING)
 
   # Skip ament_copyright check for humble
   if($ENV{ROS_DISTRO} STREQUAL "humble")
-    set(ament_cmake_copyright_FOUND TRUE)
+    list(APPEND AMENT_LINT_AUTO_EXCLUDE
+      ament_cmake_copyright
+    )
   endif()
 
   ament_lint_auto_find_test_dependencies()
