@@ -91,6 +91,12 @@ install(TARGETS ${PROJECT_NAME}
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
+
+  # Skip ament_copyright check for humble
+  if($ENV{ROS_DISTRO} STREQUAL "humble")
+    set(ament_cmake_copyright_FOUND TRUE)
+  endif()
+
   ament_lint_auto_find_test_dependencies()
 endif()
 
