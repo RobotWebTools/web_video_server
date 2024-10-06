@@ -1,6 +1,11 @@
 #include "web_video_server/png_streamers.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+
+#ifdef CV_BRIDGE_USES_OLD_HEADERS
+#include "cv_bridge/cv_bridge.h"
+#else
 #include "cv_bridge/cv_bridge.hpp"
+#endif
 
 namespace web_video_server
 {
