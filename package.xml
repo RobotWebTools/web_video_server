@@ -24,6 +24,7 @@
   <build_depend>async_web_server_cpp</build_depend>
   <build_depend>ffmpeg</build_depend>
   <build_depend>sensor_msgs</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>roslib</exec_depend>
@@ -32,4 +33,5 @@
   <exec_depend>async_web_server_cpp</exec_depend>
   <exec_depend>ffmpeg</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>dynamic_reconfigure</exec_depend>
 </package>
