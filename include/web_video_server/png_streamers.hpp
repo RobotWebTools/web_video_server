@@ -21,6 +21,7 @@ public:
 
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
   MultipartStream stream_;
@@ -47,6 +48,7 @@ public:
 
 protected:
   virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
   int quality_;

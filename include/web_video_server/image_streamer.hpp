@@ -60,6 +60,7 @@ public:
   virtual void start();
 
 protected:
+  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   virtual void sendImage(const cv::Mat &, const rclcpp::Time & time) = 0;
   virtual void restreamFrame(double max_age);
   virtual void initialize(const cv::Mat &);

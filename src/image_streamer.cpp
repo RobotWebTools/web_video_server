@@ -108,6 +108,26 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   }
 }
 
+cv::Mat ImageTransportImageStreamer::decodeImage(
+  const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+{
+  if (msg->encoding.find("F") != std::string::npos) {
+    // scale floating point images
+    cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
+    cv::Mat_<float> float_image = float_image_bridge;
+    double max_val;
+    cv::minMaxIdx(float_image, 0, &max_val);
+
+    if (max_val > 0) {
+      float_image *= (255 / max_val);
+    }
+    return float_image;
+  } else {
+    // Convert to OpenCV native BGR color
+    return cv_bridge::toCvCopy(msg, "bgr8")->image;
+  }
+}
+
 void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
@@ -116,22 +136,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
 
   cv::Mat img;
   try {
-    if (msg->encoding.find("F") != std::string::npos) {
-      // scale floating point images
-      cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
-      cv::Mat_<float> float_image = float_image_bridge;
-      double max_val;
-      cv::minMaxIdx(float_image, 0, &max_val);
-
-      if (max_val > 0) {
-        float_image *= (255 / max_val);
-      }
-      img = float_image;
-    } else {
-      // Convert to OpenCV native BGR color
-      img = cv_bridge::toCvCopy(msg, "bgr8")->image;
-    }
-
+    img = decodeImage(msg);
     int input_width = img.cols;
     int input_height = img.rows;
 
