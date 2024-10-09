@@ -112,13 +112,13 @@ void RosCompressedStreamer::sendImage(
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception");
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
     inactive_ = true;
     return;
   }

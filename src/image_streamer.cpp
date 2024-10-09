@@ -127,13 +127,13 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception");
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
     inactive_ = true;
     return;
   }
@@ -202,13 +202,13 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     last_frame = node_->now();
     sendImage(output_size_image, msg->header.stamp);
   } catch (cv_bridge::Exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (cv::Exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (boost::system::system_error & e) {
@@ -217,13 +217,13 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception");
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
     inactive_ = true;
     return;
   }
