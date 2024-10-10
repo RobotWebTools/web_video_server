@@ -142,7 +142,7 @@ void PngSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & ti
   .header("Pragma", "no-cache")
   .header("Content-type", "image/png")
   .header("Access-Control-Allow-Origin", "*")
-  .header("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size()))
+  .header("Content-Length", std::to_string(encoded_buffer.size()))
   .write(connection_);
   connection_->write_and_clear(encoded_buffer);
   inactive_ = true;

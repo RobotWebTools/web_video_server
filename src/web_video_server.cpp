@@ -97,7 +97,7 @@ WebVideoServer::WebVideoServer(rclcpp::Node::SharedPtr & node)
   try {
     server_.reset(
       new async_web_server_cpp::HttpServer(
-        address_, boost::lexical_cast<std::string>(port_),
+        address_, std::to_string(port_),
         boost::bind(&WebVideoServer::handle_request, this, _1, _2, _3, _4),
         server_threads
       )

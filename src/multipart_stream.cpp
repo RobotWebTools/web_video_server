@@ -67,10 +67,8 @@ void MultipartStream::sendPartHeader(
     new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
-  headers->push_back(
-    async_web_server_cpp::HttpHeader(
-      "Content-Length",
-      boost::lexical_cast<std::string>(payload_size)));
+  headers->push_back(async_web_server_cpp::HttpHeader("Content-Length",
+      std::to_string(payload_size)));
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
