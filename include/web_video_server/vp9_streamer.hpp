@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "image_transport/image_transport.hpp"
 #include "web_video_server/libav_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"

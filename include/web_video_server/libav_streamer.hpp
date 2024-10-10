@@ -42,6 +42,7 @@ extern "C"
 #include <libavutil/imgutils.h>
 }
 
+#include <memory>
 #include <string>
 
 #include "image_transport/image_transport.hpp"

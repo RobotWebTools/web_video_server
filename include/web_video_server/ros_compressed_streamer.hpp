@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "sensor_msgs/msg/compressed_image.hpp"

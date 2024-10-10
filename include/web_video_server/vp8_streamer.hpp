@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "image_transport/image_transport.hpp"
