@@ -33,8 +33,6 @@
 #include <chrono>
 #include <vector>
 
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -137,10 +135,8 @@ void WebVideoServer::restreamFrames(double max_age)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
-
-  for (itr_type itr = image_subscribers_.begin(); itr < image_subscribers_.end(); ++itr) {
-    (*itr)->restreamFrame(max_age);
+  for (auto& subscriber : image_subscribers_) {
+    subscriber->restreamFrame(max_age);
   }
 }
 
@@ -148,12 +144,11 @@ void WebVideoServer::cleanup_inactive_streams()
 {
   std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
   if (lock) {
-    typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
-    itr_type new_end = std::partition(
+    auto new_end = std::partition(
       image_subscribers_.begin(), image_subscribers_.end(),
       !boost::bind(&ImageStreamer::isInactive, _1));
     if (verbose_) {
-      for (itr_type itr = new_end; itr < image_subscribers_.end(); ++itr) {
+      for (auto itr = new_end; itr < image_subscribers_.end(); ++itr) {
         RCLCPP_INFO(node_->get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
       }
     }
@@ -326,8 +321,7 @@ bool WebVideoServer::handle_list_streams(
     "<head><title>ROS Image Topic List</title></head>"
     "<body><h1>Available ROS Image Topics:</h1>");
   connection->write("<ul>");
-  BOOST_FOREACH(std::string & camera_info_topic, camera_info_topics)
-  {
+  for(std::string & camera_info_topic : camera_info_topics) {
     if (boost::algorithm::ends_with(camera_info_topic, "/camera_info")) {
       std::string base_topic = camera_info_topic.substr(
         0,

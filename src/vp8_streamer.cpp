@@ -56,8 +56,8 @@ void Vp8Streamer::initializeEncoder()
   av_opt_map["drop_frame"] = "1";
   av_opt_map["error-resilient"] = "1";
 
-  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr) {
-    av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
+  for (auto & opt : av_opt_map) {
+    av_opt_set(codec_context_->priv_data, opt.first.c_str(), opt.second.c_str(), 0);
   }
 
   // Buffering settings
