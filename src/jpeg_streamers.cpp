@@ -47,7 +47,7 @@ MjpegStreamer::MjpegStreamer(
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 void MjpegStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
@@ -62,12 +62,12 @@ void MjpegStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
 }
 
-boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, node));
+  return std::make_shared<MjpegStreamer>(request, connection, node);
 }
 
 std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
@@ -91,7 +91,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
@@ -115,7 +115,7 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & t
   .header("Pragma", "no-cache")
   .header("Content-type", "image/jpeg")
   .header("Access-Control-Allow-Origin", "*")
-  .header("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size()))
+  .header("Content-Length", std::to_string(encoded_buffer.size()))
   .write(connection_);
   connection_->write_and_clear(encoded_buffer);
   inactive_ = true;

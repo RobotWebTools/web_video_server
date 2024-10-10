@@ -10,7 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 find_package(OpenCV REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
+find_package(Boost REQUIRED COMPONENTS system)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(avcodec libavcodec REQUIRED)
@@ -36,7 +36,6 @@ endif()
 
 ## Specify additional locations of header files
 include_directories(include
-  ${Boost_INCLUDE_DIRS}
   ${avcodec_INCLUDE_DIRS}
   ${avformat_INCLUDE_DIRS}
   ${avutil_INCLUDE_DIRS}
@@ -68,7 +67,8 @@ target_link_libraries(${PROJECT_NAME}
   cv_bridge::cv_bridge
   image_transport::image_transport
   rclcpp::rclcpp
-  ${Boost_LIBRARIES}
+  Boost::boost
+  Boost::system
   ${OpenCV_LIBS}
   ${avcodec_LIBRARIES}
   ${avformat_LIBRARIES}

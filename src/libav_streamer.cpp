@@ -217,7 +217,7 @@ void LibavStreamer::initializeEncoder()
 
 void LibavStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
 {
-  boost::mutex::scoped_lock lock(encode_mutex_);
+  std::scoped_lock lock(encode_mutex_);
   if (0 == first_image_timestamp_.nanoseconds()) {
     first_image_timestamp_ = time;
   }
@@ -303,13 +303,14 @@ LibavStreamerType::LibavStreamerType(
 {
 }
 
-boost::shared_ptr<ImageStreamer> LibavStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> LibavStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(
-    new LibavStreamer(request, connection, node, format_name_, codec_name_, content_type_));
+  return std::make_shared<LibavStreamer>(
+    request, connection, node, format_name_, codec_name_,
+    content_type_);
 }
 
 std::string LibavStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)

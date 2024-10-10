@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include <opencv2/opencv.hpp>
@@ -106,7 +107,7 @@ protected:
 
   rclcpp::Time last_frame;
   cv::Mat output_size_image;
-  boost::mutex send_mutex_;
+  std::mutex send_mutex_;
 
 private:
   image_transport::ImageTransport it_;
@@ -118,7 +119,7 @@ private:
 class ImageStreamerType
 {
 public:
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(
+  virtual std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node) = 0;

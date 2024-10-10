@@ -52,7 +52,7 @@ PngStreamer::PngStreamer(
 PngStreamer::~PngStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -78,12 +78,12 @@ void PngStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
   stream_.sendPartAndClear(time, "image/png", encoded_buffer);
 }
 
-boost::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new PngStreamer(request, connection, node));
+  return std::make_shared<PngStreamer>(request, connection, node);
 }
 
 std::string PngStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
@@ -107,7 +107,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
 PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
-  boost::mutex::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects sendImage.
 }
 
 cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -142,7 +142,7 @@ void PngSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & ti
   .header("Pragma", "no-cache")
   .header("Content-type", "image/png")
   .header("Access-Control-Allow-Origin", "*")
-  .header("Content-Length", boost::lexical_cast<std::string>(encoded_buffer.size()))
+  .header("Content-Length", std::to_string(encoded_buffer.size()))
   .write(connection_);
   connection_->write_and_clear(encoded_buffer);
   inactive_ = true;

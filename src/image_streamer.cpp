@@ -117,7 +117,7 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   }
   try {
     if (last_frame + rclcpp::Duration::from_seconds(max_age) < node_->now() ) {
-      boost::mutex::scoped_lock lock(send_mutex_);
+      std::scoped_lock lock(send_mutex_);
       // don't update last_frame, it may remain an old value.
       sendImage(output_size_image, node_->now());
     }
@@ -184,7 +184,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
       cv::flip(img, img, true);
     }
 
-    boost::mutex::scoped_lock lock(send_mutex_);  // protects output_size_image
+    std::scoped_lock lock(send_mutex_);  // protects output_size_image
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       cv::Size new_size(output_width_, output_height_);

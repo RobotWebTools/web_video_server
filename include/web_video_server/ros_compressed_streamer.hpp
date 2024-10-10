@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "sensor_msgs/msg/compressed_image.hpp"
@@ -63,14 +64,14 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   rclcpp::Time last_frame;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
-  boost::mutex send_mutex_;
+  std::mutex send_mutex_;
   std::string qos_profile_name_;
 };
 
 class RosCompressedStreamerType : public ImageStreamerType
 {
 public:
-  boost::shared_ptr<ImageStreamer> create_streamer(
+  std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);

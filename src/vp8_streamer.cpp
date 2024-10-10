@@ -56,8 +56,8 @@ void Vp8Streamer::initializeEncoder()
   av_opt_map["drop_frame"] = "1";
   av_opt_map["error-resilient"] = "1";
 
-  for (AvOptMap::iterator itr = av_opt_map.begin(); itr != av_opt_map.end(); ++itr) {
-    av_opt_set(codec_context_->priv_data, itr->first.c_str(), itr->second.c_str(), 0);
+  for (auto & opt : av_opt_map) {
+    av_opt_set(codec_context_->priv_data, opt.first.c_str(), opt.second.c_str(), 0);
   }
 
   // Buffering settings
@@ -75,12 +75,12 @@ Vp8StreamerType::Vp8StreamerType()
 {
 }
 
-boost::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new Vp8Streamer(request, connection, node));
+  return std::make_shared<Vp8Streamer>(request, connection, node);
 }
 
 }  // namespace web_video_server

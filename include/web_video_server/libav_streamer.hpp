@@ -42,6 +42,7 @@ extern "C"
 #include <libavutil/imgutils.h>
 }
 
+#include <memory>
 #include <string>
 
 #include "image_transport/image_transport.hpp"
@@ -78,7 +79,7 @@ private:
   AVFrame * frame_;
   struct SwsContext * sws_context_;
   rclcpp::Time first_image_timestamp_;
-  boost::mutex encode_mutex_;
+  std::mutex encode_mutex_;
 
   std::string format_name_;
   std::string codec_name_;
@@ -98,7 +99,7 @@ public:
     const std::string & format_name, const std::string & codec_name,
     const std::string & content_type);
 
-  boost::shared_ptr<ImageStreamer> create_streamer(
+  std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
