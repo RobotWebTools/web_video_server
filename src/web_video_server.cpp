@@ -135,7 +135,7 @@ void WebVideoServer::restreamFrames(double max_age)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  for (auto& subscriber : image_subscribers_) {
+  for (auto & subscriber : image_subscribers_) {
     subscriber->restreamFrame(max_age);
   }
 }
