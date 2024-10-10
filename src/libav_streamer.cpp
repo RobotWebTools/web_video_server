@@ -217,7 +217,7 @@ void LibavStreamer::initializeEncoder()
 
 void LibavStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
 {
-  boost::mutex::scoped_lock lock(encode_mutex_);
+  std::scoped_lock lock(encode_mutex_);
   if (0 == first_image_timestamp_.nanoseconds()) {
     first_image_timestamp_ = time;
   }

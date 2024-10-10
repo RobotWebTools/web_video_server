@@ -106,7 +106,7 @@ protected:
 
   rclcpp::Time last_frame;
   cv::Mat output_size_image;
-  boost::mutex send_mutex_;
+  std::mutex send_mutex_;
 
 private:
   image_transport::ImageTransport it_;

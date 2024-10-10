@@ -63,7 +63,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   rclcpp::Time last_frame;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
-  boost::mutex send_mutex_;
+  std::mutex send_mutex_;
   std::string qos_profile_name_;
 };
 

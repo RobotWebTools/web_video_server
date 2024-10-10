@@ -135,7 +135,7 @@ void WebVideoServer::spin()
 
 void WebVideoServer::restreamFrames(double max_age)
 {
-  boost::mutex::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(subscriber_mutex_);
 
   typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
 
@@ -146,7 +146,7 @@ void WebVideoServer::restreamFrames(double max_age)
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  boost::mutex::scoped_lock lock(subscriber_mutex_, boost::try_to_lock);
+  std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
   if (lock) {
     typedef std::vector<std::shared_ptr<ImageStreamer>>::iterator itr_type;
     itr_type new_end = std::partition(
@@ -214,7 +214,7 @@ bool WebVideoServer::handle_stream(
     std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request,
         connection, node_);
     streamer->start();
-    boost::mutex::scoped_lock lock(subscriber_mutex_);
+    std::scoped_lock lock(subscriber_mutex_);
     image_subscribers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
@@ -232,7 +232,7 @@ bool WebVideoServer::handle_snapshot(
       connection, node_);
   streamer->start();
 
-  boost::mutex::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(subscriber_mutex_);
   image_subscribers_.push_back(streamer);
   return true;
 }

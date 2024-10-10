@@ -78,7 +78,7 @@ private:
   AVFrame * frame_;
   struct SwsContext * sws_context_;
   rclcpp::Time first_image_timestamp_;
-  boost::mutex encode_mutex_;
+  std::mutex encode_mutex_;
 
   std::string format_name_;
   std::string codec_name_;
