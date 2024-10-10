@@ -308,8 +308,9 @@ std::shared_ptr<ImageStreamer> LibavStreamerType::create_streamer(
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return std::make_shared<LibavStreamer>(request, connection, node, format_name_, codec_name_,
-      content_type_);
+  return std::make_shared<LibavStreamer>(
+    request, connection, node, format_name_, codec_name_,
+    content_type_);
 }
 
 std::string LibavStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)

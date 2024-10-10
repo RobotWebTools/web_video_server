@@ -206,8 +206,8 @@ bool WebVideoServer::handle_stream(
         type = "mjpeg";
       }
     }
-    std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(request,
-        connection, node_);
+    std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(
+      request, connection, node_);
     streamer->start();
     std::scoped_lock lock(subscriber_mutex_);
     image_subscribers_.push_back(streamer);
@@ -223,8 +223,8 @@ bool WebVideoServer::handle_snapshot(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  std::shared_ptr<ImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(request,
-      connection, node_);
+  std::shared_ptr<ImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(
+    request, connection, node_);
   streamer->start();
 
   std::scoped_lock lock(subscriber_mutex_);
@@ -321,7 +321,7 @@ bool WebVideoServer::handle_list_streams(
     "<head><title>ROS Image Topic List</title></head>"
     "<body><h1>Available ROS Image Topics:</h1>");
   connection->write("<ul>");
-  for(std::string & camera_info_topic : camera_info_topics) {
+  for (std::string & camera_info_topic : camera_info_topics) {
     if (boost::algorithm::ends_with(camera_info_topic, "/camera_info")) {
       std::string base_topic = camera_info_topic.substr(
         0,
