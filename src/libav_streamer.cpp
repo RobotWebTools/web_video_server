@@ -84,7 +84,7 @@ static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_si
   std::vector<uint8_t> encoded_frame;
   encoded_frame.assign(buffer, buffer + buffer_size);
   connection->write_and_clear(encoded_frame);
-  return 0;  // TODO: can this fail?
+  return 0;
 }
 
 void LibavStreamer::initialize(const cv::Mat & img)
