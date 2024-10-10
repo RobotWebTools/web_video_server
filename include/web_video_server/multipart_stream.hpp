@@ -28,13 +28,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef MULTIPART_STREAM_H_
-#define MULTIPART_STREAM_H_
-
-#include <rclcpp/rclcpp.hpp>
-#include <async_web_server_cpp/http_connection.hpp>
+#pragma once
 
 #include <queue>
+#include <memory>
+#include <vector>
+#include <string>
+
+#include "rclcpp/rclcpp.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server
 {
@@ -75,6 +77,4 @@ private:
   std::queue<PendingFooter> pending_footers_;
 };
 
-}
-
-#endif
+}  // namespace web_video_server

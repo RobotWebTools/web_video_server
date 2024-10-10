@@ -28,18 +28,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef WEB_VIDEO_SERVER_H_
-#define WEB_VIDEO_SERVER_H_
+#pragma once
 
-#include <rclcpp/rclcpp.hpp>
+#include <map>
+#include <string>
+#include <vector>
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
-#include <cv_bridge/cv_bridge.h>
+#include "cv_bridge/cv_bridge.h"
 #else
-#include <cv_bridge/cv_bridge.hpp>
+#include "cv_bridge/cv_bridge.hpp"
 #endif
 
-#include <vector>
+#include "rclcpp/rclcpp.hpp"
 #include "web_video_server/image_streamer.hpp"
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -59,7 +60,7 @@ public:
    * @brief  Constructor
    * @return
    */
-  WebVideoServer(rclcpp::Node::SharedPtr & node);
+  explicit WebVideoServer(rclcpp::Node::SharedPtr & node);
 
   /**
    * @brief  Destructor - Cleans up
@@ -121,6 +122,4 @@ private:
   boost::mutex subscriber_mutex_;
 };
 
-}
-
-#endif
+}  // namespace web_video_server

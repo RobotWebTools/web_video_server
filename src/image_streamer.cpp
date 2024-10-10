@@ -118,7 +118,8 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
   try {
     if (last_frame + rclcpp::Duration::from_seconds(max_age) < node_->now() ) {
       boost::mutex::scoped_lock lock(send_mutex_);
-      sendImage(output_size_image, node_->now() ); // don't update last_frame, it may remain an old value.
+      // don't update last_frame, it may remain an old value.
+      sendImage(output_size_image, node_->now());
     }
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -126,13 +127,13 @@ void ImageTransportImageStreamer::restreamFrame(double max_age)
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception");
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
     inactive_ = true;
     return;
   }
@@ -183,7 +184,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
       cv::flip(img, img, true);
     }
 
-    boost::mutex::scoped_lock lock(send_mutex_); // protects output_size_image
+    boost::mutex::scoped_lock lock(send_mutex_);  // protects output_size_image
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       cv::Size new_size(output_width_, output_height_);
@@ -201,13 +202,13 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     last_frame = node_->now();
     sendImage(output_size_image, msg->header.stamp);
   } catch (cv_bridge::Exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (cv::Exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "cv_bridge exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (boost::system::system_error & e) {
@@ -216,16 +217,16 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception: %s", e.what());
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    // TODO THROTTLE with 30
-    RCLCPP_ERROR(node_->get_logger(), "exception");
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
     inactive_ = true;
     return;
   }
 }
 
-}
+}  // namespace web_video_server

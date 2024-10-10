@@ -27,10 +27,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef VP9_STREAMERS_H_
-#define VP9_STREAMERS_H_
+#pragma once
 
-#include <image_transport/image_transport.hpp>
+#include "image_transport/image_transport.hpp"
 #include "web_video_server/libav_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
@@ -61,6 +60,4 @@ public:
     rclcpp::Node::SharedPtr node);
 };
 
-}
-
-#endif
+}  // namespace web_video_server

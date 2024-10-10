@@ -28,15 +28,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include "web_video_server/web_video_server.hpp"
+
+#include <chrono>
+#include <vector>
+
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <chrono>
-#include <vector>
-#include <sensor_msgs/image_encodings.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "web_video_server/web_video_server.hpp"
+#include "sensor_msgs/image_encodings.hpp"
 #include "web_video_server/ros_compressed_streamer.hpp"
 #include "web_video_server/jpeg_streamers.hpp"
 #include "web_video_server/png_streamers.hpp"
@@ -46,7 +48,7 @@
 #include "async_web_server_cpp/http_reply.hpp"
 
 using namespace std::chrono_literals;
-using namespace boost::placeholders;
+using namespace boost::placeholders;  // NOLINT
 
 namespace web_video_server
 {
@@ -246,7 +248,6 @@ bool WebVideoServer::handle_stream_viewer(
     std::string topic = request.get_query_param_value_or_default("topic", "");
     // Fallback for topics without corresponding compressed topics
     if (type == std::string("ros_compressed")) {
-
       std::string compressed_topic_name = topic + "/compressed";
       auto tnat = node_->get_topic_names_and_types();
       bool did_find_compressed_topic = false;
@@ -305,8 +306,7 @@ bool WebVideoServer::handle_list_streams(
     }
     auto & topic_name = topic_and_types.first;
     auto & topic_type = topic_and_types.second[0];  // explicitly take the first
-    // TODO debugging
-    fprintf(stderr, "topic_type: %s\n", topic_type.c_str());
+
     if (topic_type == "sensor_msgs/msg/Image") {
       image_topics.push_back(topic_name);
     } else if (topic_type == "sensor_msgs/msg/CameraInfo") {
@@ -385,7 +385,7 @@ bool WebVideoServer::handle_list_streams(
   return true;
 }
 
-}
+}  // namespace web_video_server
 
 int main(int argc, char ** argv)
 {

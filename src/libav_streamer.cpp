@@ -31,7 +31,7 @@
 #include "web_video_server/libav_streamer.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 
-/*https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg*/
+// https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)
 #define CODEC_FLAG_GLOBAL_HEADER AV_CODEC_FLAG_GLOBAL_HEADER
 
@@ -84,7 +84,7 @@ static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_si
   std::vector<uint8_t> encoded_frame;
   encoded_frame.assign(buffer, buffer + buffer_size);
   connection->write_and_clear(encoded_frame);
-  return 0; // TODO: can this fail?
+  return 0;
 }
 
 void LibavStreamer::initialize(const cv::Mat & img)
@@ -120,7 +120,7 @@ void LibavStreamer::initialize(const cv::Mat & img)
   format_context_->max_interleave_delta = 0;
 
   // Load codec
-  if (codec_name_.empty()) { // use default codec if none specified
+  if (codec_name_.empty()) {  // use default codec if none specified
     codec_ = avcodec_find_encoder(format_context_->oformat->video_codec);
   } else {
     codec_ = avcodec_find_encoder_by_name(codec_name_.c_str());
@@ -321,4 +321,4 @@ std::string LibavStreamerType::create_viewer(const async_web_server_cpp::HttpReq
   return ss.str();
 }
 
-}
+}  // namespace web_video_server

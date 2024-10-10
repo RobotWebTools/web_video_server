@@ -77,4 +77,4 @@ boost::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
   return boost::shared_ptr<ImageStreamer>(new H264Streamer(request, connection, node));
 }
 
-}
+}  // namespace web_video_server
