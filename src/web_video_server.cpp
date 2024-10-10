@@ -146,7 +146,7 @@ void WebVideoServer::cleanup_inactive_streams()
   if (lock) {
     auto new_end = std::partition(
       image_subscribers_.begin(), image_subscribers_.end(),
-      !boost::bind(&ImageStreamer::isInactive, _1));
+      [](const std::shared_ptr<ImageStreamer> & streamer) {return !streamer->isInactive();});
     if (verbose_) {
       for (auto itr = new_end; itr < image_subscribers_.end(); ++itr) {
         RCLCPP_INFO(node_->get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
