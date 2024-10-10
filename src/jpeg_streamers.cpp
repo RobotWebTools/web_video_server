@@ -62,12 +62,12 @@ void MjpegStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
 }
 
-boost::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new MjpegStreamer(request, connection, node));
+  return std::make_shared<MjpegStreamer>(request, connection, node);
 }
 
 std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)

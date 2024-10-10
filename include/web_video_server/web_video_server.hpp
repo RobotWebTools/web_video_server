@@ -114,11 +114,11 @@ private:
   bool verbose_;
   std::string default_stream_type_;
 
-  boost::shared_ptr<async_web_server_cpp::HttpServer> server_;
+  std::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
-  std::vector<boost::shared_ptr<ImageStreamer>> image_subscribers_;
-  std::map<std::string, boost::shared_ptr<ImageStreamerType>> stream_types_;
+  std::vector<std::shared_ptr<ImageStreamer>> image_subscribers_;
+  std::map<std::string, std::shared_ptr<ImageStreamerType>> stream_types_;
   boost::mutex subscriber_mutex_;
 };
 

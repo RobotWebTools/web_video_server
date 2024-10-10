@@ -78,12 +78,12 @@ void PngStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
   stream_.sendPartAndClear(time, "image/png", encoded_buffer);
 }
 
-boost::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new PngStreamer(request, connection, node));
+  return std::make_shared<PngStreamer>(request, connection, node);
 }
 
 std::string PngStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)

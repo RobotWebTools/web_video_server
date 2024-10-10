@@ -57,7 +57,7 @@ class H264StreamerType : public LibavStreamerType
 {
 public:
   H264StreamerType();
-  virtual boost::shared_ptr<ImageStreamer> create_streamer(
+  std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);

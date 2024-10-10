@@ -57,12 +57,12 @@ Vp9StreamerType::Vp9StreamerType()
 {
 }
 
-boost::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new Vp9Streamer(request, connection, node));
+  return std::make_shared<Vp9Streamer>(request, connection, node);
 }
 
 }  // namespace web_video_server

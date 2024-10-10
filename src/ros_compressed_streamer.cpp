@@ -135,12 +135,12 @@ void RosCompressedStreamer::imageCallback(
 }
 
 
-boost::shared_ptr<ImageStreamer> RosCompressedStreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> RosCompressedStreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new RosCompressedStreamer(request, connection, node));
+  return std::make_shared<RosCompressedStreamer>(request, connection, node);
 }
 
 std::string RosCompressedStreamerType::create_viewer(

@@ -69,12 +69,12 @@ H264StreamerType::H264StreamerType()
 {
 }
 
-boost::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
+std::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return boost::shared_ptr<ImageStreamer>(new H264Streamer(request, connection, node));
+  return std::make_shared<H264Streamer>(request, connection, node);
 }
 
 }  // namespace web_video_server
