@@ -28,8 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef WEB_VIDEO_SERVER__MULTIPART_STREAM_HPP_
-#define WEB_VIDEO_SERVER__MULTIPART_STREAM_HPP_
+#pragma once
 
 #include <queue>
 #include <memory>
@@ -79,5 +78,3 @@ private:
 };
 
 }  // namespace web_video_server
-
-#endif  // WEB_VIDEO_SERVER__MULTIPART_STREAM_HPP_

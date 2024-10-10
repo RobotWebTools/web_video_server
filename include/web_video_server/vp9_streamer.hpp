@@ -27,8 +27,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef WEB_VIDEO_SERVER__VP9_STREAMER_HPP_
-#define WEB_VIDEO_SERVER__VP9_STREAMER_HPP_
+#pragma once
 
 #include "image_transport/image_transport.hpp"
 #include "web_video_server/libav_streamer.hpp"
@@ -62,5 +61,3 @@ public:
 };
 
 }  // namespace web_video_server
-
-#endif  // WEB_VIDEO_SERVER__VP9_STREAMER_HPP_

@@ -28,8 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_
-#define WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_
+#pragma once
 
 #include <string>
 
@@ -85,5 +84,3 @@ private:
 };
 
 }  // namespace web_video_server
-
-#endif  // WEB_VIDEO_SERVER__JPEG_STREAMERS_HPP_
