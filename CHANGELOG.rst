@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.0 (2024-10-11)
+------------------
 * Replace boost with std (#164)
 * Add ament_cpplint test, resolve TODOs (#162)
 * Add license headers to all C++ source files, update copyrights (#161)
