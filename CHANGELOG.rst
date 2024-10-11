@@ -2,6 +2,31 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.0.0 (2024-10-11)
+------------------
+* Replace boost with std (#164)
+* Add ament_cpplint test, resolve TODOs (#162)
+* Add license headers to all C++ source files, update copyrights (#161)
+* Add support for alpha pngs by adding per stream type decode functions (backport #106) (#163)
+* Add link to /stream in stream list (backport #118) (#160)
+* Add support for jpg compression format (backport #142) (#159)
+* Reformat the code with uncrustify (#158)
+* Use hpp extension for headers (#157)
+* Fix request logging, remove global parameters (#156)
+* Replace nh with node (#155)
+* Fix declaring and retrieving node parameters (#154)
+* Fix usage of deprecated libavcodec functions (#150)
+* Use cv_bridge hpp headers when available (#149)
+* Use target_link_libraries instead of ament_target_dependencies where applicable
+* Don't install headers
+* Add CI workflow and ament_lint tests (#148)
+* Update package maintainer
+* allow topic searches to continue past invalid multi-type topics. (#146)
+* Add QoS profile query parameters (#133)
+* Fix build for ROS2 Humble (#129)
+* Fix build for ROS2 Foxy (#111)
+* Contributors: Błażej Sowa, Domenic Rodriguez, Robert Brothers, Sebastian Castro, Tina Tian, TobinHall, Matthew Bries
+
 1.0.0 (2019-09-20)
 ------------------
 * Port to ROS 2
