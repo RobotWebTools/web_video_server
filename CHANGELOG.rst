@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.0.1 (2024-10-26)
+------------------
 * Add ros_environment to test dependencies (#166)
 * Contributors: Błażej Sowa
 
