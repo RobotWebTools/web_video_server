@@ -108,8 +108,9 @@ void JpegSnapshotStreamer::sendImage(
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];
-  snprintf(stamp, sizeof(stamp), "%.06lf",
-      std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
+  snprintf(
+    stamp, sizeof(stamp), "%.06lf",
+    std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
   .header("Server", "web_video_server")

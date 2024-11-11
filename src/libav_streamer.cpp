@@ -276,8 +276,8 @@ void LibavStreamer::sendImage(
     std::size_t size;
     uint8_t * output_buf;
 
-    double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(time -
-        first_image_timestamp_.value()).count();
+    double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(
+      time - first_image_timestamp_.value()).count();
     // Encode video at 1/0.95 to minimize delay
     pkt->pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt->pts <= 0) {

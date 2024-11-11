@@ -61,8 +61,9 @@ void MultipartStream::sendPartHeader(
   size_t payload_size)
 {
   char stamp[20];
-  snprintf(stamp, sizeof(stamp), "%.06lf",
-      std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
+  snprintf(
+    stamp, sizeof(stamp), "%.06lf",
+    std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
   std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader>> headers(
     new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
@@ -114,8 +115,8 @@ bool MultipartStream::isBusy()
       pending_footers_.pop();
     } else {
       auto footer_time = pending_footers_.front().timestamp;
-      if (std::chrono::duration_cast<std::chrono::duration<double>>((current_time -
-        footer_time)).count() > 0.5)
+      if (std::chrono::duration_cast<std::chrono::duration<double>>(
+          (current_time - footer_time)).count() > 0.5)
       {
         pending_footers_.pop();
       } else {
