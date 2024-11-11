@@ -43,6 +43,7 @@ extern "C"
 }
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "image_transport/image_transport.hpp"
@@ -66,7 +67,7 @@ public:
 
 protected:
   virtual void initializeEncoder();
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
   virtual void initialize(const cv::Mat &);
   AVFormatContext * format_context_;
   const AVCodec * codec_;
@@ -78,7 +79,7 @@ protected:
 private:
   AVFrame * frame_;
   struct SwsContext * sws_context_;
-  rclcpp::Time first_image_timestamp_;
+  std::optional<std::chrono::steady_clock::time_point> first_image_timestamp_;
   std::mutex encode_mutex_;
 
   std::string format_name_;

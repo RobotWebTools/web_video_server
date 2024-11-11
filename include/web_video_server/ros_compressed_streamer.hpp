@@ -51,18 +51,18 @@ public:
     rclcpp::Node::SharedPtr node);
   ~RosCompressedStreamer();
   virtual void start();
-  virtual void restreamFrame(double max_age);
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
 
 protected:
   virtual void sendImage(
     const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
-    const rclcpp::Time & time);
+    const std::chrono::steady_clock::time_point & time);
 
 private:
   void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
-  rclcpp::Time last_frame;
+  std::chrono::steady_clock::time_point last_frame_;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
   std::mutex send_mutex_;
   std::string qos_profile_name_;

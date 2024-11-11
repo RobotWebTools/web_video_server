@@ -110,7 +110,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
 
   if (publish_rate_ > 0) {
-    create_wall_timer(1s / publish_rate_, [this]() {restreamFrames(1.0 / publish_rate_);});
+    create_wall_timer(1s / publish_rate_, [this]() {restreamFrames(1s / publish_rate_);});
   }
 
   cleanup_timer_ = create_wall_timer(500ms, [this]() {cleanup_inactive_streams();});
@@ -123,7 +123,7 @@ WebVideoServer::~WebVideoServer()
   server_->stop();
 }
 
-void WebVideoServer::restreamFrames(double max_age)
+void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
 {
   std::scoped_lock lock(subscriber_mutex_);
 

@@ -35,11 +35,10 @@ namespace web_video_server
 {
 
 MultipartStream::MultipartStream(
-  std::function<rclcpp::Time()> get_now,
   async_web_server_cpp::HttpConnectionPtr & connection,
   const std::string & boundry,
   std::size_t max_queue_size)
-: get_now_(get_now), connection_(connection), boundry_(boundry), max_queue_size_(max_queue_size)
+: connection_(connection), boundry_(boundry), max_queue_size_(max_queue_size)
 {}
 
 void MultipartStream::sendInitialHeader()
@@ -58,11 +57,12 @@ void MultipartStream::sendInitialHeader()
 }
 
 void MultipartStream::sendPartHeader(
-  const rclcpp::Time & time, const std::string & type,
+  const std::chrono::steady_clock::time_point & time, const std::string & type,
   size_t payload_size)
 {
   char stamp[20];
-  snprintf(stamp, sizeof(stamp), "%.06lf", time.seconds());
+  snprintf(stamp, sizeof(stamp), "%.06lf",
+      std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
   std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader>> headers(
     new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
@@ -73,7 +73,7 @@ void MultipartStream::sendPartHeader(
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
-void MultipartStream::sendPartFooter(const rclcpp::Time & time)
+void MultipartStream::sendPartFooter(const std::chrono::steady_clock::time_point & time)
 {
   std::shared_ptr<std::string> str(new std::string("\r\n--" + boundry_ + "\r\n"));
   PendingFooter pf;
@@ -84,7 +84,7 @@ void MultipartStream::sendPartFooter(const rclcpp::Time & time)
 }
 
 void MultipartStream::sendPartAndClear(
-  const rclcpp::Time & time, const std::string & type,
+  const std::chrono::steady_clock::time_point & time, const std::string & type,
   std::vector<unsigned char> & data)
 {
   if (!isBusy()) {
@@ -95,7 +95,7 @@ void MultipartStream::sendPartAndClear(
 }
 
 void MultipartStream::sendPart(
-  const rclcpp::Time & time, const std::string & type,
+  const std::chrono::steady_clock::time_point & time, const std::string & type,
   const boost::asio::const_buffer & buffer,
   async_web_server_cpp::HttpConnection::ResourcePtr resource)
 {
@@ -108,13 +108,15 @@ void MultipartStream::sendPart(
 
 bool MultipartStream::isBusy()
 {
-  rclcpp::Time currentTime = get_now_();
+  auto current_time = std::chrono::steady_clock::now();
   while (!pending_footers_.empty()) {
     if (pending_footers_.front().contents.expired()) {
       pending_footers_.pop();
     } else {
-      rclcpp::Time footerTime = pending_footers_.front().timestamp;
-      if ((currentTime - footerTime).seconds() > 0.5) {
+      auto footer_time = pending_footers_.front().timestamp;
+      if (std::chrono::duration_cast<std::chrono::duration<double>>((current_time -
+        footer_time)).count() > 0.5)
+      {
         pending_footers_.pop();
       } else {
         break;

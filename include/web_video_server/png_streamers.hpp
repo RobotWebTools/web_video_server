@@ -51,7 +51,7 @@ public:
   ~PngStreamer();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
   virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:

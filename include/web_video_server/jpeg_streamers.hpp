@@ -52,7 +52,7 @@ public:
   ~MjpegStreamer();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
 
 private:
   MultipartStream stream_;
@@ -78,7 +78,7 @@ public:
   ~JpegSnapshotStreamer();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
 
 private:
   int quality_;

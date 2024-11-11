@@ -110,16 +110,16 @@ void ImageTransportImageStreamer::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportImageStreamer::restreamFrame(double max_age)
+void ImageTransportImageStreamer::restreamFrame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || !initialized_) {
     return;
   }
   try {
-    if (last_frame + rclcpp::Duration::from_seconds(max_age) < node_->now() ) {
+    if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
       std::scoped_lock lock(send_mutex_);
       // don't update last_frame, it may remain an old value.
-      sendImage(output_size_image, node_->now());
+      sendImage(output_size_image, std::chrono::steady_clock::now());
     }
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -199,8 +199,8 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
       initialized_ = true;
     }
 
-    last_frame = node_->now();
-    sendImage(output_size_image, msg->header.stamp);
+    last_frame_ = std::chrono::steady_clock::now();
+    sendImage(output_size_image, last_frame_);
   } catch (cv_bridge::Exception & e) {
     auto & clk = *node_->get_clock();
     RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());

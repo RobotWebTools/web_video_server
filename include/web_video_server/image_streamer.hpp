@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <string>
 
@@ -64,7 +65,7 @@ public:
   /**
    * Restreams the last received image frame if older than max_age.
    */
-  virtual void restreamFrame(double max_age) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
 
   std::string getTopic()
   {
@@ -94,8 +95,8 @@ public:
 
 protected:
   virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  virtual void sendImage(const cv::Mat &, const rclcpp::Time & time) = 0;
-  virtual void restreamFrame(double max_age);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -105,7 +106,7 @@ protected:
   std::string default_transport_;
   std::string qos_profile_name_;
 
-  rclcpp::Time last_frame;
+  std::chrono::steady_clock::time_point last_frame_;
   cv::Mat output_size_image;
   std::mutex send_mutex_;
 
