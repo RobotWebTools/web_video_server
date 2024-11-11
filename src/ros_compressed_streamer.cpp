@@ -21,19 +21,22 @@ void RosCompressedStreamer::start() {
   image_sub_ = nh_.subscribe(compressed_topic, 1, &RosCompressedStreamer::imageCallback, this);
 }
 
-void RosCompressedStreamer::restreamFrame(double max_age)
+void RosCompressedStreamer::restreamFrame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || (last_msg == 0))
     return;
 
-  if ( last_frame + ros::Duration(max_age) < ros::Time::now() ) {
+  if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
     boost::mutex::scoped_lock lock(send_mutex_);
-    sendImage(last_msg, ros::Time::now() ); // don't update last_frame, it may remain an old value.
+    // don't update last_frame, it may remain an old value.
+    sendImage(last_msg, std::chrono::steady_clock::now());
   }
 }
 
-void RosCompressedStreamer::sendImage(const sensor_msgs::CompressedImageConstPtr &msg,
-                                      const ros::Time &time) {
+void RosCompressedStreamer::sendImage(
+  const sensor_msgs::CompressedImageConstPtr & msg,
+  const std::chrono::steady_clock::time_point & time)
+{
   try {
     std::string content_type;
     if(msg->format.find("jpeg") != std::string::npos || msg->format.find("jpg") != std::string::npos) {
@@ -74,8 +77,8 @@ void RosCompressedStreamer::sendImage(const sensor_msgs::CompressedImageConstPtr
 void RosCompressedStreamer::imageCallback(const sensor_msgs::CompressedImageConstPtr &msg) {
   boost::mutex::scoped_lock lock(send_mutex_); // protects last_msg and last_frame
   last_msg = msg;
-  last_frame = ros::Time(msg->header.stamp.sec, msg->header.stamp.nsec);
-  sendImage(last_msg, last_frame);
+  last_frame_ = std::chrono::steady_clock::now();
+  sendImage(last_msg, last_frame_);
 }
 
 

@@ -18,7 +18,9 @@ MjpegStreamer::~MjpegStreamer()
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
-void MjpegStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void MjpegStreamer::sendImage(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
 {
   std::vector<int> encode_params;
 #if CV_VERSION_MAJOR >= 3
@@ -64,7 +66,9 @@ JpegSnapshotStreamer::~JpegSnapshotStreamer()
   boost::mutex::scoped_lock lock(send_mutex_); // protects sendImage.
 }
 
-void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void JpegSnapshotStreamer::sendImage(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
 {
   std::vector<int> encode_params;
 #if CV_VERSION_MAJOR >= 3
@@ -78,7 +82,8 @@ void JpegSnapshotStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];
-  sprintf(stamp, "%.06lf", time.toSec());
+  snprintf(stamp, sizeof(stamp), "%.06lf",
+      std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
       .header("Connection", "close")
       .header("Server", "web_video_server")

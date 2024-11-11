@@ -18,7 +18,7 @@ public:
               ros::NodeHandle& nh);
   ~PngStreamer();
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time);
   virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
 
 private:
@@ -42,7 +42,7 @@ public:
                       async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh);
   ~PngSnapshotStreamer();
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time);
   virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
 
 private:

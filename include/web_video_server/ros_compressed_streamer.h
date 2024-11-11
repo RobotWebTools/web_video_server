@@ -18,16 +18,16 @@ public:
   ~RosCompressedStreamer();
 
   virtual void start();
-  virtual void restreamFrame(double max_age);
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual void sendImage(const sensor_msgs::CompressedImageConstPtr &msg, const ros::Time &time);
+  virtual void sendImage(const sensor_msgs::CompressedImageConstPtr &msg, const std::chrono::steady_clock::time_point &time);
 
 private:
   void imageCallback(const sensor_msgs::CompressedImageConstPtr &msg);
   MultipartStream stream_;
   ros::Subscriber image_sub_;
-  ros::Time last_frame;
+  std::chrono::steady_clock::time_point last_frame_;
   sensor_msgs::CompressedImageConstPtr last_msg;
   boost::mutex send_mutex_;
 };

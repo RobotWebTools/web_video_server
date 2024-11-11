@@ -10,7 +10,7 @@ namespace web_video_server
 {
 
 struct PendingFooter {
-  ros::Time timestamp;
+  std::chrono::steady_clock::time_point timestamp;
   boost::weak_ptr<std::string> contents;
 };
 
@@ -21,10 +21,10 @@ public:
                   std::size_t max_queue_size=1);
 
   void sendInitialHeader();
-  void sendPartHeader(const ros::Time &time, const std::string& type, size_t payload_size);
-  void sendPartFooter(const ros::Time &time);
-  void sendPartAndClear(const ros::Time &time, const std::string& type, std::vector<unsigned char> &data);
-  void sendPart(const ros::Time &time, const std::string& type, const boost::asio::const_buffer &buffer,
+  void sendPartHeader(const std::chrono::steady_clock::time_point &time, const std::string& type, size_t payload_size);
+  void sendPartFooter(const std::chrono::steady_clock::time_point &time);
+  void sendPartAndClear(const std::chrono::steady_clock::time_point &time, const std::string& type, std::vector<unsigned char> &data);
+  void sendPart(const std::chrono::steady_clock::time_point &time, const std::string& type, const boost::asio::const_buffer &buffer,
 		async_web_server_cpp::HttpConnection::ResourcePtr resource);
 
 private:

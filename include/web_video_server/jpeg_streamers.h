@@ -18,7 +18,7 @@ public:
                 ros::NodeHandle& nh);
   ~MjpegStreamer();
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time);
 
 private:
   MultipartStream stream_;
@@ -41,7 +41,7 @@ public:
                        async_web_server_cpp::HttpConnectionPtr connection, ros::NodeHandle& nh);
   ~JpegSnapshotStreamer();
 protected:
-  virtual void sendImage(const cv::Mat &, const ros::Time &time);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time);
 
 private:
   int quality_;
