@@ -120,7 +120,9 @@ cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSha
   }
 }
 
-void PngSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & time)
+void PngSnapshotStreamer::sendImage(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
@@ -130,7 +132,9 @@ void PngSnapshotStreamer::sendImage(const cv::Mat & img, const rclcpp::Time & ti
   cv::imencode(".png", img, encoded_buffer, encode_params);
 
   char stamp[20];
-  snprintf(stamp, sizeof(stamp), "%.06lf", time.seconds());
+  snprintf(
+    stamp, sizeof(stamp), "%.06lf",
+    std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
   .header("Server", "web_video_server")
