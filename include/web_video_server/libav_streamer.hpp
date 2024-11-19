@@ -42,8 +42,8 @@ extern "C"
 #include <libavutil/imgutils.h>
 }
 
+#include <chrono>
 #include <memory>
-#include <optional>
 #include <string>
 
 #include "image_transport/image_transport.hpp"
@@ -79,8 +79,9 @@ protected:
 private:
   AVFrame * frame_;
   struct SwsContext * sws_context_;
-  std::optional<std::chrono::steady_clock::time_point> first_image_timestamp_;
   std::mutex encode_mutex_;
+  bool first_image_received_;
+  std::chrono::steady_clock::time_point first_image_time_;
 
   std::string format_name_;
   std::string codec_name_;

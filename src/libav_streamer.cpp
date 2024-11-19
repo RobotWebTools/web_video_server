@@ -45,8 +45,8 @@ LibavStreamer::LibavStreamer(
   const std::string & content_type)
 : ImageTransportImageStreamer(request, connection, node), format_context_(0), codec_(0),
   codec_context_(0), video_stream_(0), frame_(0), sws_context_(0),
-  first_image_timestamp_(std::nullopt), format_name_(format_name), codec_name_(codec_name),
-  content_type_(content_type), opt_(0), io_buffer_(0)
+  first_image_received_(false), first_image_time_(), format_name_(format_name),
+  codec_name_(codec_name), content_type_(content_type), opt_(0), io_buffer_(0)
 {
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);
   qmin_ = request.get_query_param_value_or_default<int>("qmin", 10);
@@ -220,8 +220,9 @@ void LibavStreamer::sendImage(
   const std::chrono::steady_clock::time_point & time)
 {
   std::scoped_lock lock(encode_mutex_);
-  if (!first_image_timestamp_.has_value()) {
-    first_image_timestamp_ = time;
+  if (!first_image_received_) {
+    first_image_received_ = true;
+    first_image_time_ = time;
   }
 
   AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
@@ -277,7 +278,7 @@ void LibavStreamer::sendImage(
     uint8_t * output_buf;
 
     double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(
-      time - first_image_timestamp_.value()).count();
+      time - first_image_time_).count();
     // Encode video at 1/0.95 to minimize delay
     pkt->pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt->pts <= 0) {
