@@ -1,7 +1,7 @@
 #ifndef LIBAV_STREAMERS_H_
 #define LIBAV_STREAMERS_H_
 
-#include <optional>
+#include <chrono>
 
 #include <image_transport/image_transport.h>
 #include "web_video_server/image_streamer.h"
@@ -47,8 +47,9 @@ protected:
 private:
   AVFrame* frame_;
   struct SwsContext* sws_context_;
-  std::optional<std::chrono::steady_clock::time_point> first_image_timestamp_;
   boost::mutex encode_mutex_;
+  bool first_image_received_;
+  std::chrono::steady_clock::time_point first_image_time_;
 
   std::string format_name_;
   std::string codec_name_;
