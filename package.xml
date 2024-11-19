@@ -16,6 +16,7 @@
   <author email="mwills@wpi.edu">Mitchell Wills</author>
 
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
+  <buildtool_depend>pkg-config</buildtool_depend>
 
   <build_depend>rclcpp</build_depend>
   <build_depend>rclcpp_components</build_depend>
