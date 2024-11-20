@@ -50,7 +50,7 @@ public:
                            async_web_server_cpp::HttpConnectionPtr connection, const char* begin, const char* end);
 
 private:
-  void restreamFrames(double max_age);
+  void restreamFrames(std::chrono::duration<double> max_age);
   void cleanup_inactive_streams();
 
   ros::NodeHandle nh_;

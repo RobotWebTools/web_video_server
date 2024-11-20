@@ -1,6 +1,8 @@
 #ifndef IMAGE_STREAMER_H_
 #define IMAGE_STREAMER_H_
 
+#include <chrono>
+
 #include <ros/ros.h>
 #include <image_transport/image_transport.h>
 #include <opencv2/opencv.hpp>
@@ -29,7 +31,7 @@ public:
   /**
    * Restreams the last received image frame if older than max_age.
    */
-  virtual void restreamFrame(double max_age) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
 
   std::string getTopic()
   {
@@ -56,8 +58,8 @@ public:
 
 protected:
   virtual cv::Mat decodeImage(const sensor_msgs::ImageConstPtr& msg);
-  virtual void sendImage(const cv::Mat &, const ros::Time &time) = 0;
-  virtual void restreamFrame(double max_age);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -66,7 +68,7 @@ protected:
   bool invert_;
   std::string default_transport_;
 
-  ros::Time last_frame;
+  std::chrono::steady_clock::time_point last_frame_;
   cv::Mat output_size_image;
   boost::mutex send_mutex_;
 

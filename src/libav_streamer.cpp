@@ -53,7 +53,7 @@ LibavStreamer::LibavStreamer(const async_web_server_cpp::HttpRequest &request,
                              const std::string &format_name, const std::string &codec_name,
                              const std::string &content_type) :
     ImageTransportImageStreamer(request, connection, nh), output_format_(0), format_context_(0), codec_(0), codec_context_(0), video_stream_(
-        0), frame_(0), sws_context_(0), first_image_timestamp_(0), format_name_(
+        0), frame_(0), sws_context_(0), first_image_received_(false), first_image_time_(), format_name_(
         format_name), codec_name_(codec_name), content_type_(content_type), opt_(0), io_buffer_(0)
 {
 
@@ -256,12 +256,14 @@ void LibavStreamer::initializeEncoder()
 {
 }
 
-void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
+void LibavStreamer::sendImage(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
 {
   boost::mutex::scoped_lock lock(encode_mutex_);
-  if (first_image_timestamp_.isZero())
-  {
-    first_image_timestamp_ = time;
+  if (!first_image_received_) {
+    first_image_received_ = true;
+    first_image_time_ = time;
   }
   std::vector<uint8_t> encoded_frame;
 #if (LIBAVUTIL_VERSION_MAJOR < 53)
@@ -353,7 +355,8 @@ void LibavStreamer::sendImage(const cv::Mat &img, const ros::Time &time)
     std::size_t size;
     uint8_t *output_buf;
 
-    double seconds = (time - first_image_timestamp_).toSec();
+    double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(time -
+        first_image_time_).count();
     // Encode video at 1/0.95 to minimize delay
     pkt.pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt.pts <= 0)

@@ -1,6 +1,8 @@
 #ifndef LIBAV_STREAMERS_H_
 #define LIBAV_STREAMERS_H_
 
+#include <chrono>
+
 #include <image_transport/image_transport.h>
 #include "web_video_server/image_streamer.h"
 #include "async_web_server_cpp/http_request.hpp"
@@ -32,7 +34,7 @@ public:
 
 protected:
   virtual void initializeEncoder();
-  virtual void sendImage(const cv::Mat&, const ros::Time& time);
+  virtual void sendImage(const cv::Mat&, const std::chrono::steady_clock::time_point& time);
   virtual void initialize(const cv::Mat&);
   AVOutputFormat* output_format_;
   AVFormatContext* format_context_;
@@ -45,8 +47,9 @@ protected:
 private:
   AVFrame* frame_;
   struct SwsContext* sws_context_;
-  ros::Time first_image_timestamp_;
   boost::mutex encode_mutex_;
+  bool first_image_received_;
+  std::chrono::steady_clock::time_point first_image_time_;
 
   std::string format_name_;
   std::string codec_name_;
