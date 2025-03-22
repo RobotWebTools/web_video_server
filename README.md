@@ -41,6 +41,7 @@ sudo apt install ros-<ROS_DISTRO>-web-video-server
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/RobotWebTools/web_video_server.git
+git checkout ros1
 cd ..
 catkin_make
 
