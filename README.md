@@ -28,7 +28,7 @@ This node provides HTTP streaming of ROS image topics in various formats, making
  
 ### Installing packages
 
-For newer ROS2 distrobutions (humble, jazzy, rolling) it is possible to install web_video_server as a package:
+For newer ROS2 distributions (humble, jazzy, rolling) it is possible to install web_video_server as a package:
 
 ```
 sudo apt install ros-<ROS_DISTRO>-web-video-server
