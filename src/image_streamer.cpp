@@ -24,11 +24,58 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(const async_web_server_
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
   default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
-  qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
+  qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "auto");
 }
 
 ImageTransportImageStreamer::~ImageTransportImageStreamer()
 {
+}
+
+std::optional<rmw_qos_profile_t> ImageTransportImageStreamer::detect_publisher_qos(const std::string &topic_name) 
+{
+  RCLCPP_INFO(nh_->get_logger(), "Attempting to auto-detect QoS for topic: %s", topic_name.c_str());
+
+  auto topic_endpoint_info_array = nh_->get_publishers_info_by_topic(topic_name);
+  if (topic_endpoint_info_array.empty()) {
+    RCLCPP_WARN(nh_->get_logger(), "No publishers found for topic: %s", topic_name.c_str());
+    return std::nullopt;
+  }
+
+  // Use the first publisher's QoS as reference.
+  auto endpoint_info = topic_endpoint_info_array.front();
+  auto qos_profile = endpoint_info.qos_profile();
+
+  // Log the detected QoS settings.
+  std::string reliability =
+      (qos_profile.reliability() == rclcpp::ReliabilityPolicy::Reliable) ? "RELIABLE" : "BEST_EFFORT";
+  std::string durability =
+      (qos_profile.durability() == rclcpp::DurabilityPolicy::TransientLocal) ? "TRANSIENT_LOCAL" : "VOLATILE";
+
+  RCLCPP_INFO(nh_->get_logger(), "Detected QoS - Reliability: %s, Durability: %s, History depth: %zu",
+              reliability.c_str(), durability.c_str(), qos_profile.depth());
+
+  // Convert rclcpp QoS to rmw QoS profile.
+  rmw_qos_profile_t rmw_qos = rmw_qos_profile_default;
+
+  // Set reliability
+  if (qos_profile.reliability() == rclcpp::ReliabilityPolicy::Reliable) {
+    rmw_qos.reliability = RMW_QOS_POLICY_RELIABILITY_RELIABLE;
+  } else {
+    rmw_qos.reliability = RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT;
+  }
+
+  // Set durability
+  if (qos_profile.durability() == rclcpp::DurabilityPolicy::TransientLocal) {
+    rmw_qos.durability = RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL;
+  } else {
+    rmw_qos.durability = RMW_QOS_POLICY_DURABILITY_VOLATILE;
+  }
+
+  // Set history policy and depth
+  rmw_qos.history = RMW_QOS_POLICY_HISTORY_KEEP_LAST;
+  rmw_qos.depth = qos_profile.depth();
+
+  return rmw_qos;
 }
 
 void ImageTransportImageStreamer::start()
@@ -48,15 +95,29 @@ void ImageTransportImageStreamer::start()
     }
   }
 
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(nh_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
-  if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
-    RCLCPP_ERROR(
-      nh_->get_logger(),
-      "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name_.c_str());
+  // Get QoS profile based on user selection or auto-detect
+  std::optional<rmw_qos_profile_t> qos_profile;
+
+  qos_profile_name_ = "auto";
+  if (qos_profile_name_ == "auto") {
+    // Auto-detect QoS from publisher
+    qos_profile = detect_publisher_qos(topic_);
+    if (!qos_profile) {
+      RCLCPP_WARN(nh_->get_logger(), "Could not auto-detect QoS for topic %s. Using default profile.", topic_.c_str());
+      qos_profile = rmw_qos_profile_default;
+    } else {
+      RCLCPP_INFO(nh_->get_logger(), "Using auto-detected QoS profile for topic %s", topic_.c_str());
+    }
+  } else {
+    // Use named profile
+    RCLCPP_INFO(nh_->get_logger(), "Using specified QoS profile %s for topic %s", qos_profile_name_.c_str(),
+                topic_.c_str());
+    qos_profile = get_qos_profile_from_name(qos_profile_name_);
+    if (!qos_profile) {
+      qos_profile = rmw_qos_profile_default;
+      RCLCPP_ERROR(nh_->get_logger(), "Invalid QoS profile %s specified. Using default profile.",
+                   qos_profile_name_.c_str());
+    }
   }
 
   // Create subscriber
