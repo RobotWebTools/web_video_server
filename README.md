@@ -36,21 +36,31 @@ sudo apt install ros-${ROS_DISTRO}-web-video-server
 
 ### Building from Source
 
+Create a ROS workspace if you don't have one:
 ```bash
-# For ROS 1
-mkdir -p ~/catkin_ws/src
-cd ~/catkin_ws/src
-git clone https://github.com/RobotWebTools/web_video_server.git
-git checkout ros1
-cd ..
-catkin_make
+mkdir -p ~/ros_ws/src
+cd ~/ros_ws/src
+```
 
-# For ROS 2
-mkdir -p ~/ros2_ws/src
-cd ~/ros2_ws/src
+Clone this repository:
+```bash
+# ROS 2
 git clone https://github.com/RobotWebTools/web_video_server.git
-cd ..
+# ROS 1
+git clone https://github.com/RobotWebTools/web_video_server.git -b ros1
+```
+
+Install dependencies with rosdep:
+```bash
+cd ~/ros_ws
+rosdep update
+rosdep install --from-paths src -i
+```
+
+Build the package and source your workspace:
+```bash
 colcon build --packages-select web_video_server
+source install/setup.bash
 ```
 
 ## Usage
