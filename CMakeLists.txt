@@ -68,6 +68,8 @@ target_link_libraries(${PROJECT_NAME}
   cv_bridge::cv_bridge
   image_transport::image_transport
   rclcpp::rclcpp
+  rclcpp_components::component
+  ${sensor_msgs_TARGETS}
   Boost::boost
   Boost::system
   ${OpenCV_LIBS}
@@ -84,11 +86,6 @@ add_executable(${PROJECT_NAME}_node
 
 target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}
-)
-
-ament_target_dependencies(${PROJECT_NAME}
-  rclcpp_components
-  sensor_msgs
 )
 
 rclcpp_components_register_nodes(${PROJECT_NAME} "web_video_server::WebVideoServer")
