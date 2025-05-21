@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.0 (2025-05-21)
+------------------
 * Use target_link_libraries instead of ament_target_dependencies (#182)
 * Fix compile warnings (#176)
 * Use chrono steady clock for frame timing (#173)
