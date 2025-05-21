@@ -2,6 +2,15 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Use target_link_libraries instead of ament_target_dependencies (#182)
+* Fix compile warnings (#176)
+* Use chrono steady clock for frame timing (#173)
+* Add pkg-config dependency (#175)
+* Separate web_video_server into a component and an executable (#168)
+* Contributors: Błażej Sowa, Fabian Freihube, Joe Dinius, Ph.D., Lars Lorentz Ludvigsen, Mat198
+
 2.0.1 (2024-10-26)
 ------------------
 * Add ros_environment to test dependencies (#166)
