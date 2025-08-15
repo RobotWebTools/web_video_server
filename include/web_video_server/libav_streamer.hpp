@@ -54,7 +54,7 @@ extern "C"
 namespace web_video_server
 {
 
-class LibavStreamer : public ImageTransportImageStreamer
+class LibavStreamer : public ImageStreamer
 {
 public:
   LibavStreamer(

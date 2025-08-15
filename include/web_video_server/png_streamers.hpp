@@ -41,7 +41,7 @@
 namespace web_video_server
 {
 
-class PngStreamer : public ImageTransportImageStreamer
+class PngStreamer : public ImageStreamer
 {
 public:
   PngStreamer(
@@ -69,7 +69,7 @@ public:
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
-class PngSnapshotStreamer : public ImageTransportImageStreamer
+class PngSnapshotStreamer : public ImageStreamer
 {
 public:
   PngSnapshotStreamer(

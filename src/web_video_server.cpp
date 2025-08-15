@@ -48,7 +48,7 @@
 #include "async_web_server_cpp/http_reply.hpp"
 
 using namespace std::chrono_literals;
-using namespace boost::placeholders;  // NOLINT
+using namespace std::placeholders;  // NOLINT
 
 namespace web_video_server
 {
@@ -63,6 +63,11 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   declare_parameter("server_threads", 1);
   declare_parameter("publish_rate", -1.0);
   declare_parameter("default_stream_type", "mjpeg");
+  declare_parameter("wait_for_tf_delay", 0.1);
+  declare_parameter("frame_id", "");
+  declare_parameter("normalize", true);
+  declare_parameter("colorize", true);
+  declare_parameter("field", "depth");
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -79,36 +84,10 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   stream_types_["h264"] = std::make_shared<H264StreamerType>();
   stream_types_["vp9"] = std::make_shared<Vp9StreamerType>();
 
-  handler_group_.addHandlerForPath(
-    "/",
-    boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
-  handler_group_.addHandlerForPath(
-    "/stream",
-    boost::bind(&WebVideoServer::handle_stream, this, _1, _2, _3, _4));
-  handler_group_.addHandlerForPath(
-    "/stream_viewer",
-    boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2, _3, _4));
-  handler_group_.addHandlerForPath(
-    "/snapshot",
-    boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
+  initializeHttpServer(server_threads);
 
-  try {
-    server_.reset(
-      new async_web_server_cpp::HttpServer(
-        address_, std::to_string(port_),
-        boost::bind(&WebVideoServer::handle_request, this, _1, _2, _3, _4),
-        server_threads
-      )
-    );
-  } catch (boost::exception & e) {
-    RCLCPP_ERROR(
-      get_logger(), "Exception when creating the web server! %s:%d",
-      address_.c_str(), port_);
-    throw;
-  }
-
-  RCLCPP_INFO(get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
-
+  
+  // Initialize timers
   if (publish_rate_ > 0) {
     create_wall_timer(1s / publish_rate_, [this]() {restreamFrames(1s / publish_rate_);});
   }
@@ -125,26 +104,26 @@ WebVideoServer::~WebVideoServer()
 
 void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
 {
-  std::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(streamer_mutex_);
 
-  for (auto & subscriber : image_subscribers_) {
-    subscriber->restreamFrame(max_age);
+  for (auto & streamer : image_streamers_) {
+    streamer->restreamFrame(max_age);
   }
 }
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
+  std::unique_lock lock(streamer_mutex_, std::try_to_lock);
   if (lock) {
     auto new_end = std::partition(
-      image_subscribers_.begin(), image_subscribers_.end(),
+      image_streamers_.begin(), image_streamers_.end(),
       [](const std::shared_ptr<ImageStreamer> & streamer) {return !streamer->isInactive();});
     if (verbose_) {
-      for (auto itr = new_end; itr < image_subscribers_.end(); ++itr) {
+      for (auto itr = new_end; itr < image_streamers_.end(); ++itr) {
         RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
       }
     }
-    image_subscribers_.erase(new_end, image_subscribers_.end());
+    image_streamers_.erase(new_end, image_streamers_.end());
   }
 }
 
@@ -170,7 +149,9 @@ bool WebVideoServer::handle_stream(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
+  RCLCPP_INFO_STREAM(get_logger(), "Request: " << request.uri);  
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
+  RCLCPP_INFO_STREAM(get_logger(), "  Received request for stream of type: " << type);  
   if (stream_types_.find(type) != stream_types_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
     // Fallback for topics without corresponding compressed topics
@@ -198,11 +179,12 @@ bool WebVideoServer::handle_stream(
         type = "mjpeg";
       }
     }
+    RCLCPP_INFO_STREAM(get_logger(), "  Starting stream of type: " << type);
     std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(
       request, connection, shared_from_this());
     streamer->start();
-    std::scoped_lock lock(subscriber_mutex_);
-    image_subscribers_.push_back(streamer);
+    std::scoped_lock lock(streamer_mutex_);
+    image_streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);
@@ -219,8 +201,8 @@ bool WebVideoServer::handle_snapshot(
     request, connection, shared_from_this());
   streamer->start();
 
-  std::scoped_lock lock(subscriber_mutex_);
-  image_subscribers_.push_back(streamer);
+  std::scoped_lock lock(streamer_mutex_);
+  image_streamers_.push_back(streamer);
   return true;
 }
 
@@ -284,6 +266,7 @@ bool WebVideoServer::handle_list_streams(
 {
   std::vector<std::string> image_topics;
   std::vector<std::string> camera_info_topics;
+  std::vector<std::string> pointcloud2_topics;
   auto tnat = get_topic_names_and_types();
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
@@ -297,6 +280,8 @@ bool WebVideoServer::handle_list_streams(
       image_topics.push_back(topic_name);
     } else if (topic_type == "sensor_msgs/msg/CameraInfo") {
       camera_info_topics.push_back(topic_name);
+    } else if (topic_type == "sensor_msgs/msg/PointCloud2") {
+      pointcloud2_topics.push_back(topic_name);
     }
   }
 
@@ -331,7 +316,7 @@ bool WebVideoServer::handle_list_streams(
           connection->write("</a> (");
           connection->write("<a href=\"/stream?topic=");
           connection->write(*image_topic_itr);
-          connection->write("\">Stream</a>) (");
+          connection->write("\">HTTP Stream</a>) (");
           connection->write("<a href=\"/snapshot?topic=");
           connection->write(*image_topic_itr);
           connection->write("\">Snapshot</a>)");
@@ -358,7 +343,7 @@ bool WebVideoServer::handle_list_streams(
     connection->write("</a> (");
     connection->write("<a href=\"/stream?topic=");
     connection->write(*image_topic_itr);
-    connection->write("\">Stream</a>) (");
+    connection->write("\">HTTP Stream</a>) (");
     connection->write("<a href=\"/snapshot?topic=");
     connection->write(*image_topic_itr);
     connection->write("\">Snapshot</a>)");
@@ -366,8 +351,68 @@ bool WebVideoServer::handle_list_streams(
 
     image_topic_itr = image_topics.erase(image_topic_itr);
   }
+  connection->write("</ul>");
+
+  connection->write(
+    "<html>"
+    "<head><title>ROS PointCloud2 Topic List</title></head>"
+    "<body><h1>Available ROS PointCloud2 Topics:</h1>");
+  //Add the pointcloud2 topics
+  connection->write("<ul>");
+  std::vector<std::string>::iterator pointcloud2_topic_itr = pointcloud2_topics.begin();
+  for (; pointcloud2_topic_itr != pointcloud2_topics.end();) {
+    connection->write("<li><a href=\"/stream_viewer?topic=");
+    connection->write(*pointcloud2_topic_itr);
+    connection->write("\">");
+    connection->write(*pointcloud2_topic_itr);
+    connection->write("</a> (");
+    connection->write("<a href=\"/stream?topic=");
+    connection->write(*pointcloud2_topic_itr);
+    connection->write("\">HTTP Stream</a>) (");
+    connection->write("<a href=\"/snapshot?topic=");
+    connection->write(*pointcloud2_topic_itr);
+    connection->write("\">Snapshot</a>)");
+    connection->write("</li>");
+
+    pointcloud2_topic_itr = pointcloud2_topics.erase(pointcloud2_topic_itr);
+  }
+  connection->write("</ul>");
+
+  //End
   connection->write("</ul></body></html>");
   return true;
+}
+
+void WebVideoServer::initializeHttpServer(int server_threads) {
+  // Setup HTTP request handlers
+  handler_group_.addHandlerForPath(
+    "/",
+    boost::bind(&WebVideoServer::handle_list_streams, this, _1, _2, _3, _4));
+  handler_group_.addHandlerForPath(
+    "/stream",
+    boost::bind(&WebVideoServer::handle_stream, this, _1, _2, _3, _4));
+  handler_group_.addHandlerForPath(
+    "/stream_viewer",
+    boost::bind(&WebVideoServer::handle_stream_viewer, this, _1, _2, _3, _4));
+  handler_group_.addHandlerForPath(
+    "/snapshot",
+    boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
+
+  try {
+    server_.reset(
+      new async_web_server_cpp::HttpServer(
+        address_, std::to_string(port_),
+        boost::bind(&WebVideoServer::handle_request, this, _1, _2, _3, _4),
+        server_threads
+      )
+    );
+    RCLCPP_INFO(get_logger(), "HTTP server initialized on %s:%d", address_.c_str(), port_);
+  } catch (boost::exception & e) {
+    RCLCPP_ERROR(
+      get_logger(), "Exception when creating the HTTP server! %s:%d",
+      address_.c_str(), port_);
+    throw;
+  }
 }
 
 }  // namespace web_video_server

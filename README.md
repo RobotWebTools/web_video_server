@@ -15,6 +15,7 @@ This node provides HTTP streaming of ROS image topics in various formats, making
 - Web interface to browse available image topics
 - Single image snapshot capability
 - Support for different QoS profiles in ROS 2
+- Support for PointCloud2 topics (converted to depth images)
 
 ## Installation
 

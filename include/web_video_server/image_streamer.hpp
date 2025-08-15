@@ -37,11 +37,12 @@
 #include <opencv2/opencv.hpp>
 
 #include "rclcpp/rclcpp.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
-#include "web_video_server/utils.hpp"
+
 #include "async_web_server_cpp/http_server.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+
+#include "web_video_server/subscribers/pointcloud2_subscriber.hpp"
+#include "web_video_server/subscribers/image_transport_subscriber.hpp"
 
 namespace web_video_server
 {
@@ -54,8 +55,10 @@ public:
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 
-  virtual void start() = 0;
+  virtual void start();
   virtual ~ImageStreamer();
+
+  std::map<std::string, std::shared_ptr<SubscriberType> > subscriber_types_;
 
   bool isInactive()
   {
@@ -65,7 +68,7 @@ public:
   /**
    * Restreams the last received image frame if older than max_age.
    */
-  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
 
   std::string getTopic()
   {
@@ -76,44 +79,24 @@ protected:
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
   rclcpp::Node::SharedPtr node_;
-  bool inactive_;
-  image_transport::Subscriber image_sub_;
-  std::string topic_;
-};
+  std::shared_ptr<RosSubscriber> subscriber_;
 
-
-class ImageTransportImageStreamer : public ImageStreamer
-{
-public:
-  ImageTransportImageStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  virtual ~ImageTransportImageStreamer();
-
-  virtual void start();
-
-protected:
   virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point &time) = 0;
   virtual void initialize(const cv::Mat &);
 
-  image_transport::Subscriber image_sub_;
+  std::string topic_;
+  bool inactive_;
   int output_width_;
   int output_height_;
   bool invert_;
-  std::string default_transport_;
-  std::string qos_profile_name_;
+  bool initialized_;
 
   std::chrono::steady_clock::time_point last_frame_;
-  cv::Mat output_size_image;
+  cv::Mat output_size_image_;
   std::mutex send_mutex_;
 
 private:
-  image_transport::ImageTransport it_;
-  bool initialized_;
-
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 

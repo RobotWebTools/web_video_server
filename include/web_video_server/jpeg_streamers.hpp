@@ -42,7 +42,7 @@
 namespace web_video_server
 {
 
-class MjpegStreamer : public ImageTransportImageStreamer
+class MjpegStreamer : public ImageStreamer
 {
 public:
   MjpegStreamer(
@@ -69,7 +69,7 @@ public:
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
-class JpegSnapshotStreamer : public ImageTransportImageStreamer
+class JpegSnapshotStreamer : public ImageStreamer
 {
 public:
   JpegSnapshotStreamer(

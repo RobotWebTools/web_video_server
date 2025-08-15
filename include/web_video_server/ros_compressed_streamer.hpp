@@ -54,17 +54,16 @@ public:
   virtual void restreamFrame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual void sendImage(
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void sendCompressedImage(
     const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void compressedImageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
-  std::chrono::steady_clock::time_point last_frame_;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
-  std::mutex send_mutex_;
   std::string qos_profile_name_;
 };
 
@@ -75,6 +74,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
+    
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 

@@ -42,6 +42,7 @@ Vp8Streamer::Vp8Streamer(
 }
 Vp8Streamer::~Vp8Streamer()
 {
+  std::scoped_lock lock(send_mutex_);
 }
 
 void Vp8Streamer::initializeEncoder()

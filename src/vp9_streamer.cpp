@@ -40,6 +40,7 @@ Vp9Streamer::Vp9Streamer(
 }
 Vp9Streamer::~Vp9Streamer()
 {
+  std::scoped_lock lock(send_mutex_);  
 }
 
 void Vp9Streamer::initializeEncoder()

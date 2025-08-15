@@ -43,7 +43,7 @@ LibavStreamer::LibavStreamer(
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node,
   const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
-: ImageTransportImageStreamer(request, connection, node), format_context_(0), codec_(0),
+: ImageStreamer(request, connection, node), format_context_(0), codec_(0),
   codec_context_(0), video_stream_(0), opt_(0), frame_(0), sws_context_(0),
   first_image_received_(false), first_image_time_(), format_name_(format_name),
   codec_name_(codec_name), content_type_(content_type), io_buffer_(0)
@@ -56,6 +56,8 @@ LibavStreamer::LibavStreamer(
 
 LibavStreamer::~LibavStreamer()
 {
+  std::scoped_lock lock(send_mutex_); 
+  
   if (codec_context_) {
     avcodec_free_context(&codec_context_);
   }

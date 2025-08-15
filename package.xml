@@ -36,6 +36,11 @@
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>boost</exec_depend>
 
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_sensor_msgs</depend>
+  <depend>tf2_geometry_msgs</depend>
+
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_copyright</test_depend>
   <test_depend>ament_cmake_cpplint</test_depend>
