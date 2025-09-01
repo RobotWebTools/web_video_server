@@ -77,7 +77,7 @@ LibavStreamer::~LibavStreamer()
 }
 
 // output callback for ffmpeg IO context
-static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
+static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buffer_size)
 {
   async_web_server_cpp::HttpConnectionPtr connection =
     *((async_web_server_cpp::HttpConnectionPtr *) opaque);
