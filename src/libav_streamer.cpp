@@ -229,7 +229,13 @@ void LibavStreamer::sendImage(
     first_image_time_ = time;
   }
 
-  AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
+  AVPixelFormat input_coding_format;
+  if (img.channels() == 1) {
+    img.convertTo(img, CV_32FC1);
+    input_coding_format = AV_PIX_FMT_GRAYF32;
+  } else {
+    input_coding_format = AV_PIX_FMT_BGR24;
+  }
 
   AVFrame * raw_frame = av_frame_alloc();
   av_image_fill_arrays(

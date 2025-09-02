@@ -148,10 +148,6 @@ cv::Mat ImageTransportImageStreamer::decodeImage(
     cv::Mat_<float> float_image = float_image_bridge;
     double max_val;
     cv::minMaxIdx(float_image, 0, &max_val);
-
-    if (max_val > 0) {
-      float_image *= (255 / max_val);
-    }
     return float_image;
   } else {
     // Convert to OpenCV native BGR color
