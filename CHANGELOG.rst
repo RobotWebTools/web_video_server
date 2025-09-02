@@ -2,6 +2,14 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+2.1.1 (2025-09-02)
+------------------
+* Fix build with the current FFmpeg avformat (#190)
+* Update package.xml to include necessary lib boost (#186)
+* Add Kilted workflow (#183)
+* Fix -Wmaybe-uninitialized warning (#185)
+* Contributors: Błażej Sowa, Fabian Freihube, Janosch Machowinski, Alexis Tsogias, Julian Francis
+
 2.1.0 (2025-05-21)
 ------------------
 * Use target_link_libraries instead of ament_target_dependencies (#182)
