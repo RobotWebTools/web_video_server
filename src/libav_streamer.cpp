@@ -77,7 +77,11 @@ LibavStreamer::~LibavStreamer()
 }
 
 // output callback for ffmpeg IO context
+#if LIBAVFORMAT_VERSION_MAJOR < 61
 static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
+#else
+static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buffer_size)
+#endif
 {
   async_web_server_cpp::HttpConnectionPtr connection =
     *((async_web_server_cpp::HttpConnectionPtr *) opaque);
