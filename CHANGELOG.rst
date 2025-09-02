@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+2.1.1 (2025-09-02)
+------------------
 * Fix build with the current FFmpeg avformat (#190)
 * Update package.xml to include necessary lib boost (#186)
 * Add Kilted workflow (#183)
