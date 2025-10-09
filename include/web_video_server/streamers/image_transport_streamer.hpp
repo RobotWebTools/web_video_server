@@ -1,5 +1,4 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,58 +29,46 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 
-#include "image_transport/image_transport.hpp"
 #include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_connection.hpp"
-#include "web_video_server/multipart_stream.hpp"
 
 namespace web_video_server
 {
 
-class MjpegStreamer : public ImageTransportImageStreamer
+class ImageTransportImageStreamer : public ImageStreamer
 {
 public:
-  MjpegStreamer(
+  ImageTransportImageStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  ~MjpegStreamer();
+  virtual ~ImageTransportImageStreamer();
+
+  virtual void start();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual void initialize(const cv::Mat &);
+
+  image_transport::Subscriber image_sub_;
+  int output_width_;
+  int output_height_;
+  bool invert_;
+  std::string default_transport_;
+  std::string qos_profile_name_;
+
+  std::chrono::steady_clock::time_point last_frame_;
+  cv::Mat output_size_image;
+  std::mutex send_mutex_;
 
 private:
-  MultipartStream stream_;
-  int quality_;
-};
+  image_transport::ImageTransport it_;
+  bool initialized_;
 
-class MjpegStreamerType : public ImageStreamerType
-{
-public:
-  std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
-};
-
-class JpegSnapshotStreamer : public ImageTransportImageStreamer
-{
-public:
-  JpegSnapshotStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
-  ~JpegSnapshotStreamer();
-
-protected:
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-
-private:
-  int quality_;
+  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 
 }  // namespace web_video_server

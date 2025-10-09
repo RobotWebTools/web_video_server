@@ -27,54 +27,40 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/h264_streamer.hpp"
+#pragma once
+
+#include <memory>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {
 
-H264Streamer::H264Streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "mp4", "libx264", "video/mp4")
+class Vp9Streamer : public LibavStreamer
 {
-  /* possible quality presets:
-   * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
-   * no latency improvements observed with ultrafast instead of medium
-   */
-  preset_ = request.get_query_param_value_or_default("preset", "ultrafast");
-}
+public:
+  Vp9Streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+  ~Vp9Streamer();
 
-H264Streamer::~H264Streamer()
+protected:
+  virtual void initializeEncoder();
+};
+
+class Vp9StreamerType : public LibavStreamerType
 {
-}
-
-void H264Streamer::initializeEncoder()
-{
-  av_opt_set(codec_context_->priv_data, "preset", preset_.c_str(), 0);
-  av_opt_set(codec_context_->priv_data, "tune", "zerolatency", 0);
-  av_opt_set_int(codec_context_->priv_data, "crf", 20, 0);
-  av_opt_set_int(codec_context_->priv_data, "bufsize", 100, 0);
-  av_opt_set_int(codec_context_->priv_data, "keyint", 30, 0);
-  av_opt_set_int(codec_context_->priv_data, "g", 1, 0);
-
-  // container format options
-  if (!strcmp(format_context_->oformat->name, "mp4")) {
-    // set up mp4 for streaming (instead of seekable file output)
-    av_dict_set(&opt_, "movflags", "+frag_keyframe+empty_moov+faststart", 0);
-  }
-}
-
-H264StreamerType::H264StreamerType()
-: LibavStreamerType("mp4", "libx264", "video/mp4")
-{
-}
-
-std::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
-{
-  return std::make_shared<H264Streamer>(request, connection, node);
-}
+public:
+  Vp9StreamerType();
+  std::shared_ptr<ImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+};
 
 }  // namespace web_video_server

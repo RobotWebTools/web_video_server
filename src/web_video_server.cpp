@@ -36,16 +36,17 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <opencv2/opencv.hpp>
 
-#include "rclcpp/rclcpp.hpp"
-
-#include "sensor_msgs/image_encodings.hpp"
-#include "web_video_server/ros_compressed_streamer.hpp"
-#include "web_video_server/jpeg_streamers.hpp"
-#include "web_video_server/png_streamers.hpp"
-#include "web_video_server/vp8_streamer.hpp"
-#include "web_video_server/h264_streamer.hpp"
-#include "web_video_server/vp9_streamer.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "sensor_msgs/image_encodings.hpp"
+
+#include "web_video_server/streamers/ros_compressed_streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/jpeg_streamers.hpp"
+#include "web_video_server/streamers/png_streamers.hpp"
+#include "web_video_server/streamers/vp8_streamer.hpp"
+#include "web_video_server/streamers/h264_streamer.hpp"
+#include "web_video_server/streamers/vp9_streamer.hpp"
 
 using namespace std::chrono_literals;
 using namespace boost::placeholders;  // NOLINT

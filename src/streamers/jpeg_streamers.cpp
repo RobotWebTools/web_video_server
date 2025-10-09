@@ -28,7 +28,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/jpeg_streamers.hpp"
+#include "web_video_server/streamers/jpeg_streamers.hpp"
+
 #include "async_web_server_cpp/http_reply.hpp"
 
 namespace web_video_server

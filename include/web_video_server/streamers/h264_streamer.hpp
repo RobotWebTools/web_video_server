@@ -1,4 +1,3 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -34,33 +33,32 @@
 #include <string>
 
 #include "image_transport/image_transport.hpp"
-#include "web_video_server/libav_streamer.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {
 
-class Vp8Streamer : public LibavStreamer
+class H264Streamer : public LibavStreamer
 {
 public:
-  Vp8Streamer(
+  H264Streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  ~Vp8Streamer();
+  ~H264Streamer();
 
 protected:
   virtual void initializeEncoder();
-
-private:
-  std::string quality_;
+  std::string preset_;
 };
 
-class Vp8StreamerType : public LibavStreamerType
+class H264StreamerType : public LibavStreamerType
 {
 public:
-  Vp8StreamerType();
+  H264StreamerType();
   std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,

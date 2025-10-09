@@ -1,3 +1,4 @@
+// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -29,37 +30,89 @@
 
 #pragma once
 
-#include <memory>
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/intreadwrite.h>
+#include <libavformat/avio.h>
+#include <libswscale/swscale.h>
+#include <libavutil/opt.h>
+#include <libavutil/mathematics.h>
+#include <libavutil/imgutils.h>
+}
 
-#include "image_transport/image_transport.hpp"
-#include "web_video_server/libav_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
+#include <chrono>
+#include <memory>
+#include <string>
+
 #include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
 
-class Vp9Streamer : public LibavStreamer
+class LibavStreamer : public ImageTransportImageStreamer
 {
 public:
-  Vp9Streamer(
+  LibavStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  ~Vp9Streamer();
+    rclcpp::Node::SharedPtr node, const std::string & format_name, const std::string & codec_name,
+    const std::string & content_type);
+
+  ~LibavStreamer();
 
 protected:
   virtual void initializeEncoder();
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void initialize(const cv::Mat &);
+  AVFormatContext * format_context_;
+  const AVCodec * codec_;
+  AVCodecContext * codec_context_;
+  AVStream * video_stream_;
+
+  AVDictionary * opt_;   // container format options
+
+private:
+  AVFrame * frame_;
+  struct SwsContext * sws_context_;
+  std::mutex encode_mutex_;
+  bool first_image_received_;
+  std::chrono::steady_clock::time_point first_image_time_;
+
+  std::string format_name_;
+  std::string codec_name_;
+  std::string content_type_;
+  int bitrate_;
+  int qmin_;
+  int qmax_;
+  int gop_;
+
+  uint8_t * io_buffer_;  // custom IO buffer
 };
 
-class Vp9StreamerType : public LibavStreamerType
+class LibavStreamerType : public ImageStreamerType
 {
 public:
-  Vp9StreamerType();
+  LibavStreamerType(
+    const std::string & format_name, const std::string & codec_name,
+    const std::string & content_type);
+
   std::shared_ptr<ImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
+
+  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+
+private:
+  const std::string format_name_;
+  const std::string codec_name_;
+  const std::string content_type_;
 };
 
 }  // namespace web_video_server

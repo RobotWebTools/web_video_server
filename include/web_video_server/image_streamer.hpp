@@ -81,42 +81,6 @@ protected:
   std::string topic_;
 };
 
-
-class ImageTransportImageStreamer : public ImageStreamer
-{
-public:
-  ImageTransportImageStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  virtual ~ImageTransportImageStreamer();
-
-  virtual void start();
-
-protected:
-  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
-  virtual void initialize(const cv::Mat &);
-
-  image_transport::Subscriber image_sub_;
-  int output_width_;
-  int output_height_;
-  bool invert_;
-  std::string default_transport_;
-  std::string qos_profile_name_;
-
-  std::chrono::steady_clock::time_point last_frame_;
-  cv::Mat output_size_image;
-  std::mutex send_mutex_;
-
-private:
-  image_transport::ImageTransport it_;
-  bool initialized_;
-
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-};
-
 class ImageStreamerType
 {
 public:

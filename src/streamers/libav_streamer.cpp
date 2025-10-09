@@ -28,7 +28,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/libav_streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
+
 #include "async_web_server_cpp/http_reply.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg

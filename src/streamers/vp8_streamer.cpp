@@ -1,3 +1,4 @@
+// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -27,42 +28,59 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/vp9_streamer.hpp"
+#include "web_video_server/streamers/vp8_streamer.hpp"
 
 namespace web_video_server
 {
 
-Vp9Streamer::Vp9Streamer(
+Vp8Streamer::Vp8Streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "webm", "libvpx-vp9", "video/webm")
+: LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
 {
+  quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
-Vp9Streamer::~Vp9Streamer()
-{
-}
-
-void Vp9Streamer::initializeEncoder()
-{
-  // codec options set up to provide somehow reasonable performance in cost of poor quality
-  // should be updated as soon as VP9 encoding matures
-  av_opt_set_int(codec_context_->priv_data, "pass", 1, 0);
-  av_opt_set_int(codec_context_->priv_data, "speed", 8, 0);
-  av_opt_set_int(codec_context_->priv_data, "cpu-used", 4, 0);  // 8 is max
-  av_opt_set_int(codec_context_->priv_data, "crf", 20, 0);      // 0..63 (higher is lower quality)
-}
-
-Vp9StreamerType::Vp9StreamerType()
-: LibavStreamerType("webm", "libvpx-vp9", "video/webm")
+Vp8Streamer::~Vp8Streamer()
 {
 }
 
-std::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(
+void Vp8Streamer::initializeEncoder()
+{
+  typedef std::map<std::string, std::string> AvOptMap;
+  AvOptMap av_opt_map;
+  av_opt_map["quality"] = quality_;
+  av_opt_map["deadline"] = "1";
+  av_opt_map["auto-alt-ref"] = "0";
+  av_opt_map["lag-in-frames"] = "1";
+  av_opt_map["rc_lookahead"] = "1";
+  av_opt_map["drop_frame"] = "1";
+  av_opt_map["error-resilient"] = "1";
+
+  for (auto & opt : av_opt_map) {
+    av_opt_set(codec_context_->priv_data, opt.first.c_str(), opt.second.c_str(), 0);
+  }
+
+  // Buffering settings
+  int bufsize = 10;
+  codec_context_->rc_buffer_size = bufsize;
+  codec_context_->rc_initial_buffer_occupancy = bufsize;  // bitrate/3;
+  av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
+  av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
+  av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
+  av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
+}
+
+Vp8StreamerType::Vp8StreamerType()
+: LibavStreamerType("webm", "libvpx", "video/webm")
+{
+}
+
+std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
-  return std::make_shared<Vp9Streamer>(request, connection, node);
+  return std::make_shared<Vp8Streamer>(request, connection, node);
 }
 
 }  // namespace web_video_server

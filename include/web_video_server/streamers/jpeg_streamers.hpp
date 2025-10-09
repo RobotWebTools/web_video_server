@@ -28,59 +28,61 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/vp8_streamer.hpp"
+#pragma once
+
+#include <memory>
+#include <string>
+
+#include "image_transport/image_transport.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
+
+#include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
 
-Vp8Streamer::Vp8Streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
+class MjpegStreamer : public ImageTransportImageStreamer
 {
-  quality_ = request.get_query_param_value_or_default("quality", "realtime");
-}
-Vp8Streamer::~Vp8Streamer()
+public:
+  MjpegStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+  ~MjpegStreamer();
+
+protected:
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+
+private:
+  MultipartStream stream_;
+  int quality_;
+};
+
+class MjpegStreamerType : public ImageStreamerType
 {
-}
+public:
+  std::shared_ptr<ImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+};
 
-void Vp8Streamer::initializeEncoder()
+class JpegSnapshotStreamer : public ImageTransportImageStreamer
 {
-  typedef std::map<std::string, std::string> AvOptMap;
-  AvOptMap av_opt_map;
-  av_opt_map["quality"] = quality_;
-  av_opt_map["deadline"] = "1";
-  av_opt_map["auto-alt-ref"] = "0";
-  av_opt_map["lag-in-frames"] = "1";
-  av_opt_map["rc_lookahead"] = "1";
-  av_opt_map["drop_frame"] = "1";
-  av_opt_map["error-resilient"] = "1";
+public:
+  JpegSnapshotStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
+  ~JpegSnapshotStreamer();
 
-  for (auto & opt : av_opt_map) {
-    av_opt_set(codec_context_->priv_data, opt.first.c_str(), opt.second.c_str(), 0);
-  }
+protected:
+  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
 
-  // Buffering settings
-  int bufsize = 10;
-  codec_context_->rc_buffer_size = bufsize;
-  codec_context_->rc_initial_buffer_occupancy = bufsize;  // bitrate/3;
-  av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);
-  av_opt_set_int(codec_context_->priv_data, "buf-initial", bufsize, 0);
-  av_opt_set_int(codec_context_->priv_data, "buf-optimal", bufsize, 0);
-  av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
-}
-
-Vp8StreamerType::Vp8StreamerType()
-: LibavStreamerType("webm", "libvpx", "video/webm")
-{
-}
-
-std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
-{
-  return std::make_shared<Vp8Streamer>(request, connection, node);
-}
+private:
+  int quality_;
+};
 
 }  // namespace web_video_server

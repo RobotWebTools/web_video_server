@@ -1,4 +1,3 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -28,54 +27,54 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
-
-#include <memory>
-#include <string>
-
-#include "sensor_msgs/msg/compressed_image.hpp"
-#include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_connection.hpp"
-#include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamers/h264_streamer.hpp"
 
 namespace web_video_server
 {
 
-class RosCompressedStreamer : public ImageStreamer
+H264Streamer::H264Streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
+: LibavStreamer(request, connection, node, "mp4", "libx264", "video/mp4")
 {
-public:
-  RosCompressedStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  ~RosCompressedStreamer();
-  virtual void start();
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  /* possible quality presets:
+   * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
+   * no latency improvements observed with ultrafast instead of medium
+   */
+  preset_ = request.get_query_param_value_or_default("preset", "ultrafast");
+}
 
-protected:
-  virtual void sendImage(
-    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
-    const std::chrono::steady_clock::time_point & time);
-
-private:
-  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
-  MultipartStream stream_;
-  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
-  std::chrono::steady_clock::time_point last_frame_;
-  sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
-  std::mutex send_mutex_;
-  std::string qos_profile_name_;
-};
-
-class RosCompressedStreamerType : public ImageStreamerType
+H264Streamer::~H264Streamer()
 {
-public:
-  std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
-};
+}
+
+void H264Streamer::initializeEncoder()
+{
+  av_opt_set(codec_context_->priv_data, "preset", preset_.c_str(), 0);
+  av_opt_set(codec_context_->priv_data, "tune", "zerolatency", 0);
+  av_opt_set_int(codec_context_->priv_data, "crf", 20, 0);
+  av_opt_set_int(codec_context_->priv_data, "bufsize", 100, 0);
+  av_opt_set_int(codec_context_->priv_data, "keyint", 30, 0);
+  av_opt_set_int(codec_context_->priv_data, "g", 1, 0);
+
+  // container format options
+  if (!strcmp(format_context_->oformat->name, "mp4")) {
+    // set up mp4 for streaming (instead of seekable file output)
+    av_dict_set(&opt_, "movflags", "+frag_keyframe+empty_moov+faststart", 0);
+  }
+}
+
+H264StreamerType::H264StreamerType()
+: LibavStreamerType("mp4", "libx264", "video/mp4")
+{
+}
+
+std::shared_ptr<ImageStreamer> H264StreamerType::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
+{
+  return std::make_shared<H264Streamer>(request, connection, node);
+}
 
 }  // namespace web_video_server

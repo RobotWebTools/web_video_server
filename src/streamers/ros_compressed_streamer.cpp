@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/ros_compressed_streamer.hpp"
+#include "web_video_server/streamers/ros_compressed_streamer.hpp"
 
 namespace web_video_server
 {

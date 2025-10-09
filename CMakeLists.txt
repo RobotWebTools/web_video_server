@@ -51,15 +51,16 @@ include_directories(include
 add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
   src/image_streamer.cpp
-  src/libav_streamer.cpp
-  src/vp8_streamer.cpp
-  src/h264_streamer.cpp
-  src/vp9_streamer.cpp
   src/multipart_stream.cpp
-  src/ros_compressed_streamer.cpp
-  src/jpeg_streamers.cpp
-  src/png_streamers.cpp
   src/utils.cpp
+  src/streamers/image_transport_streamer.cpp
+  src/streamers/libav_streamer.cpp
+  src/streamers/h264_streamer.cpp
+  src/streamers/vp8_streamer.cpp
+  src/streamers/vp9_streamer.cpp
+  src/streamers/ros_compressed_streamer.cpp
+  src/streamers/jpeg_streamers.cpp
+  src/streamers/png_streamers.cpp
 )
 
 ## Specify libraries to link a library or executable target against

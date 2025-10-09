@@ -27,7 +27,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/png_streamers.hpp"
+#include "web_video_server/streamers/png_streamers.hpp"
+
 #include "async_web_server_cpp/http_reply.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS

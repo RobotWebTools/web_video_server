@@ -30,90 +30,42 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
-#include <vector>
-
-#ifdef CV_BRIDGE_USES_OLD_HEADERS
-#include "cv_bridge/cv_bridge.h"
-#else
-#include "cv_bridge/cv_bridge.hpp"
-#endif
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_server.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "image_transport/image_transport.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {
 
-/**
- * @class WebVideoServer
- * @brief
- */
-class WebVideoServer : public rclcpp::Node
+class Vp8Streamer : public LibavStreamer
 {
 public:
-  /**
-   * @brief  Constructor
-   * @return
-   */
-  explicit WebVideoServer(const rclcpp::NodeOptions & options);
-
-  /**
-   * @brief  Destructor - Cleans up
-   */
-  virtual ~WebVideoServer();
-
-  bool handle_request(
+  Vp8Streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    const char * begin, const char * end);
+    rclcpp::Node::SharedPtr node);
+  ~Vp8Streamer();
 
-  bool handle_stream(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    const char * begin, const char * end);
-
-  bool handle_stream_viewer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    const char * begin, const char * end);
-
-  bool handle_snapshot(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    const char * begin, const char * end);
-
-  bool handle_list_streams(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    const char * begin, const char * end);
+protected:
+  virtual void initializeEncoder();
 
 private:
-  void restreamFrames(std::chrono::duration<double> max_age);
-  void cleanup_inactive_streams();
+  std::string quality_;
+};
 
-  rclcpp::TimerBase::SharedPtr cleanup_timer_;
-
-  // Parameters
-  int ros_threads_;
-  double publish_rate_;
-  int port_;
-  std::string address_;
-  bool verbose_;
-  std::string default_stream_type_;
-
-  std::shared_ptr<async_web_server_cpp::HttpServer> server_;
-  async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
-
-  std::vector<std::shared_ptr<ImageStreamer>> image_subscribers_;
-  std::map<std::string, std::shared_ptr<ImageStreamerType>> stream_types_;
-  std::mutex subscriber_mutex_;
+class Vp8StreamerType : public LibavStreamerType
+{
+public:
+  Vp8StreamerType();
+  std::shared_ptr<ImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
 };
 
 }  // namespace web_video_server
