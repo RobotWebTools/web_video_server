@@ -18,23 +18,19 @@
   <buildtool_depend>ament_cmake_ros</buildtool_depend>
   <buildtool_depend>pkg-config</buildtool_depend>
 
-  <build_depend>rclcpp</build_depend>
-  <build_depend>rclcpp_components</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <build_depend>image_transport</build_depend>
-  <build_depend>async_web_server_cpp</build_depend>
-  <build_depend>ffmpeg</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>boost</build_depend>
+  <!-- Dependencies present in installed header files -->
+  <depend>async_web_server_cpp</depend>
+  <depend>boost</depend>
+  <depend>cv_bridge</depend>
+  <depend>ffmpeg</depend>
+  <depend>image_transport</depend>
+  <depend>rclcpp</depend>
+  <depend>rmw</depend>
+  <depend>sensor_msgs</depend>
 
-  <exec_depend>rclcpp</exec_depend>
+  <!-- Dependencies present only in source files -->
+  <build_depend>rclcpp_components</build_depend>
   <exec_depend>rclcpp_components</exec_depend>
-  <exec_depend>cv_bridge</exec_depend>
-  <exec_depend>image_transport</exec_depend>
-  <exec_depend>async_web_server_cpp</exec_depend>
-  <exec_depend>ffmpeg</exec_depend>
-  <exec_depend>sensor_msgs</exec_depend>
-  <exec_depend>boost</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_copyright</test_depend>
