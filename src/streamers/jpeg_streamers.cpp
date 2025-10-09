@@ -30,7 +30,26 @@
 
 #include "web_video_server/streamers/jpeg_streamers.hpp"
 
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include <opencv2/core/mat.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
@@ -59,7 +78,7 @@ void MjpegStreamer::sendImage(
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
-  std::vector<uchar> encoded_buffer;
+  std::vector<uint8_t> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
@@ -105,7 +124,7 @@ void JpegSnapshotStreamer::sendImage(
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
-  std::vector<uchar> encoded_buffer;
+  std::vector<uint8_t> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];

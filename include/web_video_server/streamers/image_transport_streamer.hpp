@@ -29,7 +29,18 @@
 
 #pragma once
 
+#include <chrono>
+#include <mutex>
 #include <string>
+
+#include <opencv2/core/mat.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/subscriber.hpp"
+#include "rclcpp/node.hpp"
+#include "sensor_msgs/msg/image.hpp"
 
 #include "web_video_server/image_streamer.hpp"
 

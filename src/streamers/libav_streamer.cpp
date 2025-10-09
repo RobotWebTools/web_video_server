@@ -30,7 +30,44 @@
 
 #include "web_video_server/streamers/libav_streamer.hpp"
 
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavcodec/codec.h>
+#include <libavcodec/packet.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libswscale/swscale.h>
+#include <libavutil/dict.h>
+#include <libavutil/error.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/frame.h>
+#include <libavutil/mem.h>
+#include <libavutil/pixfmt.h>
+#include <libavutil/rational.h>
+}
+
+#include <cerrno>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+#include <opencv2/core/mat.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
+
+#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)
@@ -249,7 +286,7 @@ void LibavStreamer::sendImage(
   }
 
 
-  int ret = sws_scale(
+  sws_scale(
     sws_context_,
     (const uint8_t * const *)raw_frame->data, raw_frame->linesize, 0,
     output_height_, frame_->data, frame_->linesize);
@@ -259,7 +296,7 @@ void LibavStreamer::sendImage(
   // Encode the frame
   AVPacket * pkt = av_packet_alloc();
 
-  ret = avcodec_send_frame(codec_context_, frame_);
+  int ret = avcodec_send_frame(codec_context_, frame_);
   if (ret == AVERROR_EOF) {
     RCLCPP_DEBUG_STREAM(node_->get_logger(), "avcodec_send_frame() encoder flushed\n");
   } else if (ret == AVERROR(EAGAIN)) {

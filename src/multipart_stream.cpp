@@ -30,6 +30,17 @@
 
 #include "web_video_server/multipart_stream.hpp"
 
+#include <chrono>
+#include <cstddef>
+#include <cstdio>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <boost/asio/buffer.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_header.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 
 namespace web_video_server

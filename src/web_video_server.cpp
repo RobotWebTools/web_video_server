@@ -30,18 +30,31 @@
 
 #include "web_video_server/web_video_server.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cstring>
+#include <exception>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <sstream>
 #include <vector>
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <opencv2/opencv.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/bind/placeholders.hpp>
+#include <boost/exception/exception.hpp>
 
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "sensor_msgs/image_encodings.hpp"
+#include "async_web_server_cpp/http_server.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/logging.hpp"
 
+#include "web_video_server/image_streamer.hpp"
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
 #include "web_video_server/streamers/jpeg_streamers.hpp"
 #include "web_video_server/streamers/png_streamers.hpp"
 #include "web_video_server/streamers/vp8_streamer.hpp"

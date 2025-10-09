@@ -29,6 +29,12 @@
 
 #include "web_video_server/utils.hpp"
 
+#include <optional>
+#include <string>
+
+#include "rmw/qos_profiles.h"
+#include "rmw/types.h"
+
 namespace web_video_server
 {
 

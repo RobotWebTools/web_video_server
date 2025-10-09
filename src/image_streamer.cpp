@@ -30,7 +30,10 @@
 
 #include "web_video_server/image_streamer.hpp"
 
-#include <iostream>
+#include "rclcpp/node.hpp"
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
 
 namespace web_video_server
 {

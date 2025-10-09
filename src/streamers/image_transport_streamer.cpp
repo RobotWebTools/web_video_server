@@ -30,11 +30,34 @@
 
 #include "web_video_server/streamers/image_transport_streamer.hpp"
 
+#include <chrono>
+#include <exception>
+#include <functional>
+#include <mutex>
+
+#include <boost/system/system_error.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <opencv2/imgproc.hpp>
+
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"
 #else
 #include "cv_bridge/cv_bridge.hpp"
 #endif
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/transport_hints.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
+#include "rmw/qos_profiles.h"
+#include "sensor_msgs/msg/image.hpp"
+
+#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {

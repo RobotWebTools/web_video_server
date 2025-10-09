@@ -33,23 +33,26 @@
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+#include <libavcodec/codec.h>
 #include <libavformat/avformat.h>
-#include <libavutil/intreadwrite.h>
-#include <libavformat/avio.h>
+#include <libavutil/dict.h>
+#include <libavutil/frame.h>
 #include <libswscale/swscale.h>
-#include <libavutil/opt.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/imgutils.h>
 }
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
+
+#include <opencv2/core/mat.hpp>
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/image_transport.hpp"
+#include "rclcpp/node.hpp"
 
+#include "web_video_server/image_streamer.hpp"
 #include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server

@@ -31,7 +31,8 @@
 
 #include <string>
 #include <optional>
-#include "rmw/qos_profiles.h"
+
+#include "rmw/types.h"
 
 namespace web_video_server
 {

@@ -30,21 +30,20 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#ifdef CV_BRIDGE_USES_OLD_HEADERS
-#include "cv_bridge/cv_bridge.h"
-#else
-#include "cv_bridge/cv_bridge.hpp"
-#endif
-
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_request_handler.hpp"
 #include "async_web_server_cpp/http_server.hpp"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/timer.hpp"
 
 #include "web_video_server/image_streamer.hpp"
 

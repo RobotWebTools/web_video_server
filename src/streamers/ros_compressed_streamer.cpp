@@ -30,6 +30,27 @@
 
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
 
+#include <chrono>
+#include <exception>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+
+#include <boost/asio/buffer.hpp>
+#include <boost/system/system_error.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
+#include "rmw/qos_profiles.h"
+#include "sensor_msgs/msg/compressed_image.hpp"
+
+#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/utils.hpp"
+
 namespace web_video_server
 {
 

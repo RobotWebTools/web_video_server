@@ -30,12 +30,15 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstddef>
 #include <queue>
 #include <memory>
 #include <vector>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include <boost/asio/buffer.hpp>
+
 #include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server

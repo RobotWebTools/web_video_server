@@ -32,10 +32,11 @@
 #include <memory>
 #include <string>
 
-#include "image_transport/image_transport.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+#include "rclcpp/node.hpp"
 
+#include "web_video_server/image_streamer.hpp"
 #include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server

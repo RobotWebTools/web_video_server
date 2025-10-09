@@ -34,14 +34,10 @@
 #include <memory>
 #include <string>
 
-#include <opencv2/opencv.hpp>
-
-#include "rclcpp/rclcpp.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
-#include "web_video_server/utils.hpp"
-#include "async_web_server_cpp/http_server.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/subscriber.hpp"
+#include "rclcpp/node.hpp"
 
 namespace web_video_server
 {
