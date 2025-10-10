@@ -48,16 +48,16 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/image_streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_image_transport_streamer.hpp"
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
 MjpegStreamer::MjpegStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node),
+: web_video_server::BaseImageTransportStreamer(request, connection, node),
   stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
@@ -84,7 +84,7 @@ void MjpegStreamer::sendImage(
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
 }
 
-std::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
+std::shared_ptr<web_video_server::BaseImageStreamer> MjpegStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -92,20 +92,11 @@ std::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
   return std::make_shared<MjpegStreamer>(request, connection, node);
 }
 
-std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
-{
-  std::stringstream ss;
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\"></img>";
-  return ss.str();
-}
-
 JpegSnapshotStreamer::JpegSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node)
+: web_video_server::BaseImageTransportStreamer(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
@@ -148,3 +139,9 @@ void JpegSnapshotStreamer::sendImage(
 }
 
 }  // namespace web_video_server
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::MjpegStreamerFactory,
+  web_video_server::BaseImageStreamerFactory)

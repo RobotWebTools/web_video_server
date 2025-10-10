@@ -40,14 +40,14 @@
 #include "rclcpp/node.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_image_transport_streamer.hpp"
 #include "web_video_server/multipart_stream.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
-class PngStreamer : public ImageTransportImageStreamer
+class PngStreamer : public web_video_server::BaseImageTransportStreamer
 {
 public:
   PngStreamer(
@@ -61,21 +61,21 @@ protected:
   virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
-  MultipartStream stream_;
+  web_video_server::MultipartStream stream_;
   int quality_;
 };
 
-class PngStreamerType : public ImageStreamerType
+class PngStreamerFactory : public web_video_server::BaseImageStreamerFactory
 {
 public:
-  std::shared_ptr<ImageStreamer> create_streamer(
+  std::string get_type() {return "png";}
+  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
-class PngSnapshotStreamer : public ImageTransportImageStreamer
+class PngSnapshotStreamer : public web_video_server::BaseImageTransportStreamer
 {
 public:
   PngSnapshotStreamer(
@@ -91,4 +91,4 @@ private:
   int quality_;
 };
 
-}  // namespace web_video_server
+}  // namespace web_video_server_streamers

@@ -42,16 +42,16 @@
 namespace web_video_server
 {
 
-class ImageStreamer
+class BaseImageStreamer
 {
 public:
-  ImageStreamer(
+  BaseImageStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 
   virtual void start() = 0;
-  virtual ~ImageStreamer();
+  virtual ~BaseImageStreamer();
 
   bool isInactive()
   {
@@ -73,19 +73,20 @@ protected:
   async_web_server_cpp::HttpRequest request_;
   rclcpp::Node::SharedPtr node_;
   bool inactive_;
-  image_transport::Subscriber image_sub_;
   std::string topic_;
 };
 
-class ImageStreamerType
+class BaseImageStreamerFactory
 {
 public:
-  virtual std::shared_ptr<ImageStreamer> create_streamer(
+  virtual std::string get_type() = 0;
+
+  virtual std::shared_ptr<BaseImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node) = 0;
 
-  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request) = 0;
+  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
 }  // namespace web_video_server

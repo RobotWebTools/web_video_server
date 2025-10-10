@@ -1,0 +1,33 @@
+<library path="web_video_server_streamers">
+  <class name="web_video_server/mjpeg"
+    type="web_video_server_streamers::MjpegStreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images as multipart/x-mixed-replace (MJPEG).</description>
+  </class>
+  <class name="web_video_server/png"
+    type="web_video_server_streamers::PngStreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images as multipart/x-mixed-replace (PNG).</description>
+  </class>
+  <class name="web_video_server/ros_compressed"
+    type="web_video_server_streamers::RosCompressedStreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images published using compressed_image_transport as
+      multipart/x-mixed-replace.</description>
+  </class>
+  <class name="web_video_server/h264"
+    type="web_video_server_streamers::H264StreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images as H.264 encoded video in an MP4 container.</description>
+  </class>
+  <class name="web_video_server/vp8"
+    type="web_video_server_streamers::Vp8StreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images as VP8 encoded video in a WebM container.</description>
+  </class>
+  <class name="web_video_server/vp9"
+    type="web_video_server_streamers::Vp9StreamerFactory"
+    base_class_type="web_video_server::BaseImageStreamerFactory">
+    <description>Streams images as VP9 encoded video in a WebM container.</description>
+  </class>
+</library>

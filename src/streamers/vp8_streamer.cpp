@@ -44,16 +44,16 @@ extern "C"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/image_streamer.hpp"
-#include "web_video_server/streamers/libav_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_libav_streamer.hpp"
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
 Vp8Streamer::Vp8Streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
+: web_video_server::BaseLibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
@@ -87,12 +87,7 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
 }
 
-Vp8StreamerType::Vp8StreamerType()
-: LibavStreamerType("webm", "libvpx", "video/webm")
-{
-}
-
-std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
+std::shared_ptr<web_video_server::BaseImageStreamer> Vp8StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -100,4 +95,10 @@ std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
   return std::make_shared<Vp8Streamer>(request, connection, node);
 }
 
-}  // namespace web_video_server
+}  // namespace web_video_server_streamers
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::Vp8StreamerFactory,
+  web_video_server::BaseImageStreamerFactory)

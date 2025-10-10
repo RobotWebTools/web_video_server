@@ -41,11 +41,12 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_request_handler.hpp"
 #include "async_web_server_cpp/http_server.hpp"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/timer.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
 
 namespace web_video_server
 {
@@ -110,8 +111,9 @@ private:
   std::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
-  std::vector<std::shared_ptr<ImageStreamer>> image_subscribers_;
-  std::map<std::string, std::shared_ptr<ImageStreamerType>> stream_types_;
+  std::vector<std::shared_ptr<BaseImageStreamer>> streamers_;
+  pluginlib::ClassLoader<BaseImageStreamerFactory> streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> streamer_factories_;
   std::mutex subscriber_mutex_;
 };
 

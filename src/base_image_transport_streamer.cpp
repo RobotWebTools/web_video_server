@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/base_image_transport_streamer.hpp"
 
 #include <chrono>
 #include <exception>
@@ -56,16 +56,16 @@
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
 #include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {
 
-ImageTransportImageStreamer::ImageTransportImageStreamer(
+BaseImageTransportStreamer::BaseImageTransportStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageStreamer(request, connection, node), it_(node), initialized_(false)
+: BaseImageStreamer(request, connection, node), it_(node), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -74,11 +74,11 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
-ImageTransportImageStreamer::~ImageTransportImageStreamer()
+BaseImageTransportStreamer::~BaseImageTransportStreamer()
 {
 }
 
-void ImageTransportImageStreamer::start()
+void BaseImageTransportStreamer::start()
 {
   image_transport::TransportHints hints(node_.get(), default_transport_);
   auto tnat = node_->get_topic_names_and_types();
@@ -111,15 +111,15 @@ void ImageTransportImageStreamer::start()
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
     node_.get(), topic_,
-    std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
+    std::bind(&BaseImageTransportStreamer::imageCallback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
 
-void ImageTransportImageStreamer::initialize(const cv::Mat &)
+void BaseImageTransportStreamer::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportImageStreamer::restreamFrame(std::chrono::duration<double> max_age)
+void BaseImageTransportStreamer::restreamFrame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -148,7 +148,7 @@ void ImageTransportImageStreamer::restreamFrame(std::chrono::duration<double> ma
   }
 }
 
-void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void BaseImageTransportStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
@@ -218,7 +218,7 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
   }
 }
 
-cv::Mat ImageTransportImageStreamer::decodeImage(
+cv::Mat BaseImageTransportStreamer::decodeImage(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (msg->encoding.find("F") != std::string::npos) {

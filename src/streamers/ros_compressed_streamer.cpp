@@ -48,16 +48,16 @@
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/compressed_image.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
 #include "web_video_server/utils.hpp"
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageStreamer(request, connection, node), stream_(connection)
+: BaseImageStreamer(request, connection, node), stream_(connection)
 {
   stream_.sendInitialHeader();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -77,7 +77,7 @@ void RosCompressedStreamer::start()
   RCLCPP_INFO(
     node_->get_logger(), "Streaming topic %s with QoS profile %s",
     compressed_topic.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
+  auto qos_profile = web_video_server::get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
@@ -157,7 +157,7 @@ void RosCompressedStreamer::imageCallback(
 }
 
 
-std::shared_ptr<ImageStreamer> RosCompressedStreamerType::create_streamer(
+std::shared_ptr<web_video_server::BaseImageStreamer> RosCompressedStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -165,14 +165,10 @@ std::shared_ptr<ImageStreamer> RosCompressedStreamerType::create_streamer(
   return std::make_shared<RosCompressedStreamer>(request, connection, node);
 }
 
-std::string RosCompressedStreamerType::create_viewer(
-  const async_web_server_cpp::HttpRequest & request)
-{
-  std::stringstream ss;
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\"></img>";
-  return ss.str();
-}
+}  // namespace web_video_server_streamers
 
-}  // namespace web_video_server
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::RosCompressedStreamerFactory,
+  web_video_server::BaseImageStreamerFactory)

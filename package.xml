@@ -24,11 +24,14 @@
   <depend>cv_bridge</depend>
   <depend>ffmpeg</depend>
   <depend>image_transport</depend>
+  <depend>libopencv-dev</depend>
   <depend>rclcpp</depend>
   <depend>rmw</depend>
   <depend>sensor_msgs</depend>
 
   <!-- Dependencies present only in source files -->
+  <build_depend>pluginlib</build_depend>
+  <exec_depend>pluginlib</exec_depend>
   <build_depend>rclcpp_components</build_depend>
   <exec_depend>rclcpp_components</exec_depend>
 

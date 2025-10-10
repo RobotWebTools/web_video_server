@@ -53,13 +53,13 @@
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
-#include "web_video_server/streamers/jpeg_streamers.hpp"
-#include "web_video_server/streamers/png_streamers.hpp"
-#include "web_video_server/streamers/vp8_streamer.hpp"
-#include "web_video_server/streamers/h264_streamer.hpp"
-#include "web_video_server/streamers/vp9_streamer.hpp"
+// #include "web_video_server/streamers/jpeg_streamers.hpp"
+// #include "web_video_server/streamers/png_streamers.hpp"
+// #include "web_video_server/streamers/vp8_streamer.hpp"
+// #include "web_video_server/streamers/h264_streamer.hpp"
+// #include "web_video_server/streamers/vp9_streamer.hpp"
 
 using namespace std::chrono_literals;
 using namespace boost::placeholders;  // NOLINT
@@ -69,14 +69,15 @@ namespace web_video_server
 
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
-    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
+  streamer_factory_loader_("web_video_server", "web_video_server::BaseImageStreamerFactory")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
   declare_parameter("address", "0.0.0.0");
   declare_parameter("server_threads", 1);
   declare_parameter("publish_rate", -1.0);
-  declare_parameter("default_stream_type", "mjpeg");
+  declare_parameter("default_stream_type", "ros_compressed");
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -86,12 +87,15 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("publish_rate", publish_rate_);
   get_parameter("default_stream_type", default_stream_type_);
 
-  stream_types_["mjpeg"] = std::make_shared<MjpegStreamerType>();
-  stream_types_["png"] = std::make_shared<PngStreamerType>();
-  stream_types_["ros_compressed"] = std::make_shared<RosCompressedStreamerType>();
-  stream_types_["vp8"] = std::make_shared<Vp8StreamerType>();
-  stream_types_["h264"] = std::make_shared<H264StreamerType>();
-  stream_types_["vp9"] = std::make_shared<Vp9StreamerType>();
+  for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
+    RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
+    try {
+      auto streamer = streamer_factory_loader_.createSharedInstance(cls);
+      streamer_factories_[streamer->get_type()] = streamer;
+    } catch (pluginlib::PluginlibException & ex) {
+      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+    }
+  }
 
   handler_group_.addHandlerForPath(
     "/",
@@ -141,7 +145,7 @@ void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  for (auto & subscriber : image_subscribers_) {
+  for (auto & subscriber : streamers_) {
     subscriber->restreamFrame(max_age);
   }
 }
@@ -151,14 +155,14 @@ void WebVideoServer::cleanup_inactive_streams()
   std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
   if (lock) {
     auto new_end = std::partition(
-      image_subscribers_.begin(), image_subscribers_.end(),
-      [](const std::shared_ptr<ImageStreamer> & streamer) {return !streamer->isInactive();});
+      streamers_.begin(), streamers_.end(),
+      [](const std::shared_ptr<BaseImageStreamer> & streamer) {return !streamer->isInactive();});
     if (verbose_) {
-      for (auto itr = new_end; itr < image_subscribers_.end(); ++itr) {
+      for (auto itr = new_end; itr < streamers_.end(); ++itr) {
         RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
       }
     }
-    image_subscribers_.erase(new_end, image_subscribers_.end());
+    streamers_.erase(new_end, streamers_.end());
   }
 }
 
@@ -185,7 +189,7 @@ bool WebVideoServer::handle_stream(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (stream_types_.find(type) != stream_types_.end()) {
+  if (streamer_factories_.find(type) != streamer_factories_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
     // Fallback for topics without corresponding compressed topics
     if (type == std::string("ros_compressed")) {
@@ -212,11 +216,11 @@ bool WebVideoServer::handle_stream(
         type = "mjpeg";
       }
     }
-    std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(
+    std::shared_ptr<BaseImageStreamer> streamer = streamer_factories_[type]->create_streamer(
       request, connection, shared_from_this());
     streamer->start();
     std::scoped_lock lock(subscriber_mutex_);
-    image_subscribers_.push_back(streamer);
+    streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);
@@ -229,12 +233,12 @@ bool WebVideoServer::handle_snapshot(
   async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
   const char * /* end */)
 {
-  std::shared_ptr<ImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(
-    request, connection, shared_from_this());
-  streamer->start();
+  // std::shared_ptr<BaseImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(
+  //   request, connection, shared_from_this());
+  // streamer->start();
 
-  std::scoped_lock lock(subscriber_mutex_);
-  image_subscribers_.push_back(streamer);
+  // std::scoped_lock lock(subscriber_mutex_);
+  // image_subscribers_.push_back(streamer);
   return true;
 }
 
@@ -244,7 +248,7 @@ bool WebVideoServer::handle_stream_viewer(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (stream_types_.find(type) != stream_types_.end()) {
+  if (streamer_factories_.find(type) != streamer_factories_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
     // Fallback for topics without corresponding compressed topics
     if (type == std::string("ros_compressed")) {
@@ -281,7 +285,7 @@ bool WebVideoServer::handle_stream_viewer(
     std::stringstream ss;
     ss << "<html><head><title>" << topic << "</title></head><body>";
     ss << "<h1>" << topic << "</h1>";
-    ss << stream_types_[type]->create_viewer(request);
+    ss << streamer_factories_[type]->create_viewer(request);
     ss << "</body></html>";
     connection->write(ss.str());
   } else {

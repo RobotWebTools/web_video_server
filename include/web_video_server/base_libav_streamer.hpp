@@ -52,25 +52,25 @@ extern "C"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/image_streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_image_transport_streamer.hpp"
 
 namespace web_video_server
 {
 
-class LibavStreamer : public ImageTransportImageStreamer
+class BaseLibavStreamer : public BaseImageTransportStreamer
 {
 public:
-  LibavStreamer(
+  BaseLibavStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node, const std::string & format_name, const std::string & codec_name,
     const std::string & content_type);
 
-  ~LibavStreamer();
+  ~BaseLibavStreamer();
 
 protected:
-  virtual void initializeEncoder();
+  virtual void initializeEncoder() = 0;
   virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
   virtual void initialize(const cv::Mat &);
   AVFormatContext * format_context_;
@@ -98,24 +98,10 @@ private:
   uint8_t * io_buffer_;  // custom IO buffer
 };
 
-class LibavStreamerType : public ImageStreamerType
+class BaseLibavStreamerFactory : public BaseImageStreamerFactory
 {
 public:
-  LibavStreamerType(
-    const std::string & format_name, const std::string & codec_name,
-    const std::string & content_type);
-
-  std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
-
-private:
-  const std::string format_name_;
-  const std::string codec_name_;
-  const std::string content_type_;
+  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
 }  // namespace web_video_server

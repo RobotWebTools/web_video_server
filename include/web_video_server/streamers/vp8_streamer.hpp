@@ -37,13 +37,13 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/image_streamer.hpp"
-#include "web_video_server/streamers/libav_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_libav_streamer.hpp"
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
-class Vp8Streamer : public LibavStreamer
+class Vp8Streamer : public web_video_server::BaseLibavStreamer
 {
 public:
   Vp8Streamer(
@@ -59,14 +59,14 @@ private:
   std::string quality_;
 };
 
-class Vp8StreamerType : public LibavStreamerType
+class Vp8StreamerFactory : public web_video_server::BaseLibavStreamerFactory
 {
 public:
-  Vp8StreamerType();
-  std::shared_ptr<ImageStreamer> create_streamer(
+  std::string get_type() {return "vp8";}
+  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 };
 
-}  // namespace web_video_server
+}  // namespace web_video_server_streamers

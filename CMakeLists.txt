@@ -10,6 +10,7 @@ find_package(ament_cmake_ros REQUIRED)
 find_package(async_web_server_cpp REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
+find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -39,37 +40,67 @@ if(${cv_bridge_VERSION} VERSION_LESS "3.3.0")
   add_compile_definitions(CV_BRIDGE_USES_OLD_HEADERS)
 endif()
 
-## Specify additional locations of header files
-include_directories(include
-  ${avcodec_INCLUDE_DIRS}
-  ${avformat_INCLUDE_DIRS}
-  ${avutil_INCLUDE_DIRS}
-  ${swscale_INCLUDE_DIRS}
-)
-
 ## Declare a cpp library
 add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
-  src/image_streamer.cpp
+  src/base_image_streamer.cpp
+  src/base_image_transport_streamer.cpp
+  src/base_libav_streamer.cpp
   src/multipart_stream.cpp
   src/utils.cpp
-  src/streamers/image_transport_streamer.cpp
-  src/streamers/libav_streamer.cpp
-  src/streamers/h264_streamer.cpp
-  src/streamers/vp8_streamer.cpp
-  src/streamers/vp9_streamer.cpp
-  src/streamers/ros_compressed_streamer.cpp
-  src/streamers/jpeg_streamers.cpp
-  src/streamers/png_streamers.cpp
+)
+
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${avcodec_INCLUDE_DIRS}
+    ${avformat_INCLUDE_DIRS}
+    ${avutil_INCLUDE_DIRS}
+    ${swscale_INCLUDE_DIRS}
 )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
+  PUBLIC
+    async_web_server_cpp::async_web_server_cpp
+    image_transport::image_transport
+    pluginlib::pluginlib
+    rclcpp::rclcpp
+    ${sensor_msgs_TARGETS}
+    Boost::boost
+    ${OpenCV_LIBS}
+    ${avcodec_LIBRARIES}
+    ${avformat_LIBRARIES}
+    ${avutil_LIBRARIES}
+    ${swscale_LIBRARIES}
+  PRIVATE
+    cv_bridge::cv_bridge
+    rclcpp_components::component
+)
+
+add_library(${PROJECT_NAME}_streamers SHARED
+  src/streamers/h264_streamer.cpp
+  src/streamers/jpeg_streamers.cpp
+  src/streamers/png_streamers.cpp
+  src/streamers/ros_compressed_streamer.cpp
+  src/streamers/vp8_streamer.cpp
+  src/streamers/vp9_streamer.cpp
+)
+
+target_include_directories(${PROJECT_NAME}_streamers
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+)
+
+target_link_libraries(${PROJECT_NAME}_streamers
+  ${PROJECT_NAME}
   async_web_server_cpp::async_web_server_cpp
   cv_bridge::cv_bridge
   image_transport::image_transport
+  pluginlib::pluginlib
   rclcpp::rclcpp
-  rclcpp_components::component
   ${sensor_msgs_TARGETS}
   Boost::boost
   Boost::system
@@ -91,11 +122,12 @@ target_link_libraries(${PROJECT_NAME}_node
 
 rclcpp_components_register_nodes(${PROJECT_NAME} "web_video_server::WebVideoServer")
 
+pluginlib_export_plugin_description_file(web_video_server plugins.xml)
+
 #############
 ## Install ##
 #############
 
-## Mark executables and/or libraries for installation
 install(
   DIRECTORY include/
   DESTINATION include/${PROJECT_NAME}
@@ -114,6 +146,11 @@ set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME ${PROJECT_NAME
 install(
   TARGETS ${PROJECT_NAME}_node
   DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}_streamers
+  LIBRARY DESTINATION lib
 )
 
 ###########

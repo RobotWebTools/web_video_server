@@ -42,19 +42,19 @@
 #include "rclcpp/node.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
 
 namespace web_video_server
 {
 
-class ImageTransportImageStreamer : public ImageStreamer
+class BaseImageTransportStreamer : public BaseImageStreamer
 {
 public:
-  ImageTransportImageStreamer(
+  BaseImageTransportStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  virtual ~ImageTransportImageStreamer();
+  virtual ~BaseImageTransportStreamer();
 
   virtual void start();
 

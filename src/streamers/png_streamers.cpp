@@ -49,8 +49,8 @@
 #include "sensor_msgs/image_encodings.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/image_streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/base_image_transport_streamer.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"
@@ -58,13 +58,13 @@
 #include "cv_bridge/cv_bridge.hpp"
 #endif
 
-namespace web_video_server
+namespace web_video_server_streamers
 {
 
 PngStreamer::PngStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node), stream_(connection)
+: web_video_server::BaseImageTransportStreamer(request, connection, node), stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
   stream_.sendInitialHeader();
@@ -83,7 +83,7 @@ cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr &
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return ImageTransportImageStreamer::decodeImage(msg);
+    return web_video_server::BaseImageTransportStreamer::decodeImage(msg);
   }
 }
 
@@ -99,7 +99,7 @@ void PngStreamer::sendImage(const cv::Mat & img, const std::chrono::steady_clock
   stream_.sendPartAndClear(time, "image/png", encoded_buffer);
 }
 
-std::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
+std::shared_ptr<web_video_server::BaseImageStreamer> PngStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -107,20 +107,11 @@ std::shared_ptr<ImageStreamer> PngStreamerType::create_streamer(
   return std::make_shared<PngStreamer>(request, connection, node);
 }
 
-std::string PngStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
-{
-  std::stringstream ss;
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\"></img>";
-  return ss.str();
-}
-
 PngSnapshotStreamer::PngSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node)
+: web_video_server::BaseImageTransportStreamer(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
 }
@@ -138,7 +129,7 @@ cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSha
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return ImageTransportImageStreamer::decodeImage(msg);
+    return web_video_server::BaseImageTransportStreamer::decodeImage(msg);
   }
 }
 
@@ -173,4 +164,10 @@ void PngSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
-}  // namespace web_video_server
+}  // namespace web_video_server_streamers
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::PngStreamerFactory,
+  web_video_server::BaseImageStreamerFactory)
