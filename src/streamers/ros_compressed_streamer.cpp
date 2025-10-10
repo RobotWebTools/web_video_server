@@ -50,6 +50,7 @@
 
 #include "web_video_server/base_image_streamer.hpp"
 #include "web_video_server/utils.hpp"
+#include "web_video_server/streamers/jpeg_streamers.hpp"
 
 namespace web_video_server_streamers
 {
@@ -162,6 +163,30 @@ std::shared_ptr<web_video_server::BaseImageStreamer> RosCompressedStreamerFactor
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
 {
+  std::string topic = request.get_query_param_value_or_default("topic", "");
+  std::string compressed_topic_name = topic + "/compressed";
+  auto tnat = node->get_topic_names_and_types();
+  bool did_find_compressed_topic = false;
+  for (auto topic_and_types : tnat) {
+    if (topic_and_types.second.size() > 1) {
+      // skip over topics with more than one type
+      continue;
+    }
+    auto & topic_name = topic_and_types.first;
+    if (topic_name == compressed_topic_name ||
+      (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
+    {
+      did_find_compressed_topic = true;
+      break;
+    }
+  }
+  if (!did_find_compressed_topic) {
+    RCLCPP_WARN(
+        node->get_logger().get_child("RosCompressedStreamerFactory"),
+        "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
+    return std::make_shared<MjpegStreamer>(request, connection, node);
+  }
+
   return std::make_shared<RosCompressedStreamer>(request, connection, node);
 }
 

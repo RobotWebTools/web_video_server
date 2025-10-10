@@ -54,12 +54,6 @@
 #include "rclcpp/logging.hpp"
 
 #include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/streamers/ros_compressed_streamer.hpp"
-// #include "web_video_server/streamers/jpeg_streamers.hpp"
-// #include "web_video_server/streamers/png_streamers.hpp"
-// #include "web_video_server/streamers/vp8_streamer.hpp"
-// #include "web_video_server/streamers/h264_streamer.hpp"
-// #include "web_video_server/streamers/vp9_streamer.hpp"
 
 using namespace std::chrono_literals;
 using namespace boost::placeholders;  // NOLINT
@@ -143,7 +137,7 @@ WebVideoServer::~WebVideoServer()
 
 void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
 {
-  std::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(streamers_mutex_);
 
   for (auto & subscriber : streamers_) {
     subscriber->restreamFrame(max_age);
@@ -152,7 +146,7 @@ void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
+  std::unique_lock lock(streamers_mutex_, std::try_to_lock);
   if (lock) {
     auto new_end = std::partition(
       streamers_.begin(), streamers_.end(),
@@ -190,36 +184,10 @@ bool WebVideoServer::handle_stream(
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
-    std::string topic = request.get_query_param_value_or_default("topic", "");
-    // Fallback for topics without corresponding compressed topics
-    if (type == std::string("ros_compressed")) {
-      std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = get_topic_names_and_types();
-      bool did_find_compressed_topic = false;
-      for (auto topic_and_types : tnat) {
-        if (topic_and_types.second.size() > 1) {
-          // skip over topics with more than one type
-          continue;
-        }
-        auto & topic_name = topic_and_types.first;
-        if (topic_name == compressed_topic_name ||
-          (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-        {
-          did_find_compressed_topic = true;
-          break;
-        }
-      }
-      if (!did_find_compressed_topic) {
-        RCLCPP_WARN(
-          get_logger(),
-          "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
-        type = "mjpeg";
-      }
-    }
     std::shared_ptr<BaseImageStreamer> streamer = streamer_factories_[type]->create_streamer(
       request, connection, shared_from_this());
     streamer->start();
-    std::scoped_lock lock(subscriber_mutex_);
+    std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
@@ -237,7 +205,7 @@ bool WebVideoServer::handle_snapshot(
   //   request, connection, shared_from_this());
   // streamer->start();
 
-  // std::scoped_lock lock(subscriber_mutex_);
+  // std::scoped_lock lock(streamers_mutex_);
   // image_subscribers_.push_back(streamer);
   return true;
 }
@@ -250,31 +218,6 @@ bool WebVideoServer::handle_stream_viewer(
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
-    // Fallback for topics without corresponding compressed topics
-    if (type == std::string("ros_compressed")) {
-      std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = get_topic_names_and_types();
-      bool did_find_compressed_topic = false;
-      for (auto topic_and_types : tnat) {
-        if (topic_and_types.second.size() > 1) {
-          // skip over topics with more than one type
-          continue;
-        }
-        auto & topic_name = topic_and_types.first;
-        if (topic_name == compressed_topic_name ||
-          (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-        {
-          did_find_compressed_topic = true;
-          break;
-        }
-      }
-      if (!did_find_compressed_topic) {
-        RCLCPP_WARN(
-          get_logger(),
-          "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
-        type = "mjpeg";
-      }
-    }
 
     async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
     .header("Connection", "close")

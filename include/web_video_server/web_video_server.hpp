@@ -114,7 +114,7 @@ private:
   std::vector<std::shared_ptr<BaseImageStreamer>> streamers_;
   pluginlib::ClassLoader<BaseImageStreamerFactory> streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> streamer_factories_;
-  std::mutex subscriber_mutex_;
+  std::mutex streamers_mutex_;
 };
 
 }  // namespace web_video_server
