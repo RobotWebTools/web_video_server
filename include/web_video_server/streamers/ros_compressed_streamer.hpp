@@ -83,4 +83,37 @@ public:
     rclcpp::Node::SharedPtr node);
 };
 
+class RosCompressedSnapshotStreamer : public web_video_server::BaseImageStreamer
+{
+public:
+  RosCompressedSnapshotStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+  ~RosCompressedSnapshotStreamer();
+  virtual void start();
+  virtual void restreamFrame(std::chrono::duration<double> max_age);
+
+protected:
+  virtual void sendImage(
+    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+    const std::chrono::steady_clock::time_point & time);
+
+private:
+  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
+  std::string qos_profile_name_;
+};
+
+class RosCompressedSnapshotStreamerFactory : public web_video_server::BaseSnapshotStreamerFactory
+{
+public:
+  std::string get_type() {return "ros_compressed";}
+  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+};
+
 }  // namespace web_video_server_streamers

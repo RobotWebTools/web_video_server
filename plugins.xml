@@ -40,4 +40,9 @@
     base_class_type="web_video_server::BaseSnapshotStreamerFactory">
     <description>Provides single PNG images.</description>
   </class>
+  <class name="web_video_server/snapshot/ros_compressed"
+    type="web_video_server_streamers::RosCompressedSnapshotStreamerFactory"
+    base_class_type="web_video_server::BaseSnapshotStreamerFactory">
+    <description>Provides single images published using compressed_image_transport as JPEG or PNG.</description>
+  </class>
 </library>
