@@ -363,7 +363,6 @@ bool WebVideoServer::handle_list_streams(
     }
     connection->write("</ul>");
     connection->write("</li>");
-
   }
   connection->write("</ul></body></html>");
   return true;

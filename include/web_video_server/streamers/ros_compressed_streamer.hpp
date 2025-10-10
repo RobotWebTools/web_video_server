@@ -34,6 +34,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
