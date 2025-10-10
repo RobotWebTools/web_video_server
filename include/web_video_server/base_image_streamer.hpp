@@ -89,4 +89,6 @@ public:
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
+class BaseSnapshotStreamerFactory : public BaseImageStreamerFactory {};
+
 }  // namespace web_video_server

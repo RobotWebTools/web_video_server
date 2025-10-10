@@ -64,14 +64,17 @@ namespace web_video_server
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
-  streamer_factory_loader_("web_video_server", "web_video_server::BaseImageStreamerFactory")
+  image_streamer_factory_loader_("web_video_server", "web_video_server::BaseImageStreamerFactory"),
+  snapshot_streamer_factory_loader_("web_video_server",
+    "web_video_server::BaseSnapshotStreamerFactory")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
   declare_parameter("address", "0.0.0.0");
   declare_parameter("server_threads", 1);
   declare_parameter("publish_rate", -1.0);
-  declare_parameter("default_stream_type", "ros_compressed");
+  declare_parameter("default_stream_type", "mjpeg");
+  declare_parameter("default_snapshot_type", "jpeg");
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -80,12 +83,23 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("server_threads", server_threads);
   get_parameter("publish_rate", publish_rate_);
   get_parameter("default_stream_type", default_stream_type_);
+  get_parameter("default_snapshot_type", default_snapshot_type_);
 
-  for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
+  for (auto cls : image_streamer_factory_loader_.getDeclaredClasses()) {
     RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
     try {
-      auto streamer = streamer_factory_loader_.createSharedInstance(cls);
-      streamer_factories_[streamer->get_type()] = streamer;
+      auto streamer = image_streamer_factory_loader_.createSharedInstance(cls);
+      image_streamer_factories_[streamer->get_type()] = streamer;
+    } catch (pluginlib::PluginlibException & ex) {
+      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+    }
+  }
+
+  for (auto cls : snapshot_streamer_factory_loader_.getDeclaredClasses()) {
+    RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
+    try {
+      auto streamer = snapshot_streamer_factory_loader_.createSharedInstance(cls);
+      snapshot_streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
       RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
     }
@@ -183,8 +197,8 @@ bool WebVideoServer::handle_stream(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (streamer_factories_.find(type) != streamer_factories_.end()) {
-    std::shared_ptr<BaseImageStreamer> streamer = streamer_factories_[type]->create_streamer(
+  if (image_streamer_factories_.find(type) != image_streamer_factories_.end()) {
+    std::shared_ptr<BaseImageStreamer> streamer = image_streamer_factories_[type]->create_streamer(
       request, connection, shared_from_this());
     streamer->start();
     std::scoped_lock lock(streamers_mutex_);
@@ -198,15 +212,21 @@ bool WebVideoServer::handle_stream(
 
 bool WebVideoServer::handle_snapshot(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
-  const char * /* end */)
+  async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
+  const char * end)
 {
-  // std::shared_ptr<BaseImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(
-  //   request, connection, shared_from_this());
-  // streamer->start();
-
-  // std::scoped_lock lock(streamers_mutex_);
-  // image_subscribers_.push_back(streamer);
+  std::string type = request.get_query_param_value_or_default("type", default_snapshot_type_);
+  if (snapshot_streamer_factories_.find(type) != snapshot_streamer_factories_.end()) {
+    std::shared_ptr<BaseImageStreamer> streamer =
+      snapshot_streamer_factories_[type]->create_streamer(
+      request, connection, shared_from_this());
+    streamer->start();
+    std::scoped_lock lock(streamers_mutex_);
+    streamers_.push_back(streamer);
+  } else {
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
+      request, connection, begin, end);
+  }
   return true;
 }
 
@@ -216,7 +236,7 @@ bool WebVideoServer::handle_stream_viewer(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (streamer_factories_.find(type) != streamer_factories_.end()) {
+  if (image_streamer_factories_.find(type) != image_streamer_factories_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
 
     async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
@@ -228,7 +248,7 @@ bool WebVideoServer::handle_stream_viewer(
     std::stringstream ss;
     ss << "<html><head><title>" << topic << "</title></head><body>";
     ss << "<h1>" << topic << "</h1>";
-    ss << streamer_factories_[type]->create_viewer(request);
+    ss << image_streamer_factories_[type]->create_viewer(request);
     ss << "</body></html>";
     connection->write(ss.str());
   } else {

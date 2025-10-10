@@ -164,6 +164,14 @@ void PngSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
+std::shared_ptr<web_video_server::BaseImageStreamer> PngSnapshotStreamerFactory::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
+{
+  return std::make_shared<PngSnapshotStreamer>(request, connection, node);
+}
+
 }  // namespace web_video_server_streamers
 
 #include "pluginlib/class_list_macros.hpp"
@@ -171,3 +179,6 @@ void PngSnapshotStreamer::sendImage(
 PLUGINLIB_EXPORT_CLASS(
   web_video_server_streamers::PngStreamerFactory,
   web_video_server::BaseImageStreamerFactory)
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::PngSnapshotStreamerFactory,
+  web_video_server::BaseSnapshotStreamerFactory)

@@ -107,13 +107,16 @@ private:
   std::string address_;
   bool verbose_;
   std::string default_stream_type_;
+  std::string default_snapshot_type_;
 
   std::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
   std::vector<std::shared_ptr<BaseImageStreamer>> streamers_;
-  pluginlib::ClassLoader<BaseImageStreamerFactory> streamer_factory_loader_;
-  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> streamer_factories_;
+  pluginlib::ClassLoader<BaseImageStreamerFactory> image_streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> image_streamer_factories_;
+  pluginlib::ClassLoader<BaseSnapshotStreamerFactory> snapshot_streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> snapshot_streamer_factories_;
   std::mutex streamers_mutex_;
 };
 

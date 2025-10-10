@@ -89,4 +89,15 @@ private:
   int quality_;
 };
 
+class JpegSnapshotStreamerFactory : public web_video_server::BaseSnapshotStreamerFactory
+{
+public:
+  std::string get_type() {return "jpeg";}
+
+  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node);
+};
+
 }  // namespace web_video_server_streamers

@@ -138,10 +138,21 @@ void JpegSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
-}  // namespace web_video_server
+std::shared_ptr<web_video_server::BaseImageStreamer> JpegSnapshotStreamerFactory::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::SharedPtr node)
+{
+  return std::make_shared<JpegSnapshotStreamer>(request, connection, node);
+}
+
+}  // namespace web_video_server_streamers
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
   web_video_server_streamers::MjpegStreamerFactory,
   web_video_server::BaseImageStreamerFactory)
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server_streamers::JpegSnapshotStreamerFactory,
+  web_video_server::BaseSnapshotStreamerFactory)
