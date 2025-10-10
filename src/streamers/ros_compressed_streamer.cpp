@@ -185,8 +185,8 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
   }
   if (!did_find_compressed_topic) {
     RCLCPP_WARN(
-        node->get_logger().get_child("RosCompressedStreamerFactory"),
-        "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
+      node->get_logger().get_child("RosCompressedStreamerFactory"),
+      "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
     return std::make_shared<MjpegStreamer>(request, connection, node);
   }
 
@@ -248,7 +248,7 @@ void RosCompressedSnapshotStreamer::start()
     qos_profile.value());
   image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
     compressed_topic, qos,
-      std::bind(&RosCompressedSnapshotStreamer::imageCallback, this, std::placeholders::_1)
+    std::bind(&RosCompressedSnapshotStreamer::imageCallback, this, std::placeholders::_1)
   );
 }
 
@@ -328,8 +328,8 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
   }
   if (!did_find_compressed_topic) {
     RCLCPP_WARN(
-        node->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
-        "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
+      node->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
+      "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
     return std::make_shared<JpegSnapshotStreamer>(request, connection, node);
   }
   return std::make_shared<RosCompressedSnapshotStreamer>(request, connection, node);

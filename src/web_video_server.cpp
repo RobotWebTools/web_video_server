@@ -273,7 +273,8 @@ bool WebVideoServer::handle_list_streams(
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
     std::vector<std::string> factory_topics =
       factory_pair.second->get_available_topics(shared_from_this());
-    RCLCPP_DEBUG(get_logger(), "Factory %s returned %zu topics",
+    RCLCPP_DEBUG(
+      get_logger(), "Factory %s returned %zu topics",
       factory_pair.first.c_str(), factory_topics.size());
     for (const auto & topic : factory_topics) {
       RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
@@ -286,7 +287,8 @@ bool WebVideoServer::handle_list_streams(
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
     std::vector<std::string> factory_topics =
       factory_pair.second->get_available_topics(shared_from_this());
-    RCLCPP_DEBUG(get_logger(), "Factory %s returned %zu topics",
+    RCLCPP_DEBUG(
+      get_logger(), "Factory %s returned %zu topics",
       factory_pair.first.c_str(), factory_topics.size());
     for (const auto & topic : factory_topics) {
       RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
