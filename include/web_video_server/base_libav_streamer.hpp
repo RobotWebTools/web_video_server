@@ -98,7 +98,7 @@ private:
   uint8_t * io_buffer_;  // custom IO buffer
 };
 
-class BaseLibavStreamerFactory : public BaseImageStreamerFactory
+class BaseLibavStreamerFactory : public BaseImageTransportStreamerFactory
 {
 public:
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
