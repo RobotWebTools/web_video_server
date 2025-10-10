@@ -91,7 +91,8 @@ private:
   int quality_;
 };
 
-class PngSnapshotStreamerFactory : public web_video_server::BaseSnapshotStreamerFactory
+class PngSnapshotStreamerFactory : public web_video_server::
+  BaseImageTransportSnapshotStreamerFactory
 {
 public:
   std::string get_type() {return "png";}

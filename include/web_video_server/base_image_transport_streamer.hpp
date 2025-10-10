@@ -88,4 +88,10 @@ public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
+class BaseImageTransportSnapshotStreamerFactory : public BaseSnapshotStreamerFactory
+{
+public:
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+};
+
 }  // namespace web_video_server

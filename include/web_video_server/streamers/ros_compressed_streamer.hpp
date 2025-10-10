@@ -115,6 +115,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
+  std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
 }  // namespace web_video_server_streamers

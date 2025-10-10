@@ -89,7 +89,8 @@ private:
   int quality_;
 };
 
-class JpegSnapshotStreamerFactory : public web_video_server::BaseSnapshotStreamerFactory
+class JpegSnapshotStreamerFactory : public web_video_server::
+  BaseImageTransportSnapshotStreamerFactory
 {
 public:
   std::string get_type() {return "jpeg";}

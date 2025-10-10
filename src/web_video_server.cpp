@@ -265,7 +265,8 @@ bool WebVideoServer::handle_list_streams(
   async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
   const char * /* end */)
 {
-  std::map<std::string, std::vector<std::string>> topics_by_type;
+  std::map<std::string, std::vector<std::string>> topics_by_streamer_type;
+  std::map<std::string, std::vector<std::string>> topics_by_snapshot_type;
   std::set<std::string> all_topics;
 
   for (const auto & factory_pair : image_streamer_factories_) {
@@ -276,7 +277,20 @@ bool WebVideoServer::handle_list_streams(
       factory_pair.first.c_str(), factory_topics.size());
     for (const auto & topic : factory_topics) {
       RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
-      topics_by_type[factory_pair.first].push_back(topic);
+      topics_by_streamer_type[factory_pair.first].push_back(topic);
+      all_topics.insert(topic);
+    }
+  }
+
+  for (const auto & factory_pair : snapshot_streamer_factories_) {
+    RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
+    std::vector<std::string> factory_topics =
+      factory_pair.second->get_available_topics(shared_from_this());
+    RCLCPP_DEBUG(get_logger(), "Factory %s returned %zu topics",
+      factory_pair.first.c_str(), factory_topics.size());
+    for (const auto & topic : factory_topics) {
+      RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
+      topics_by_snapshot_type[factory_pair.first].push_back(topic);
       all_topics.insert(topic);
     }
   }
@@ -297,8 +311,9 @@ bool WebVideoServer::handle_list_streams(
   for (const std::string & topic : all_topics) {
     std::vector<std::string> available_stream_viewers;
     std::vector<std::string> available_streams;
+    std::vector<std::string> available_snapshots;
 
-    for (const auto & factory_pair : topics_by_type) {
+    for (const auto & factory_pair : topics_by_streamer_type) {
       const auto & type = factory_pair.first;
       const auto & topics = factory_pair.second;
       if (std::find(topics.begin(), topics.end(), topic) != topics.end()) {
@@ -311,21 +326,41 @@ bool WebVideoServer::handle_list_streams(
       }
     }
 
+    for (const auto & factory_pair : topics_by_snapshot_type) {
+      const auto & type = factory_pair.first;
+      const auto & topics = factory_pair.second;
+      if (std::find(topics.begin(), topics.end(), topic) != topics.end()) {
+        available_snapshots.push_back(
+          "<a href=\"/snapshot?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
+      }
+    }
+
     connection->write("<li>");
     connection->write(topic);
     connection->write("<ul>");
-    connection->write("<li>");
-    connection->write("<a href=\"/stream_viewer?topic=" + topic + "\">");
-    connection->write("Stream Viewer</a> (");
-    connection->write(boost::algorithm::join(available_stream_viewers, ", "));
-    connection->write(")");
-    connection->write("</li>");
-    connection->write("<li>");
-    connection->write("<a href=\"/stream?topic=" + topic + "\">");
-    connection->write("Stream</a> (");
-    connection->write(boost::algorithm::join(available_streams, ", "));
-    connection->write(")");
-    connection->write("</li>");
+    if (!available_streams.empty()) {
+      connection->write("<li>");
+      connection->write("<a href=\"/stream_viewer?topic=" + topic + "\">");
+      connection->write("Stream Viewer</a> (");
+      connection->write(boost::algorithm::join(available_stream_viewers, ", "));
+      connection->write(")");
+      connection->write("</li>");
+      connection->write("<li>");
+      connection->write("<a href=\"/stream?topic=" + topic + "\">");
+      connection->write("Stream</a> (");
+      connection->write(boost::algorithm::join(available_streams, ", "));
+      connection->write(")");
+      connection->write("</li>");
+    }
+    if (!available_snapshots.empty()) {
+      connection->write("<li>");
+      connection->write("<a href=\"/snapshot?topic=" + topic + "\">");
+      connection->write("Snapshot</a> (");
+      connection->write(boost::algorithm::join(available_snapshots, ", "));
+      connection->write(")");
+      connection->write("</li>");
+    }
     connection->write("</ul>");
     connection->write("</li>");
 
