@@ -49,17 +49,19 @@
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/compressed_image.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/utils.hpp"
+#include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/jpeg_streamers.hpp"
+#include "web_video_server/utils.hpp"
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: BaseImageStreamer(request, connection, node), stream_(connection)
+: StreamerInterface(request, connection, node), stream_(connection)
 {
   stream_.sendInitialHeader();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -79,7 +81,7 @@ void RosCompressedStreamer::start()
   RCLCPP_INFO(
     node_->get_logger(), "Streaming topic %s with QoS profile %s",
     compressed_topic.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = web_video_server::get_qos_profile_from_name(qos_profile_name_);
+  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
@@ -159,7 +161,7 @@ void RosCompressedStreamer::imageCallback(
 }
 
 
-std::shared_ptr<web_video_server::BaseImageStreamer> RosCompressedStreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -213,7 +215,7 @@ std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: web_video_server::BaseImageStreamer(request, connection, node)
+: StreamerInterface(request, connection, node)
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
@@ -231,7 +233,7 @@ void RosCompressedSnapshotStreamer::start()
   RCLCPP_INFO(
     node_->get_logger(), "Streaming topic %s with QoS profile %s",
     compressed_topic.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = web_video_server::get_qos_profile_from_name(qos_profile_name_);
+  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
@@ -301,7 +303,7 @@ void RosCompressedSnapshotStreamer::imageCallback(
   sendImage(msg, std::chrono::steady_clock::now());
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer>
+std::shared_ptr<StreamerInterface>
 RosCompressedSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
@@ -352,13 +354,14 @@ std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_top
   return result;
 }
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::RosCompressedStreamerFactory,
-  web_video_server::BaseImageStreamerFactory)
+  web_video_server::streamers::RosCompressedStreamerFactory,
+  web_video_server::StreamerFactoryInterface)
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::RosCompressedSnapshotStreamerFactory,
-  web_video_server::BaseSnapshotStreamerFactory)
+  web_video_server::streamers::RosCompressedSnapshotStreamerFactory,
+  web_video_server::SnapshotStreamerFactoryInterface)

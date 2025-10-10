@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
 #include "rclcpp/node.hpp"
 
@@ -38,7 +38,7 @@
 namespace web_video_server
 {
 
-BaseImageStreamer::BaseImageStreamer(
+StreamerInterface::StreamerInterface(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
 : connection_(connection), request_(request), node_(node), inactive_(false)
@@ -46,11 +46,11 @@ BaseImageStreamer::BaseImageStreamer(
   topic_ = request.get_query_param_value_or_default("topic", "");
 }
 
-BaseImageStreamer::~BaseImageStreamer()
+StreamerInterface::~StreamerInterface()
 {
 }
 
-std::string BaseImageStreamerFactory::create_viewer(
+std::string StreamerFactoryInterface::create_viewer(
   const async_web_server_cpp::HttpRequest & request)
 {
   std::stringstream ss;
@@ -60,7 +60,7 @@ std::string BaseImageStreamerFactory::create_viewer(
   return ss.str();
 }
 
-std::vector<std::string> BaseImageStreamerFactory::get_available_topics(
+std::vector<std::string> StreamerFactoryInterface::get_available_topics(
   rclcpp::Node::SharedPtr /* node */)
 {
   return {};

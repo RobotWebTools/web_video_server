@@ -30,78 +30,68 @@
 
 #pragma once
 
-extern "C"
-{
-#include <libavcodec/avcodec.h>
-#include <libavcodec/codec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/dict.h>
-#include <libavutil/frame.h>
-#include <libswscale/swscale.h>
-}
-
 #include <chrono>
-#include <cstdint>
 #include <memory>
-#include <mutex>
 #include <string>
-
-#include <opencv2/core/mat.hpp>
+#include <vector>
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/subscriber.hpp"
 #include "rclcpp/node.hpp"
-
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_image_transport_streamer.hpp"
 
 namespace web_video_server
 {
 
-class BaseLibavStreamer : public BaseImageTransportStreamer
+class StreamerInterface
 {
 public:
-  BaseLibavStreamer(
+  StreamerInterface(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node, const std::string & format_name, const std::string & codec_name,
-    const std::string & content_type);
+    rclcpp::Node::SharedPtr node);
 
-  ~BaseLibavStreamer();
+  virtual void start() = 0;
+  virtual ~StreamerInterface();
+
+  bool isInactive()
+  {
+    return inactive_;
+  }
+
+  /**
+   * Restreams the last received image frame if older than max_age.
+   */
+  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
+
+  std::string getTopic()
+  {
+    return topic_;
+  }
 
 protected:
-  virtual void initializeEncoder() = 0;
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-  virtual void initialize(const cv::Mat &);
-  AVFormatContext * format_context_;
-  const AVCodec * codec_;
-  AVCodecContext * codec_context_;
-  AVStream * video_stream_;
-
-  AVDictionary * opt_;   // container format options
-
-private:
-  AVFrame * frame_;
-  struct SwsContext * sws_context_;
-  std::mutex encode_mutex_;
-  bool first_image_received_;
-  std::chrono::steady_clock::time_point first_image_time_;
-
-  std::string format_name_;
-  std::string codec_name_;
-  std::string content_type_;
-  int bitrate_;
-  int qmin_;
-  int qmax_;
-  int gop_;
-
-  uint8_t * io_buffer_;  // custom IO buffer
+  async_web_server_cpp::HttpConnectionPtr connection_;
+  async_web_server_cpp::HttpRequest request_;
+  rclcpp::Node::SharedPtr node_;
+  bool inactive_;
+  std::string topic_;
 };
 
-class BaseLibavStreamerFactory : public BaseImageTransportStreamerFactory
+class StreamerFactoryInterface
 {
 public:
+  virtual std::string get_type() = 0;
+
+  virtual std::shared_ptr<StreamerInterface> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::SharedPtr node) = 0;
+
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
+
+class SnapshotStreamerFactoryInterface : public StreamerFactoryInterface {};
 
 }  // namespace web_video_server

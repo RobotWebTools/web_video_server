@@ -49,8 +49,8 @@
 #include "sensor_msgs/image_encodings.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_image_transport_streamer.hpp"
+#include "web_video_server/image_transport_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"
@@ -58,13 +58,15 @@
 #include "cv_bridge/cv_bridge.hpp"
 #endif
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
 PngStreamer::PngStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: web_video_server::BaseImageTransportStreamer(request, connection, node), stream_(connection)
+: ImageTransportStreamerBase(request, connection, node), stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
   stream_.sendInitialHeader();
@@ -83,7 +85,7 @@ cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr &
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return web_video_server::BaseImageTransportStreamer::decodeImage(msg);
+    return ImageTransportStreamerBase::decodeImage(msg);
   }
 }
 
@@ -99,7 +101,7 @@ void PngStreamer::sendImage(const cv::Mat & img, const std::chrono::steady_clock
   stream_.sendPartAndClear(time, "image/png", encoded_buffer);
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer> PngStreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -111,7 +113,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
-: web_video_server::BaseImageTransportStreamer(request, connection, node)
+: ImageTransportStreamerBase(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
 }
@@ -129,7 +131,7 @@ cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSha
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return web_video_server::BaseImageTransportStreamer::decodeImage(msg);
+    return ImageTransportStreamerBase::decodeImage(msg);
   }
 }
 
@@ -164,7 +166,7 @@ void PngSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer> PngSnapshotStreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> PngSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -172,13 +174,14 @@ std::shared_ptr<web_video_server::BaseImageStreamer> PngSnapshotStreamerFactory:
   return std::make_shared<PngSnapshotStreamer>(request, connection, node);
 }
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::PngStreamerFactory,
-  web_video_server::BaseImageStreamerFactory)
+  web_video_server::streamers::PngStreamerFactory,
+  web_video_server::StreamerFactoryInterface)
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::PngSnapshotStreamerFactory,
-  web_video_server::BaseSnapshotStreamerFactory)
+  web_video_server::streamers::PngSnapshotStreamerFactory,
+  web_video_server::SnapshotStreamerFactoryInterface)

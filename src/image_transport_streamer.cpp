@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/base_image_transport_streamer.hpp"
+#include "web_video_server/image_transport_streamer.hpp"
 
 #include <chrono>
 #include <exception>
@@ -56,16 +56,16 @@
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 #include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {
 
-BaseImageTransportStreamer::BaseImageTransportStreamer(
+ImageTransportStreamerBase::ImageTransportStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: BaseImageStreamer(request, connection, node), it_(node), initialized_(false)
+: StreamerInterface(request, connection, node), it_(node), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -74,11 +74,11 @@ BaseImageTransportStreamer::BaseImageTransportStreamer(
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
-BaseImageTransportStreamer::~BaseImageTransportStreamer()
+ImageTransportStreamerBase::~ImageTransportStreamerBase()
 {
 }
 
-void BaseImageTransportStreamer::start()
+void ImageTransportStreamerBase::start()
 {
   image_transport::TransportHints hints(node_.get(), default_transport_);
   auto tnat = node_->get_topic_names_and_types();
@@ -111,15 +111,15 @@ void BaseImageTransportStreamer::start()
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
     node_.get(), topic_,
-    std::bind(&BaseImageTransportStreamer::imageCallback, this, std::placeholders::_1),
+    std::bind(&ImageTransportStreamerBase::imageCallback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
 
-void BaseImageTransportStreamer::initialize(const cv::Mat &)
+void ImageTransportStreamerBase::initialize(const cv::Mat &)
 {
 }
 
-void BaseImageTransportStreamer::restreamFrame(std::chrono::duration<double> max_age)
+void ImageTransportStreamerBase::restreamFrame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -148,7 +148,7 @@ void BaseImageTransportStreamer::restreamFrame(std::chrono::duration<double> max
   }
 }
 
-void BaseImageTransportStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageTransportStreamerBase::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
@@ -218,7 +218,7 @@ void BaseImageTransportStreamer::imageCallback(const sensor_msgs::msg::Image::Co
   }
 }
 
-cv::Mat BaseImageTransportStreamer::decodeImage(
+cv::Mat ImageTransportStreamerBase::decodeImage(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (msg->encoding.find("F") != std::string::npos) {
@@ -238,7 +238,7 @@ cv::Mat BaseImageTransportStreamer::decodeImage(
   }
 }
 
-std::vector<std::string> BaseImageTransportStreamerFactory::get_available_topics(
+std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
   std::vector<std::string> result;
@@ -254,7 +254,7 @@ std::vector<std::string> BaseImageTransportStreamerFactory::get_available_topics
   return result;
 }
 
-std::vector<std::string> BaseImageTransportSnapshotStreamerFactory::get_available_topics(
+std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
   std::vector<std::string> result;

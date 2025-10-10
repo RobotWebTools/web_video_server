@@ -40,14 +40,16 @@
 #include "async_web_server_cpp/http_connection.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_image_transport_streamer.hpp"
+#include "web_video_server/image_transport_streamer.hpp"
 #include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamer.hpp"
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
-class MjpegStreamer : public web_video_server::BaseImageTransportStreamer
+class MjpegStreamer : public ImageTransportStreamerBase
 {
 public:
   MjpegStreamer(
@@ -60,21 +62,21 @@ protected:
   virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
 
 private:
-  web_video_server::MultipartStream stream_;
+  MultipartStream stream_;
   int quality_;
 };
 
-class MjpegStreamerFactory : public web_video_server::BaseImageTransportStreamerFactory
+class MjpegStreamerFactory : public ImageTransportStreamerFactoryBase
 {
 public:
   std::string get_type() {return "mjpeg";}
-  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 };
 
-class JpegSnapshotStreamer : public web_video_server::BaseImageTransportStreamer
+class JpegSnapshotStreamer : public ImageTransportStreamerBase
 {
 public:
   JpegSnapshotStreamer(
@@ -89,16 +91,16 @@ private:
   int quality_;
 };
 
-class JpegSnapshotStreamerFactory : public web_video_server::
-  BaseImageTransportSnapshotStreamerFactory
+class JpegSnapshotStreamerFactory : public ImageTransportSnapshotStreamerFactoryBase
 {
 public:
   std::string get_type() {return "jpeg";}
 
-  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
 };
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server

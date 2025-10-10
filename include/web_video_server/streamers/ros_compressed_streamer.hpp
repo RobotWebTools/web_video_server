@@ -42,13 +42,15 @@
 #include "rclcpp/subscription.hpp"
 #include "sensor_msgs/msg/compressed_image.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
 #include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamer.hpp"
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
-class RosCompressedStreamer : public web_video_server::BaseImageStreamer
+class RosCompressedStreamer : public StreamerInterface
 {
 public:
   RosCompressedStreamer(
@@ -66,7 +68,7 @@ protected:
 
 private:
   void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
-  web_video_server::MultipartStream stream_;
+  MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
@@ -74,18 +76,18 @@ private:
   std::string qos_profile_name_;
 };
 
-class RosCompressedStreamerFactory : public web_video_server::BaseImageStreamerFactory
+class RosCompressedStreamerFactory : public StreamerFactoryInterface
 {
 public:
   std::string get_type() {return "ros_compressed";}
-  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
   std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
-class RosCompressedSnapshotStreamer : public web_video_server::BaseImageStreamer
+class RosCompressedSnapshotStreamer : public StreamerInterface
 {
 public:
   RosCompressedSnapshotStreamer(
@@ -108,15 +110,16 @@ private:
   std::string qos_profile_name_;
 };
 
-class RosCompressedSnapshotStreamerFactory : public web_video_server::BaseSnapshotStreamerFactory
+class RosCompressedSnapshotStreamerFactory : public SnapshotStreamerFactoryInterface
 {
 public:
   std::string get_type() {return "ros_compressed";}
-  std::shared_ptr<web_video_server::BaseImageStreamer> create_streamer(
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
   std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server

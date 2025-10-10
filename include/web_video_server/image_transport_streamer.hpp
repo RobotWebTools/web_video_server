@@ -43,19 +43,19 @@
 #include "rclcpp/node.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
 namespace web_video_server
 {
 
-class BaseImageTransportStreamer : public BaseImageStreamer
+class ImageTransportStreamerBase : public StreamerInterface
 {
 public:
-  BaseImageTransportStreamer(
+  ImageTransportStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  virtual ~BaseImageTransportStreamer();
+  virtual ~ImageTransportStreamerBase();
 
   virtual void start();
 
@@ -83,13 +83,13 @@ private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 
-class BaseImageTransportStreamerFactory : public BaseImageStreamerFactory
+class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
-class BaseImageTransportSnapshotStreamerFactory : public BaseSnapshotStreamerFactory
+class ImageTransportSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);

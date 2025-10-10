@@ -46,7 +46,7 @@
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/timer.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
 namespace web_video_server
 {
@@ -112,11 +112,11 @@ private:
   std::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
-  std::vector<std::shared_ptr<BaseImageStreamer>> streamers_;
-  pluginlib::ClassLoader<BaseImageStreamerFactory> image_streamer_factory_loader_;
-  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> image_streamer_factories_;
-  pluginlib::ClassLoader<BaseSnapshotStreamerFactory> snapshot_streamer_factory_loader_;
-  std::map<std::string, std::shared_ptr<BaseImageStreamerFactory>> snapshot_streamer_factories_;
+  std::vector<std::shared_ptr<StreamerInterface>> streamers_;
+  pluginlib::ClassLoader<StreamerFactoryInterface> streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> streamer_factories_;
+  pluginlib::ClassLoader<SnapshotStreamerFactoryInterface> snapshot_streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> snapshot_streamer_factories_;
   std::mutex streamers_mutex_;
 };
 

@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/base_libav_streamer.hpp"
+#include "web_video_server/libav_streamer.hpp"
 
 extern "C"
 {
@@ -66,8 +66,8 @@ extern "C"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_image_transport_streamer.hpp"
+#include "web_video_server/image_transport_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)
@@ -76,12 +76,12 @@ extern "C"
 namespace web_video_server
 {
 
-BaseLibavStreamer::BaseLibavStreamer(
+LibavStreamerBase::LibavStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node,
   const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
-: BaseImageTransportStreamer(request, connection, node), format_context_(0), codec_(0),
+: ImageTransportStreamerBase(request, connection, node), format_context_(0), codec_(0),
   codec_context_(0), video_stream_(0), opt_(0), frame_(0), sws_context_(0),
   first_image_received_(false), first_image_time_(), format_name_(format_name),
   codec_name_(codec_name), content_type_(content_type), io_buffer_(0)
@@ -92,7 +92,7 @@ BaseLibavStreamer::BaseLibavStreamer(
   gop_ = request.get_query_param_value_or_default<int>("gop", 25);
 }
 
-BaseLibavStreamer::~BaseLibavStreamer()
+LibavStreamerBase::~LibavStreamerBase()
 {
   if (codec_context_) {
     avcodec_free_context(&codec_context_);
@@ -129,7 +129,7 @@ static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buf
   return 0;
 }
 
-void BaseLibavStreamer::initialize(const cv::Mat & /* img */)
+void LibavStreamerBase::initialize(const cv::Mat & /* img */)
 {
   // Load format
   format_context_ = avformat_alloc_context();
@@ -253,7 +253,7 @@ void BaseLibavStreamer::initialize(const cv::Mat & /* img */)
   }
 }
 
-void BaseLibavStreamer::sendImage(
+void LibavStreamerBase::sendImage(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -335,7 +335,7 @@ void BaseLibavStreamer::sendImage(
   av_packet_unref(pkt);
 }
 
-std::string BaseLibavStreamerFactory::create_viewer(
+std::string LibavStreamerFactoryBase::create_viewer(
   const async_web_server_cpp::HttpRequest & request)
 {
   std::stringstream ss;

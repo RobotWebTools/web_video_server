@@ -48,16 +48,18 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_image_transport_streamer.hpp"
+#include "web_video_server/image_transport_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
 MjpegStreamer::MjpegStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: web_video_server::BaseImageTransportStreamer(request, connection, node),
+: ImageTransportStreamerBase(request, connection, node),
   stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
@@ -84,7 +86,7 @@ void MjpegStreamer::sendImage(
   stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer> MjpegStreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> MjpegStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -96,7 +98,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
-: web_video_server::BaseImageTransportStreamer(request, connection, node)
+: ImageTransportStreamerBase(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
@@ -138,7 +140,7 @@ void JpegSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer> JpegSnapshotStreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> JpegSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -146,13 +148,14 @@ std::shared_ptr<web_video_server::BaseImageStreamer> JpegSnapshotStreamerFactory
   return std::make_shared<JpegSnapshotStreamer>(request, connection, node);
 }
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::MjpegStreamerFactory,
-  web_video_server::BaseImageStreamerFactory)
+  web_video_server::streamers::MjpegStreamerFactory,
+  web_video_server::StreamerFactoryInterface)
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::JpegSnapshotStreamerFactory,
-  web_video_server::BaseSnapshotStreamerFactory)
+  web_video_server::streamers::JpegSnapshotStreamerFactory,
+  web_video_server::SnapshotStreamerFactoryInterface)

@@ -44,16 +44,18 @@ extern "C"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/base_image_streamer.hpp"
-#include "web_video_server/base_libav_streamer.hpp"
+#include "web_video_server/libav_streamer.hpp"
+#include "web_video_server/streamer.hpp"
 
-namespace web_video_server_streamers
+namespace web_video_server
+{
+namespace streamers
 {
 
 H264Streamer::H264Streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: web_video_server::BaseLibavStreamer(request, connection, node, "mp4", "libx264", "video/mp4")
+: LibavStreamerBase(request, connection, node, "mp4", "libx264", "video/mp4")
 {
   /* possible quality presets:
    * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
@@ -82,7 +84,7 @@ void H264Streamer::initializeEncoder()
   }
 }
 
-std::shared_ptr<web_video_server::BaseImageStreamer> H264StreamerFactory::create_streamer(
+std::shared_ptr<StreamerInterface> H264StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::SharedPtr node)
@@ -90,10 +92,11 @@ std::shared_ptr<web_video_server::BaseImageStreamer> H264StreamerFactory::create
   return std::make_shared<H264Streamer>(request, connection, node);
 }
 
-}  // namespace web_video_server_streamers
+}  // namespace streamers
+}  // namespace web_video_server
 
 #include "pluginlib/class_list_macros.hpp"
 
 PLUGINLIB_EXPORT_CLASS(
-  web_video_server_streamers::H264StreamerFactory,
-  web_video_server::BaseImageStreamerFactory)
+  web_video_server::streamers::H264StreamerFactory,
+  web_video_server::StreamerFactoryInterface)

@@ -43,10 +43,10 @@ endif()
 ## Declare a cpp library
 add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
-  src/base_image_streamer.cpp
-  src/base_image_transport_streamer.cpp
-  src/base_libav_streamer.cpp
+  src/image_transport_streamer.cpp
+  src/libav_streamer.cpp
   src/multipart_stream.cpp
+  src/streamer.cpp
   src/utils.cpp
 )
 
