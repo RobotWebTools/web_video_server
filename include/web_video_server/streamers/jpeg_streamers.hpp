@@ -64,7 +64,7 @@ private:
   int quality_;
 };
 
-class MjpegStreamerFactory : public web_video_server::BaseImageStreamerFactory
+class MjpegStreamerFactory : public web_video_server::BaseImageTransportStreamerFactory
 {
 public:
   std::string get_type() {return "mjpeg";}

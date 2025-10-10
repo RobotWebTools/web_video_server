@@ -238,4 +238,20 @@ cv::Mat BaseImageTransportStreamer::decodeImage(
   }
 }
 
+std::vector<std::string> BaseImageTransportStreamerFactory::get_available_topics(
+  rclcpp::Node::SharedPtr node)
+{
+  std::vector<std::string> result;
+  auto tnat = node->get_topic_names_and_types();
+  for (auto topic_and_types : tnat) {
+    for (auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/Image") {
+        result.push_back(topic_and_types.first);
+        break;
+      }
+    }
+  }
+  return result;
+}
+
 }  // namespace web_video_server

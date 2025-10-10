@@ -36,10 +36,12 @@
 #include <exception>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 #include <sstream>
 #include <vector>
 
+#include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/bind/placeholders.hpp>
@@ -263,21 +265,19 @@ bool WebVideoServer::handle_list_streams(
   async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
   const char * /* end */)
 {
-  std::vector<std::string> image_topics;
-  std::vector<std::string> camera_info_topics;
-  auto tnat = get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    auto & topic_name = topic_and_types.first;
-    auto & topic_type = topic_and_types.second[0];  // explicitly take the first
+  std::map<std::string, std::vector<std::string>> topics_by_type;
+  std::set<std::string> all_topics;
 
-    if (topic_type == "sensor_msgs/msg/Image") {
-      image_topics.push_back(topic_name);
-    } else if (topic_type == "sensor_msgs/msg/CameraInfo") {
-      camera_info_topics.push_back(topic_name);
+  for (const auto & factory_pair : image_streamer_factories_) {
+    RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
+    std::vector<std::string> factory_topics =
+      factory_pair.second->get_available_topics(shared_from_this());
+    RCLCPP_DEBUG(get_logger(), "Factory %s returned %zu topics",
+      factory_pair.first.c_str(), factory_topics.size());
+    for (const auto & topic : factory_topics) {
+      RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
+      topics_by_type[factory_pair.first].push_back(topic);
+      all_topics.insert(topic);
     }
   }
 
@@ -291,61 +291,44 @@ bool WebVideoServer::handle_list_streams(
 
   connection->write(
     "<html>"
-    "<head><title>ROS Image Topic List</title></head>"
-    "<body><h1>Available ROS Image Topics:</h1>");
+    "<head><title>ROS Streamable Topic List</title></head>"
+    "<body><h1>Available ROS Topics for streaming:</h1>");
   connection->write("<ul>");
-  for (std::string & camera_info_topic : camera_info_topics) {
-    if (boost::algorithm::ends_with(camera_info_topic, "/camera_info")) {
-      std::string base_topic = camera_info_topic.substr(
-        0,
-        camera_info_topic.size() - strlen("camera_info"));
-      connection->write("<li>");
-      connection->write(base_topic);
-      connection->write("<ul>");
-      std::vector<std::string>::iterator image_topic_itr = image_topics.begin();
-      for (; image_topic_itr != image_topics.end(); ) {
-        if (boost::starts_with(*image_topic_itr, base_topic)) {
-          connection->write("<li><a href=\"/stream_viewer?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">");
-          connection->write(image_topic_itr->substr(base_topic.size()));
-          connection->write("</a> (");
-          connection->write("<a href=\"/stream?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">Stream</a>) (");
-          connection->write("<a href=\"/snapshot?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">Snapshot</a>)");
-          connection->write("</li>");
+  for (const std::string & topic : all_topics) {
+    std::vector<std::string> available_stream_viewers;
+    std::vector<std::string> available_streams;
 
-          image_topic_itr = image_topics.erase(image_topic_itr);
-        } else {
-          ++image_topic_itr;
-        }
+    for (const auto & factory_pair : topics_by_type) {
+      const auto & type = factory_pair.first;
+      const auto & topics = factory_pair.second;
+      if (std::find(topics.begin(), topics.end(), topic) != topics.end()) {
+        available_stream_viewers.push_back(
+          "<a href=\"/stream_viewer?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
+        available_streams.push_back(
+          "<a href=\"/stream?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
       }
-      connection->write("</ul>");
     }
+
+    connection->write("<li>");
+    connection->write(topic);
+    connection->write("<ul>");
+    connection->write("<li>");
+    connection->write("<a href=\"/stream_viewer?topic=" + topic + "\">");
+    connection->write("Stream Viewer</a> (");
+    connection->write(boost::algorithm::join(available_stream_viewers, ", "));
+    connection->write(")");
     connection->write("</li>");
-  }
-  connection->write("</ul>");
-  // Add the rest of the image topics that don't have camera_info.
-  connection->write("<ul>");
-  std::vector<std::string>::iterator image_topic_itr = image_topics.begin();
-  for (; image_topic_itr != image_topics.end(); ) {
-    connection->write("<li><a href=\"/stream_viewer?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">");
-    connection->write(*image_topic_itr);
-    connection->write("</a> (");
-    connection->write("<a href=\"/stream?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">Stream</a>) (");
-    connection->write("<a href=\"/snapshot?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">Snapshot</a>)");
+    connection->write("<li>");
+    connection->write("<a href=\"/stream?topic=" + topic + "\">");
+    connection->write("Stream</a> (");
+    connection->write(boost::algorithm::join(available_streams, ", "));
+    connection->write(")");
+    connection->write("</li>");
+    connection->write("</ul>");
     connection->write("</li>");
 
-    image_topic_itr = image_topics.erase(image_topic_itr);
   }
   connection->write("</ul></body></html>");
   return true;

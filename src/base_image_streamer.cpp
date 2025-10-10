@@ -60,4 +60,10 @@ std::string BaseImageStreamerFactory::create_viewer(
   return ss.str();
 }
 
+std::vector<std::string> BaseImageStreamerFactory::get_available_topics(
+  rclcpp::Node::SharedPtr /* node */)
+{
+  return {};
+}
+
 }  // namespace web_video_server

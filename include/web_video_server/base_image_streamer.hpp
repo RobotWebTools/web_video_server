@@ -87,6 +87,8 @@ public:
     rclcpp::Node::SharedPtr node) = 0;
 
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
 class BaseSnapshotStreamerFactory : public BaseImageStreamerFactory {};

@@ -82,4 +82,10 @@ private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 };
 
+class BaseImageTransportStreamerFactory : public BaseImageStreamerFactory
+{
+public:
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+};
+
 }  // namespace web_video_server

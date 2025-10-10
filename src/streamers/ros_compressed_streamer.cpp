@@ -191,6 +191,25 @@ std::shared_ptr<web_video_server::BaseImageStreamer> RosCompressedStreamerFactor
   return std::make_shared<RosCompressedStreamer>(request, connection, node);
 }
 
+std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
+  rclcpp::Node::SharedPtr node)
+{
+  std::vector<std::string> result;
+  auto tnat = node->get_topic_names_and_types();
+  for (auto topic_and_types : tnat) {
+    for (auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/CompressedImage") {
+        std::string topic_name = topic_and_types.first;
+        if (topic_name.size() > 11 && topic_name.substr(topic_name.size() - 11) == "/compressed") {
+          topic_name = topic_name.substr(0, topic_name.size() - 11);
+        }
+        result.push_back(topic_name);
+      }
+    }
+  }
+  return result;
+}
+
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
