@@ -37,7 +37,6 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/subscriber.hpp"
 #include "rclcpp/node.hpp"
 
 namespace web_video_server

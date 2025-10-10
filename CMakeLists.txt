@@ -13,6 +13,7 @@ find_package(image_transport REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_components REQUIRED)
+find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 find_package(OpenCV REQUIRED)
@@ -43,8 +44,6 @@ endif()
 ## Declare a cpp library
 add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
-  src/image_transport_streamer.cpp
-  src/libav_streamer.cpp
   src/multipart_stream.cpp
   src/streamer.cpp
   src/utils.cpp
@@ -54,32 +53,23 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    ${avcodec_INCLUDE_DIRS}
-    ${avformat_INCLUDE_DIRS}
-    ${avutil_INCLUDE_DIRS}
-    ${swscale_INCLUDE_DIRS}
 )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME}
   PUBLIC
     async_web_server_cpp::async_web_server_cpp
-    image_transport::image_transport
     pluginlib::pluginlib
     rclcpp::rclcpp
-    ${sensor_msgs_TARGETS}
+    rmw::rmw
     Boost::boost
-    ${OpenCV_LIBS}
-    ${avcodec_LIBRARIES}
-    ${avformat_LIBRARIES}
-    ${avutil_LIBRARIES}
-    ${swscale_LIBRARIES}
   PRIVATE
-    cv_bridge::cv_bridge
     rclcpp_components::component
 )
 
 add_library(${PROJECT_NAME}_streamers SHARED
+  src/image_transport_streamer.cpp
+  src/libav_streamer.cpp
   src/streamers/h264_streamer.cpp
   src/streamers/jpeg_streamers.cpp
   src/streamers/png_streamers.cpp
@@ -92,6 +82,10 @@ target_include_directories(${PROJECT_NAME}_streamers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    ${avcodec_INCLUDE_DIRS}
+    ${avformat_INCLUDE_DIRS}
+    ${avutil_INCLUDE_DIRS}
+    ${swscale_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}_streamers
@@ -134,7 +128,7 @@ install(
 )
 
 install(
-  TARGETS ${PROJECT_NAME}
+  TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_streamers
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
@@ -146,11 +140,6 @@ set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME ${PROJECT_NAME
 install(
   TARGETS ${PROJECT_NAME}_node
   DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-  TARGETS ${PROJECT_NAME}_streamers
-  LIBRARY DESTINATION lib
 )
 
 ###########
