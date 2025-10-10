@@ -240,6 +240,20 @@ void RosCompressedSnapshotStreamer::sendImage(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
+  std::string content_type;
+  if (msg->format.find("jpeg") != std::string::npos ||
+    msg->format.find("jpg") != std::string::npos)
+  {
+    content_type = "image/jpeg";
+  } else if (msg->format.find("png") != std::string::npos) {
+    content_type = "image/png";
+  } else {
+    RCLCPP_WARN(
+      node_->get_logger(), "Unknown ROS compressed image format: %s",
+      msg->format.c_str());
+    return;
+  }
+
   char stamp[20];
   snprintf(
     stamp, sizeof(stamp), "%.06lf",
@@ -252,7 +266,7 @@ void RosCompressedSnapshotStreamer::sendImage(
     "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
   .header("X-Timestamp", stamp)
   .header("Pragma", "no-cache")
-  .header("Content-type", "image/png")
+  .header("Content-type", content_type)
   .header("Access-Control-Allow-Origin", "*")
   .header("Content-Length", std::to_string(msg->data.size()))
   .write(connection_);
