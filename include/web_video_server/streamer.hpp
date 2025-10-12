@@ -42,6 +42,9 @@
 namespace web_video_server
 {
 
+/**
+ * @brief A common interface for all streaming plugins.
+ */
 class StreamerInterface
 {
 public:
@@ -49,20 +52,32 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-
-  virtual void start() = 0;
   virtual ~StreamerInterface();
 
+  /**
+   * @brief Starts the streaming process.
+   */
+  virtual void start() = 0;
+
+  /**
+   * @brief Returns true if the streamer is inactive and should be deleted.
+   *
+   * This could be because the connection was closed or snapshot was successfully sent (in case
+   * of snapshot streamers).
+   */
   bool isInactive()
   {
     return inactive_;
   }
 
   /**
-   * Restreams the last received image frame if older than max_age.
+   * @brief Restreams the last received image frame if older than max_age.
    */
   virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
 
+  /**
+   * @brief Returns the topic being streamed.
+   */
   std::string getTopic()
   {
     return topic_;
@@ -76,21 +91,48 @@ protected:
   std::string topic_;
 };
 
+/**
+ * @brief A factory interface for creating Streamer instances.
+ */
 class StreamerFactoryInterface
 {
 public:
+  /**
+   * @brief Returns the type of streamer created by this factory.
+   *
+   * This should match the "type" query parameter used to select the streamer.
+   */
   virtual std::string get_type() = 0;
 
+  /**
+   * @brief Creates a new Streamer instance.
+   * @param request The HTTP request that initiated the streamer.
+   * @param connection The HTTP connection to use for streaming.
+   * @param node The ROS2 node to use for subscribing to topics.
+   * @return A shared pointer to the created Streamer instance.
+   */
   virtual std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node) = 0;
 
+  /**
+   * @brief Creates HTML code for embedding a viewer for this streamer.
+   * @param request The HTTP request that initiated the viewer.
+   */
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 
+  /**
+   * @brief Returns a list of available topics that can be streamed by this streamer.
+   * @param node The ROS2 node to use for discovering topics.
+   * @return A vector of topic names.
+   */
   virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
+/**
+ * @brief A factory interface for creating snapshot Streamer instances.
+ */
 class SnapshotStreamerFactoryInterface : public StreamerFactoryInterface {};
 
 }  // namespace web_video_server

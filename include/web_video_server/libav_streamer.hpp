@@ -58,6 +58,10 @@ extern "C"
 namespace web_video_server
 {
 
+/**
+ * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * topics and libav to encode and stream video.
+ */
 class LibavStreamerBase : public ImageTransportStreamerBase
 {
 public:

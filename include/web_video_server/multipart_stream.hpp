@@ -50,6 +50,9 @@ struct PendingFooter
   std::weak_ptr<std::string> contents;
 };
 
+/**
+ * Helper class to manage sending multipart HTTP responses.
+ */
 class MultipartStream
 {
 public:

@@ -48,6 +48,10 @@
 namespace web_video_server
 {
 
+/**
+ * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * topics.
+ */
 class ImageTransportStreamerBase : public StreamerInterface
 {
 public:
