@@ -48,9 +48,9 @@ namespace web_video_server
 
 MultipartStream::MultipartStream(
   async_web_server_cpp::HttpConnectionPtr & connection,
-  const std::string & boundry,
+  const std::string & boundary,
   std::size_t max_queue_size)
-: max_queue_size_(max_queue_size), connection_(connection), boundry_(boundry)
+: max_queue_size_(max_queue_size), connection_(connection), boundary_(boundary)
 {}
 
 void MultipartStream::send_initial_header()
@@ -62,10 +62,10 @@ void MultipartStream::send_initial_header()
     "Cache-Control",
     "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
   .header("Pragma", "no-cache")
-  .header("Content-type", "multipart/x-mixed-replace;boundary=" + boundry_)
+  .header("Content-type", "multipart/x-mixed-replace;boundary=" + boundary_)
   .header("Access-Control-Allow-Origin", "*")
   .write(connection_);
-  connection_->write("--" + boundry_ + "\r\n");
+  connection_->write("--" + boundary_ + "\r\n");
 }
 
 void MultipartStream::send_part_header(
@@ -88,7 +88,7 @@ void MultipartStream::send_part_header(
 
 void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & time)
 {
-  std::shared_ptr<std::string> str(new std::string("\r\n--" + boundry_ + "\r\n"));
+  std::shared_ptr<std::string> str(new std::string("\r\n--" + boundary_ + "\r\n"));
   PendingFooter pf;
   pf.timestamp = time;
   pf.contents = str;

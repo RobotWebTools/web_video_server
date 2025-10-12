@@ -58,7 +58,7 @@ class MultipartStream
 public:
   MultipartStream(
     async_web_server_cpp::HttpConnectionPtr & connection,
-    const std::string & boundry = "boundarydonotcross",
+    const std::string & boundary = "boundarydonotcross",
     std::size_t max_queue_size = 1);
 
   void send_initial_header();
@@ -80,7 +80,7 @@ private:
 private:
   const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
-  std::string boundry_;
+  std::string boundary_;
   std::queue<PendingFooter> pending_footers_;
 };
 
