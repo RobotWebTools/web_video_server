@@ -54,7 +54,7 @@ public:
   ~H264Streamer();
 
 protected:
-  virtual void initializeEncoder();
+  virtual void initialize_encoder();
   std::string preset_;
 };
 

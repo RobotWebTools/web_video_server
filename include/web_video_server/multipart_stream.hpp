@@ -61,21 +61,21 @@ public:
     const std::string & boundry = "boundarydonotcross",
     std::size_t max_queue_size = 1);
 
-  void sendInitialHeader();
-  void sendPartHeader(
+  void send_initial_header();
+  void send_part_header(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     size_t payload_size);
-  void sendPartFooter(const std::chrono::steady_clock::time_point & time);
-  void sendPartAndClear(
+  void send_part_footer(const std::chrono::steady_clock::time_point & time);
+  void send_part_and_clear(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     std::vector<unsigned char> & data);
-  void sendPart(
+  void send_part(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     const boost::asio::const_buffer & buffer,
     async_web_server_cpp::HttpConnection::ResourcePtr resource);
 
 private:
-  bool isBusy();
+  bool is_busy();
 
 private:
   const std::size_t max_queue_size_;

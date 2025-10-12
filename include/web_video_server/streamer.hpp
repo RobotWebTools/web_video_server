@@ -65,7 +65,7 @@ public:
    * This could be because the connection was closed or snapshot was successfully sent (in case
    * of snapshot streamers).
    */
-  bool isInactive()
+  bool is_inactive()
   {
     return inactive_;
   }
@@ -73,12 +73,12 @@ public:
   /**
    * @brief Restreams the last received image frame if older than max_age.
    */
-  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
+  virtual void restream_frame(std::chrono::duration<double> max_age) = 0;
 
   /**
    * @brief Returns the topic being streamed.
    */
-  std::string getTopic()
+  std::string get_topic()
   {
     return topic_;
   }

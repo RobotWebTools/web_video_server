@@ -53,7 +53,7 @@ MultipartStream::MultipartStream(
 : max_queue_size_(max_queue_size), connection_(connection), boundry_(boundry)
 {}
 
-void MultipartStream::sendInitialHeader()
+void MultipartStream::send_initial_header()
 {
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
@@ -68,7 +68,7 @@ void MultipartStream::sendInitialHeader()
   connection_->write("--" + boundry_ + "\r\n");
 }
 
-void MultipartStream::sendPartHeader(
+void MultipartStream::send_part_header(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   size_t payload_size)
 {
@@ -86,7 +86,7 @@ void MultipartStream::sendPartHeader(
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
-void MultipartStream::sendPartFooter(const std::chrono::steady_clock::time_point & time)
+void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & time)
 {
   std::shared_ptr<std::string> str(new std::string("\r\n--" + boundry_ + "\r\n"));
   PendingFooter pf;
@@ -96,30 +96,30 @@ void MultipartStream::sendPartFooter(const std::chrono::steady_clock::time_point
   if (max_queue_size_ > 0) {pending_footers_.push(pf);}
 }
 
-void MultipartStream::sendPartAndClear(
+void MultipartStream::send_part_and_clear(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   std::vector<unsigned char> & data)
 {
-  if (!isBusy()) {
-    sendPartHeader(time, type, data.size());
+  if (!is_busy()) {
+    send_part_header(time, type, data.size());
     connection_->write_and_clear(data);
-    sendPartFooter(time);
+    send_part_footer(time);
   }
 }
 
-void MultipartStream::sendPart(
+void MultipartStream::send_part(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   const boost::asio::const_buffer & buffer,
   async_web_server_cpp::HttpConnection::ResourcePtr resource)
 {
-  if (!isBusy()) {
-    sendPartHeader(time, type, boost::asio::buffer_size(buffer));
+  if (!is_busy()) {
+    send_part_header(time, type, boost::asio::buffer_size(buffer));
     connection_->write(buffer, resource);
-    sendPartFooter(time);
+    send_part_footer(time);
   }
 }
 
-bool MultipartStream::isBusy()
+bool MultipartStream::is_busy()
 {
   auto current_time = std::chrono::steady_clock::now();
   while (!pending_footers_.empty()) {

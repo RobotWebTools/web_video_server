@@ -63,14 +63,14 @@ RosCompressedStreamer::RosCompressedStreamer(
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
 : StreamerInterface(request, connection, node), stream_(connection)
 {
-  stream_.sendInitialHeader();
+  stream_.send_initial_header();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
 RosCompressedStreamer::~RosCompressedStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 void RosCompressedStreamer::start()
@@ -96,10 +96,10 @@ void RosCompressedStreamer::start()
     qos_profile.value());
   image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
     compressed_topic, qos,
-    std::bind(&RosCompressedStreamer::imageCallback, this, std::placeholders::_1));
+    std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1));
 }
 
-void RosCompressedStreamer::restreamFrame(std::chrono::duration<double> max_age)
+void RosCompressedStreamer::restream_frame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || (last_msg == 0)) {
     return;
@@ -108,11 +108,11 @@ void RosCompressedStreamer::restreamFrame(std::chrono::duration<double> max_age)
   if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
     std::scoped_lock lock(send_mutex_);
     // don't update last_frame, it may remain an old value.
-    sendImage(last_msg, std::chrono::steady_clock::now());
+    send_image(last_msg, std::chrono::steady_clock::now());
   }
 }
 
-void RosCompressedStreamer::sendImage(
+void RosCompressedStreamer::send_image(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -131,7 +131,7 @@ void RosCompressedStreamer::sendImage(
       return;
     }
 
-    stream_.sendPart(time, content_type, boost::asio::buffer(msg->data), msg);
+    stream_.send_part(time, content_type, boost::asio::buffer(msg->data), msg);
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
     RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
@@ -151,13 +151,13 @@ void RosCompressedStreamer::sendImage(
 }
 
 
-void RosCompressedStreamer::imageCallback(
+void RosCompressedStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
   std::scoped_lock lock(send_mutex_);  // protects last_msg and last_frame
   last_msg = msg;
   last_frame_ = std::chrono::steady_clock::now();
-  sendImage(last_msg, last_frame_);
+  send_image(last_msg, last_frame_);
 }
 
 
@@ -248,16 +248,16 @@ void RosCompressedSnapshotStreamer::start()
     qos_profile.value());
   image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
     compressed_topic, qos,
-    std::bind(&RosCompressedSnapshotStreamer::imageCallback, this, std::placeholders::_1)
+    std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1)
   );
 }
 
-void RosCompressedSnapshotStreamer::restreamFrame(std::chrono::duration<double>/* max_age */)
+void RosCompressedSnapshotStreamer::restream_frame(std::chrono::duration<double>/* max_age */)
 {
   // no-op, snapshot streamer doesn't restream frames
 }
 
-void RosCompressedSnapshotStreamer::sendImage(
+void RosCompressedSnapshotStreamer::send_image(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -297,10 +297,10 @@ void RosCompressedSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
-void RosCompressedSnapshotStreamer::imageCallback(
+void RosCompressedSnapshotStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
-  sendImage(msg, std::chrono::steady_clock::now());
+  send_image(msg, std::chrono::steady_clock::now());
 }
 
 std::shared_ptr<StreamerInterface>

@@ -68,7 +68,7 @@ H264Streamer::~H264Streamer()
 {
 }
 
-void H264Streamer::initializeEncoder()
+void H264Streamer::initialize_encoder()
 {
   av_opt_set(codec_context_->priv_data, "preset", preset_.c_str(), 0);
   av_opt_set(codec_context_->priv_data, "tune", "zerolatency", 0);

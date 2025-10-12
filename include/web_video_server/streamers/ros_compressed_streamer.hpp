@@ -59,15 +59,15 @@ public:
     rclcpp::Node::SharedPtr node);
   ~RosCompressedStreamer();
   virtual void start();
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual void restream_frame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual void sendImage(
+  virtual void send_image(
     const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
@@ -96,15 +96,15 @@ public:
     rclcpp::Node::SharedPtr node);
   ~RosCompressedSnapshotStreamer();
   virtual void start();
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual void restream_frame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual void sendImage(
+  virtual void send_image(
     const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
 
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::string qos_profile_name_;

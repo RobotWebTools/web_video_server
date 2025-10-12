@@ -54,7 +54,7 @@ public:
   ~Vp9Streamer();
 
 protected:
-  virtual void initializeEncoder();
+  virtual void initialize_encoder();
 };
 
 class Vp9StreamerFactory : public LibavStreamerFactoryBase

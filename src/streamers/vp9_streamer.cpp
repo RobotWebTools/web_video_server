@@ -60,7 +60,7 @@ Vp9Streamer::~Vp9Streamer()
 {
 }
 
-void Vp9Streamer::initializeEncoder()
+void Vp9Streamer::initialize_encoder()
 {
   // codec options set up to provide somehow reasonable performance in cost of poor quality
   // should be updated as soon as VP9 encoding matures

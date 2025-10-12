@@ -74,8 +74,8 @@ public:
   ~LibavStreamerBase();
 
 protected:
-  virtual void initializeEncoder() = 0;
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void initialize_encoder() = 0;
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
   virtual void initialize(const cv::Mat &);
   AVFormatContext * format_context_;
   const AVCodec * codec_;

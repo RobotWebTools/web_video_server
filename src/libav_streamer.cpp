@@ -204,7 +204,7 @@ void LibavStreamerBase::initialize(const cv::Mat & /* img */)
 
   codec_context_->flags |= AV_CODEC_FLAG_LOW_DELAY;
 
-  initializeEncoder();
+  initialize_encoder();
 
   avcodec_parameters_from_context(video_stream_->codecpar, codec_context_);
 
@@ -253,7 +253,7 @@ void LibavStreamerBase::initialize(const cv::Mat & /* img */)
   }
 }
 
-void LibavStreamerBase::sendImage(
+void LibavStreamerBase::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {

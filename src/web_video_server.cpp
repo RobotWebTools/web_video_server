@@ -138,7 +138,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
 
   if (publish_rate_ > 0) {
-    create_wall_timer(1s / publish_rate_, [this]() {restreamFrames(1s / publish_rate_);});
+    create_wall_timer(1s / publish_rate_, [this]() {restream_frames(1s / publish_rate_);});
   }
 
   cleanup_timer_ = create_wall_timer(500ms, [this]() {cleanup_inactive_streams();});
@@ -151,12 +151,12 @@ WebVideoServer::~WebVideoServer()
   server_->stop();
 }
 
-void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
+void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 {
   std::scoped_lock lock(streamers_mutex_);
 
   for (auto & subscriber : streamers_) {
-    subscriber->restreamFrame(max_age);
+    subscriber->restream_frame(max_age);
   }
 }
 
@@ -166,10 +166,10 @@ void WebVideoServer::cleanup_inactive_streams()
   if (lock) {
     auto new_end = std::partition(
       streamers_.begin(), streamers_.end(),
-      [](const std::shared_ptr<StreamerInterface> & streamer) {return !streamer->isInactive();});
+      [](const std::shared_ptr<StreamerInterface> & streamer) {return !streamer->is_inactive();});
     if (verbose_) {
       for (auto itr = new_end; itr < streamers_.end(); ++itr) {
-        RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
+        RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->get_topic().c_str());
       }
     }
     streamers_.erase(new_end, streamers_.end());

@@ -69,13 +69,13 @@ PngStreamer::PngStreamer(
 : ImageTransportStreamerBase(request, connection, node), stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
-  stream_.sendInitialHeader();
+  stream_.send_initial_header();
 }
 
 PngStreamer::~PngStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -89,7 +89,9 @@ cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr &
   }
 }
 
-void PngStreamer::sendImage(const cv::Mat & img, const std::chrono::steady_clock::time_point & time)
+void PngStreamer::send_image(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
 {
   std::vector<int> encode_params;
   encode_params.push_back(cv::IMWRITE_PNG_COMPRESSION);
@@ -98,7 +100,7 @@ void PngStreamer::sendImage(const cv::Mat & img, const std::chrono::steady_clock
   std::vector<uint8_t> encoded_buffer;
   cv::imencode(".png", img, encoded_buffer, encode_params);
 
-  stream_.sendPartAndClear(time, "image/png", encoded_buffer);
+  stream_.send_part_and_clear(time, "image/png", encoded_buffer);
 }
 
 std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
@@ -121,7 +123,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
 PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -135,7 +137,7 @@ cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSha
   }
 }
 
-void PngSnapshotStreamer::sendImage(
+void PngSnapshotStreamer::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {

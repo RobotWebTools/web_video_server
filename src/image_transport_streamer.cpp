@@ -111,7 +111,7 @@ void ImageTransportStreamerBase::start()
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
     node_.get(), topic_,
-    std::bind(&ImageTransportStreamerBase::imageCallback, this, std::placeholders::_1),
+    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
 
@@ -119,7 +119,7 @@ void ImageTransportStreamerBase::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportStreamerBase::restreamFrame(std::chrono::duration<double> max_age)
+void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double> max_age)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -128,7 +128,7 @@ void ImageTransportStreamerBase::restreamFrame(std::chrono::duration<double> max
     if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
       std::scoped_lock lock(send_mutex_);
       // don't update last_frame, it may remain an old value.
-      sendImage(output_size_image, std::chrono::steady_clock::now());
+      send_image(output_size_image, std::chrono::steady_clock::now());
     }
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -148,7 +148,7 @@ void ImageTransportStreamerBase::restreamFrame(std::chrono::duration<double> max
   }
 }
 
-void ImageTransportStreamerBase::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
@@ -189,7 +189,7 @@ void ImageTransportStreamerBase::imageCallback(const sensor_msgs::msg::Image::Co
     }
 
     last_frame_ = std::chrono::steady_clock::now();
-    sendImage(output_size_image, last_frame_);
+    send_image(output_size_image, last_frame_);
   } catch (cv_bridge::Exception & e) {
     auto & clk = *node_->get_clock();
     RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());

@@ -55,7 +55,7 @@ public:
   ~Vp8Streamer();
 
 protected:
-  virtual void initializeEncoder();
+  virtual void initialize_encoder();
 
 private:
   std::string quality_;

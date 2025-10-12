@@ -95,7 +95,7 @@ public:
     const char * begin, const char * end);
 
 private:
-  void restreamFrames(std::chrono::duration<double> max_age);
+  void restream_frames(std::chrono::duration<double> max_age);
   void cleanup_inactive_streams();
 
   rclcpp::TimerBase::SharedPtr cleanup_timer_;

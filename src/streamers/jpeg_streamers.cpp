@@ -63,16 +63,16 @@ MjpegStreamer::MjpegStreamer(
   stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
-  stream_.sendInitialHeader();
+  stream_.send_initial_header();
 }
 
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-void MjpegStreamer::sendImage(
+void MjpegStreamer::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -83,7 +83,7 @@ void MjpegStreamer::sendImage(
   std::vector<uint8_t> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
-  stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
+  stream_.send_part_and_clear(time, "image/jpeg", encoded_buffer);
 }
 
 std::shared_ptr<StreamerInterface> MjpegStreamerFactory::create_streamer(
@@ -106,10 +106,10 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-void JpegSnapshotStreamer::sendImage(
+void JpegSnapshotStreamer::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {

@@ -63,7 +63,7 @@ Vp8Streamer::~Vp8Streamer()
 {
 }
 
-void Vp8Streamer::initializeEncoder()
+void Vp8Streamer::initialize_encoder()
 {
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
