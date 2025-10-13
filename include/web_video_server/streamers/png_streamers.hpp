@@ -60,7 +60,7 @@ public:
 
 protected:
   virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
   MultipartStream stream_;
@@ -87,7 +87,7 @@ public:
 
 protected:
   virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
   int quality_;

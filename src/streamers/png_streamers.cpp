@@ -78,14 +78,14 @@ PngStreamer::~PngStreamer()
   std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-cv::Mat PngStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+cv::Mat PngStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   // Handle alpha values since PNG supports it
   if (sensor_msgs::image_encodings::hasAlpha(msg->encoding)) {
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return ImageTransportStreamerBase::decodeImage(msg);
+    return ImageTransportStreamerBase::decode_image(msg);
   }
 }
 
@@ -126,14 +126,14 @@ PngSnapshotStreamer::~PngSnapshotStreamer()
   std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-cv::Mat PngSnapshotStreamer::decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+cv::Mat PngSnapshotStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   // Handle alpha values since PNG supports it
   if (sensor_msgs::image_encodings::hasAlpha(msg->encoding)) {
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   } else {
     // Use the normal decode otherwise
-    return ImageTransportStreamerBase::decodeImage(msg);
+    return ImageTransportStreamerBase::decode_image(msg);
   }
 }
 

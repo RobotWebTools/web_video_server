@@ -64,7 +64,7 @@ public:
   virtual void start();
 
 protected:
-  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
   virtual void restream_frame(std::chrono::duration<double> max_age);
   virtual void initialize(const cv::Mat &);

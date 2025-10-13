@@ -156,7 +156,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
 
   cv::Mat img;
   try {
-    img = decodeImage(msg);
+    img = decode_image(msg);
     int input_width = img.cols;
     int input_height = img.rows;
 
@@ -218,7 +218,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
   }
 }
 
-cv::Mat ImageTransportStreamerBase::decodeImage(
+cv::Mat ImageTransportStreamerBase::decode_image(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (msg->encoding.find("F") != std::string::npos) {
