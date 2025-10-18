@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 #include <chrono>
 #include <exception>
@@ -60,6 +60,8 @@
 #include "web_video_server/utils.hpp"
 
 namespace web_video_server
+{
+namespace streamers
 {
 
 ImageTransportStreamerBase::ImageTransportStreamerBase(
@@ -270,4 +272,5 @@ std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_availabl
   return result;
 }
 
+}  // namespace streamers
 }  // namespace web_video_server

@@ -49,8 +49,8 @@
 #include "sensor_msgs/image_encodings.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-#include "web_video_server/image_transport_streamer.hpp"
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"

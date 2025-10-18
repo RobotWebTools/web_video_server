@@ -52,10 +52,12 @@ extern "C"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/image_transport_streamer.hpp"
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
+{
+namespace streamers
 {
 
 /**
@@ -108,4 +110,5 @@ public:
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
+}  // namespace streamers
 }  // namespace web_video_server

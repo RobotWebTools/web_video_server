@@ -36,8 +36,8 @@
 #include "async_web_server_cpp/http_connection.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/libav_streamer.hpp"
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {

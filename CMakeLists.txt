@@ -68,8 +68,8 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 add_library(${PROJECT_NAME}_streamers SHARED
-  src/image_transport_streamer.cpp
-  src/libav_streamer.cpp
+  src/streamers/image_transport_streamer.cpp
+  src/streamers/libav_streamer.cpp
   src/streamers/h264_streamer.cpp
   src/streamers/jpeg_streamers.cpp
   src/streamers/png_streamers.cpp

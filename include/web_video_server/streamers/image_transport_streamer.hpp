@@ -47,6 +47,8 @@
 
 namespace web_video_server
 {
+namespace streamers
+{
 
 /**
  * @brief A common base class for all streaming plugins using image_transport to subscribe to image
@@ -99,4 +101,5 @@ public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
 };
 
+}  // namespace streamers
 }  // namespace web_video_server

@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/libav_streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 extern "C"
 {
@@ -66,14 +66,16 @@ extern "C"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "web_video_server/image_transport_streamer.hpp"
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)
 #define CODEC_FLAG_GLOBAL_HEADER AV_CODEC_FLAG_GLOBAL_HEADER
 
 namespace web_video_server
+{
+namespace streamers
 {
 
 LibavStreamerBase::LibavStreamerBase(
@@ -345,4 +347,5 @@ std::string LibavStreamerFactoryBase::create_viewer(
   return ss.str();
 }
 
+}  // namespace streamers
 }  // namespace web_video_server
