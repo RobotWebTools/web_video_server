@@ -135,6 +135,15 @@ install(
   RUNTIME DESTINATION bin
 )
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
+ament_export_dependencies(
+  async_web_server_cpp
+  cv_bridge
+  image_transport
+  pluginlib
+  rclcpp
+  rmw
+  sensor_msgs
+)
 
 set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME ${PROJECT_NAME})
 install(
@@ -159,4 +168,6 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_package()
+ament_package(
+  CONFIG_EXTRAS "config-extras.cmake"
+)
