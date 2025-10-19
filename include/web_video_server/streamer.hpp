@@ -97,6 +97,8 @@ protected:
 class StreamerFactoryInterface
 {
 public:
+  virtual ~StreamerFactoryInterface() = default;
+
   /**
    * @brief Returns the type of streamer created by this factory.
    *
