@@ -34,6 +34,8 @@
 #include <exception>
 #include <functional>
 #include <mutex>
+#include <string>
+#include <vector>
 
 #include <boost/system/system_error.hpp>
 #include <opencv2/core.hpp>
@@ -141,7 +143,7 @@ void ImageTransportStreamerBase::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double> max_age)
+void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -208,7 +210,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
 
 void ImageTransportStreamerBase::try_send_image(
   const cv::Mat & img,
-  const std::chrono::steady_clock::time_point & time)
+  const std::chrono::steady_clock::time_point & /* time */)
 {
   try {
     std::scoped_lock lock(send_mutex_);

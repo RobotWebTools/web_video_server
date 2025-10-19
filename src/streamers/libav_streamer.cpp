@@ -51,7 +51,6 @@ extern "C"
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -66,7 +65,6 @@ extern "C"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/image_transport_streamer.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg

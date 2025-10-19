@@ -31,14 +31,15 @@
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
 
 #include <chrono>
+#include <cstdio>
 #include <exception>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <sstream>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
@@ -46,8 +47,11 @@
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
 #include "rclcpp/node.hpp"
+#include "rclcpp/qos.hpp"
+#include "rclcpp/subscription.hpp"
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/compressed_image.hpp"
 
@@ -288,7 +292,7 @@ void RosCompressedSnapshotStreamer::send_image(
   }
 
   char stamp[20];
-  snprintf(
+  std::snprintf(
     stamp, sizeof(stamp), "%.06lf",
     std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
 

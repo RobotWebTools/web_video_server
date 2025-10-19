@@ -34,6 +34,7 @@
 #include <chrono>
 #include <cstring>
 #include <exception>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -42,7 +43,6 @@
 #include <vector>
 
 #include <boost/algorithm/string/join.hpp>
-#include <boost/algorithm/string/predicate.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/bind/placeholders.hpp>
 #include <boost/exception/exception.hpp>
@@ -51,6 +51,7 @@
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 #include "async_web_server_cpp/http_server.hpp"
+#include "pluginlib/exceptions.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/logging.hpp"

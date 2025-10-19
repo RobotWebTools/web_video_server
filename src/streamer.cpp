@@ -30,6 +30,9 @@
 
 #include "web_video_server/streamer.hpp"
 
+#include <vector>
+#include <sstream>
+
 #include "rclcpp/node.hpp"
 
 #include "async_web_server_cpp/http_connection.hpp"
