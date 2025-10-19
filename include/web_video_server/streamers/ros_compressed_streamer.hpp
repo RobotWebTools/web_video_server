@@ -84,7 +84,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+  std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
 class RosCompressedSnapshotStreamer : public StreamerInterface
@@ -118,7 +118,7 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     rclcpp::Node::SharedPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+  std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
 }  // namespace streamers

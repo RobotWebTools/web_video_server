@@ -69,10 +69,10 @@ namespace streamers
 namespace
 {
 
-std::vector<std::string> get_image_topics(const rclcpp::Node::SharedPtr & node)
+std::vector<std::string> get_image_topics(rclcpp::Node & node)
 {
   std::vector<std::string> result;
-  auto topic_names_and_types = node->get_topic_names_and_types();
+  auto topic_names_and_types = node.get_topic_names_and_types();
   for (const auto & topic_and_types : topic_names_and_types) {
     for (const auto & type : topic_and_types.second) {
       if (type == "sensor_msgs/msg/Image") {
@@ -254,13 +254,13 @@ cv::Mat ImageTransportStreamerBase::decode_image(
 }
 
 std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node & node)
 {
   return get_image_topics(node);
 }
 
 std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node & node)
 {
   return get_image_topics(node);
 }

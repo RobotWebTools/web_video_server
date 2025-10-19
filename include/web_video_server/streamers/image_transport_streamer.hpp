@@ -93,13 +93,13 @@ private:
 class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
 class ImageTransportSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node::SharedPtr node);
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
 }  // namespace streamers

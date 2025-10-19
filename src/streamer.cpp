@@ -64,7 +64,7 @@ std::string StreamerFactoryInterface::create_viewer(
 }
 
 std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node::SharedPtr /* node */)
+  rclcpp::Node & /* node */)
 {
   return {};
 }

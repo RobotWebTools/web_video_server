@@ -252,9 +252,9 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
 }
 
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node & node)
 {
-  return collect_compressed_topics(*node);
+  return collect_compressed_topics(node);
 }
 
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
@@ -355,9 +355,9 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
 }
 
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node & node)
 {
-  return collect_compressed_topics(*node);
+  return collect_compressed_topics(node);
 }
 
 }  // namespace streamers
