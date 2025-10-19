@@ -83,7 +83,6 @@ protected:
   std::mutex send_mutex_;
 
 private:
-  image_transport::ImageTransport it_;
   bool initialized_;
 
   void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);

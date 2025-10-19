@@ -89,7 +89,7 @@ std::vector<std::string> get_image_topics(rclcpp::Node & node)
 ImageTransportStreamerBase::ImageTransportStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: StreamerInterface(request, connection, node), it_(node), initialized_(false)
+: StreamerInterface(request, connection, node), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
