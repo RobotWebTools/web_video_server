@@ -64,6 +64,26 @@ namespace web_video_server
 namespace streamers
 {
 
+namespace
+{
+
+std::vector<std::string> get_image_topics(const rclcpp::Node::SharedPtr & node)
+{
+  std::vector<std::string> result;
+  auto topic_names_and_types = node->get_topic_names_and_types();
+  for (const auto & topic_and_types : topic_names_and_types) {
+    for (const auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/Image") {
+        result.push_back(topic_and_types.first);
+        break;
+      }
+    }
+  }
+  return result;
+}
+
+}  // namespace
+
 ImageTransportStreamerBase::ImageTransportStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
@@ -126,28 +146,8 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double> ma
   if (inactive_ || !initialized_) {
     return;
   }
-  try {
-    if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
-      std::scoped_lock lock(send_mutex_);
-      // don't update last_frame, it may remain an old value.
-      send_image(output_size_image, std::chrono::steady_clock::now());
-    }
-  } catch (boost::system::system_error & e) {
-    // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
-    inactive_ = true;
-    return;
-  } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
-    inactive_ = true;
-    return;
-  } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
-    inactive_ = true;
-    return;
-  }
+
+  try_send_image(output_size_image, last_frame_);
 }
 
 void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -191,7 +191,6 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
     }
 
     last_frame_ = std::chrono::steady_clock::now();
-    send_image(output_size_image, last_frame_);
   } catch (cv_bridge::Exception & e) {
     auto & clk = *node_->get_clock();
     RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
@@ -199,9 +198,21 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
     return;
   } catch (cv::Exception & e) {
     auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "OpenCV exception: %s", e.what());
     inactive_ = true;
     return;
+  }
+
+  try_send_image(output_size_image, last_frame_);
+}
+
+void ImageTransportStreamerBase::try_send_image(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & time)
+{
+  try {
+    std::scoped_lock lock(send_mutex_);
+    send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
     RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
@@ -243,33 +254,13 @@ cv::Mat ImageTransportStreamerBase::decode_image(
 std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
-  std::vector<std::string> result;
-  auto tnat = node->get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    for (auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/Image") {
-        result.push_back(topic_and_types.first);
-        break;
-      }
-    }
-  }
-  return result;
+  return get_image_topics(node);
 }
 
 std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
-  std::vector<std::string> result;
-  auto tnat = node->get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    for (auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/Image") {
-        result.push_back(topic_and_types.first);
-        break;
-      }
-    }
-  }
-  return result;
+  return get_image_topics(node);
 }
 
 }  // namespace streamers

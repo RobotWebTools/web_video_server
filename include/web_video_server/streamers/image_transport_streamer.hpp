@@ -64,11 +64,11 @@ public:
   virtual ~ImageTransportStreamerBase();
 
   virtual void start();
+  virtual void restream_frame(std::chrono::duration<double> max_age);
 
 protected:
   virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
-  virtual void restream_frame(std::chrono::duration<double> max_age);
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -87,6 +87,7 @@ private:
   bool initialized_;
 
   void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  void try_send_image(const cv::Mat & img, const std::chrono::steady_clock::time_point & time);
 };
 
 class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface

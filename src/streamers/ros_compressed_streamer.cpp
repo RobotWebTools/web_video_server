@@ -35,8 +35,10 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <sstream>
 #include <string>
+#include <utility>
 
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
@@ -58,6 +60,102 @@ namespace web_video_server
 namespace streamers
 {
 
+namespace
+{
+
+using sensor_msgs::msg::CompressedImage;
+
+rclcpp::QoS make_compressed_qos(
+  const std::string & compressed_topic,
+  const std::string & qos_profile_name,
+  rclcpp::Node & node)
+{
+  RCLCPP_INFO(
+    node.get_logger(), "Streaming topic %s with QoS profile %s",
+    compressed_topic.c_str(), qos_profile_name.c_str());
+  auto qos_profile = get_qos_profile_from_name(qos_profile_name);
+  if (!qos_profile) {
+    RCLCPP_ERROR(
+      node.get_logger(),
+      "Invalid QoS profile %s specified. Using default profile.",
+      qos_profile_name.c_str());
+    qos_profile = rmw_qos_profile_default;
+  }
+
+  return rclcpp::QoS(
+    rclcpp::QoSInitialization(qos_profile.value().history, 1),
+    qos_profile.value());
+}
+
+std::optional<std::string> resolve_content_type(
+  const std::string & format, const rclcpp::Logger & logger)
+{
+  if (format.find("jpeg") != std::string::npos || format.find("jpg") != std::string::npos) {
+    return std::string("image/jpeg");
+  }
+  if (format.find("png") != std::string::npos) {
+    return std::string("image/png");
+  }
+
+  RCLCPP_WARN(
+    logger, "Unknown ROS compressed image format: %s",
+    format.c_str());
+  return std::nullopt;
+}
+
+template<typename CallbackT>
+rclcpp::Subscription<CompressedImage>::SharedPtr create_compressed_image_subscription(
+  const std::string & topic,
+  const std::string & qos_profile_name,
+  rclcpp::Node::SharedPtr node,
+  CallbackT && callback)
+{
+  const std::string compressed_topic = topic + "/compressed";
+  const auto qos = make_compressed_qos(compressed_topic, qos_profile_name, *node);
+  return node->create_subscription<CompressedImage>(
+    compressed_topic, qos, std::forward<CallbackT>(callback));
+}
+
+bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
+{
+  const auto compressed_topic_name = topic + "/compressed";
+  const auto tnat = node.get_topic_names_and_types();
+  for (const auto & topic_and_types : tnat) {
+    if (topic_and_types.second.size() > 1) {
+      continue;
+    }
+    const auto & topic_name = topic_and_types.first;
+    if (topic_name == compressed_topic_name ||
+      (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name))
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
+{
+  std::vector<std::string> result;
+  const auto tnat = node.get_topic_names_and_types();
+  for (const auto & topic_and_types : tnat) {
+    for (const auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/CompressedImage") {
+        std::string topic_name = topic_and_types.first;
+        if (topic_name.size() > 11 &&
+          topic_name.substr(topic_name.size() - 11) == "/compressed")
+        {
+          topic_name = topic_name.substr(0, topic_name.size() - 11);
+        }
+        result.push_back(topic_name);
+      }
+    }
+  }
+  return result;
+}
+
+}  // namespace
+
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
@@ -75,27 +173,8 @@ RosCompressedStreamer::~RosCompressedStreamer()
 
 void RosCompressedStreamer::start()
 {
-  const std::string compressed_topic = topic_ + "/compressed";
-
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(
-    node_->get_logger(), "Streaming topic %s with QoS profile %s",
-    compressed_topic.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
-  if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name_.c_str());
-  }
-
-  // Create subscriber
-  const auto qos = rclcpp::QoS(
-    rclcpp::QoSInitialization(qos_profile.value().history, 1),
-    qos_profile.value());
-  image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
-    compressed_topic, qos,
+  image_sub_ = create_compressed_image_subscription(
+    topic_, qos_profile_name_, node_,
     std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1));
 }
 
@@ -117,21 +196,12 @@ void RosCompressedStreamer::send_image(
   const std::chrono::steady_clock::time_point & time)
 {
   try {
-    std::string content_type;
-    if (msg->format.find("jpeg") != std::string::npos ||
-      msg->format.find("jpg") != std::string::npos)
-    {
-      content_type = "image/jpeg";
-    } else if (msg->format.find("png") != std::string::npos) {
-      content_type = "image/png";
-    } else {
-      RCLCPP_WARN(
-        node_->get_logger(), "Unknown ROS compressed image format: %s",
-        msg->format.c_str());
+    auto content_type = resolve_content_type(msg->format, node_->get_logger());
+    if (!content_type) {
       return;
     }
 
-    stream_.send_part(time, content_type, boost::asio::buffer(msg->data), msg);
+    stream_.send_part(time, *content_type, boost::asio::buffer(msg->data), msg);
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
     RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
@@ -167,23 +237,7 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
   rclcpp::Node::SharedPtr node)
 {
   std::string topic = request.get_query_param_value_or_default("topic", "");
-  std::string compressed_topic_name = topic + "/compressed";
-  auto tnat = node->get_topic_names_and_types();
-  bool did_find_compressed_topic = false;
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    auto & topic_name = topic_and_types.first;
-    if (topic_name == compressed_topic_name ||
-      (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-    {
-      did_find_compressed_topic = true;
-      break;
-    }
-  }
-  if (!did_find_compressed_topic) {
+  if (!has_compressed_topic(*node, topic)) {
     RCLCPP_WARN(
       node->get_logger().get_child("RosCompressedStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
@@ -196,20 +250,7 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
-  std::vector<std::string> result;
-  auto tnat = node->get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    for (auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/CompressedImage") {
-        std::string topic_name = topic_and_types.first;
-        if (topic_name.size() > 11 && topic_name.substr(topic_name.size() - 11) == "/compressed") {
-          topic_name = topic_name.substr(0, topic_name.size() - 11);
-        }
-        result.push_back(topic_name);
-      }
-    }
-  }
-  return result;
+  return collect_compressed_topics(*node);
 }
 
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
@@ -227,29 +268,9 @@ RosCompressedSnapshotStreamer::~RosCompressedSnapshotStreamer()
 
 void RosCompressedSnapshotStreamer::start()
 {
-  const std::string compressed_topic = topic_ + "/compressed";
-
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(
-    node_->get_logger(), "Streaming topic %s with QoS profile %s",
-    compressed_topic.c_str(), qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
-  if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
-    RCLCPP_ERROR(
-      node_->get_logger(),
-      "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name_.c_str());
-  }
-
-  // Create subscriber
-  const auto qos = rclcpp::QoS(
-    rclcpp::QoSInitialization(qos_profile.value().history, 1),
-    qos_profile.value());
-  image_sub_ = node_->create_subscription<sensor_msgs::msg::CompressedImage>(
-    compressed_topic, qos,
-    std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1)
-  );
+  image_sub_ = create_compressed_image_subscription(
+    topic_, qos_profile_name_, node_,
+    std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1));
 }
 
 void RosCompressedSnapshotStreamer::restream_frame(std::chrono::duration<double>/* max_age */)
@@ -261,17 +282,8 @@ void RosCompressedSnapshotStreamer::send_image(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
-  std::string content_type;
-  if (msg->format.find("jpeg") != std::string::npos ||
-    msg->format.find("jpg") != std::string::npos)
-  {
-    content_type = "image/jpeg";
-  } else if (msg->format.find("png") != std::string::npos) {
-    content_type = "image/png";
-  } else {
-    RCLCPP_WARN(
-      node_->get_logger(), "Unknown ROS compressed image format: %s",
-      msg->format.c_str());
+  auto content_type = resolve_content_type(msg->format, node_->get_logger());
+  if (!content_type) {
     return;
   }
 
@@ -279,19 +291,38 @@ void RosCompressedSnapshotStreamer::send_image(
   snprintf(
     stamp, sizeof(stamp), "%.06lf",
     std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
-  async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
-  .header("Connection", "close")
-  .header("Server", "web_video_server")
-  .header(
-    "Cache-Control",
-    "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
-  .header("X-Timestamp", stamp)
-  .header("Pragma", "no-cache")
-  .header("Content-type", content_type)
-  .header("Access-Control-Allow-Origin", "*")
-  .header("Content-Length", std::to_string(msg->data.size()))
-  .write(connection_);
-  connection_->write(boost::asio::buffer(msg->data), msg);
+
+  try {
+    async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
+    .header("Connection", "close")
+    .header("Server", "web_video_server")
+    .header(
+      "Cache-Control",
+      "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
+    .header("X-Timestamp", stamp)
+    .header("Pragma", "no-cache")
+    .header("Content-type", *content_type)
+    .header("Access-Control-Allow-Origin", "*")
+    .header("Content-Length", std::to_string(msg->data.size()))
+    .write(connection_);
+
+    connection_->write(boost::asio::buffer(msg->data), msg);
+  } catch (boost::system::system_error & e) {
+    // happens when client disconnects
+    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
+    inactive_ = true;
+    return;
+  } catch (std::exception & e) {
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
+    inactive_ = true;
+    return;
+  } catch (...) {
+    auto & clk = *node_->get_clock();
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+    inactive_ = true;
+    return;
+  }
 
   image_sub_.reset();
   inactive_ = true;
@@ -310,23 +341,7 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
   rclcpp::Node::SharedPtr node)
 {
   std::string topic = request.get_query_param_value_or_default("topic", "");
-  std::string compressed_topic_name = topic + "/compressed";
-  auto tnat = node->get_topic_names_and_types();
-  bool did_find_compressed_topic = false;
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    auto & topic_name = topic_and_types.first;
-    if (topic_name == compressed_topic_name ||
-      (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-    {
-      did_find_compressed_topic = true;
-      break;
-    }
-  }
-  if (!did_find_compressed_topic) {
+  if (!has_compressed_topic(*node, topic)) {
     RCLCPP_WARN(
       node->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
@@ -338,20 +353,7 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
   rclcpp::Node::SharedPtr node)
 {
-  std::vector<std::string> result;
-  auto tnat = node->get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    for (auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/CompressedImage") {
-        std::string topic_name = topic_and_types.first;
-        if (topic_name.size() > 11 && topic_name.substr(topic_name.size() - 11) == "/compressed") {
-          topic_name = topic_name.substr(0, topic_name.size() - 11);
-        }
-        result.push_back(topic_name);
-      }
-    }
-  }
-  return result;
+  return collect_compressed_topics(*node);
 }
 
 }  // namespace streamers
