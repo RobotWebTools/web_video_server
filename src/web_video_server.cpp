@@ -139,8 +139,9 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
 
   if (publish_rate_ > 0) {
-    restream_timer_ = create_wall_timer(1s / publish_rate_,
-        [this]() {restream_frames(1s / publish_rate_);});
+    restream_timer_ = create_wall_timer(
+      1s / publish_rate_,
+      [this]() {restream_frames(1s / publish_rate_);});
   }
 
   cleanup_timer_ = create_wall_timer(500ms, [this]() {cleanup_inactive_streams();});
