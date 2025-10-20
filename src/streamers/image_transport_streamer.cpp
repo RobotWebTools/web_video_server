@@ -88,8 +88,10 @@ std::vector<std::string> get_image_topics(rclcpp::Node & node)
 
 ImageTransportStreamerBase::ImageTransportStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: StreamerInterface(request, connection, node), initialized_(false)
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node,
+  std::string logger_name)
+: StreamerInterface(request, connection, node, logger_name), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -104,8 +106,14 @@ ImageTransportStreamerBase::~ImageTransportStreamerBase()
 
 void ImageTransportStreamerBase::start()
 {
-  image_transport::TransportHints hints(node_.get(), default_transport_);
-  auto tnat = node_->get_topic_names_and_types();
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
+  image_transport::TransportHints hints(node.get(), default_transport_);
+  auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
@@ -121,20 +129,20 @@ void ImageTransportStreamerBase::start()
 
   // Get QoS profile from query parameter
   RCLCPP_INFO(
-    node_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(),
+    logger_, "Streaming topic %s with QoS profile %s", topic_.c_str(),
     qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
-      node_->get_logger(),
+      logger_,
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name_.c_str());
   }
 
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
-    node_.get(), topic_,
+    node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
@@ -149,12 +157,24 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
     return;
   }
 
-  try_send_image(output_size_image, last_frame_);
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
+  try_send_image(output_size_image, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
+    return;
+  }
+
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
     return;
   }
 
@@ -194,40 +214,41 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
 
     last_frame_ = std::chrono::steady_clock::now();
   } catch (cv_bridge::Exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (cv::Exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "OpenCV exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "OpenCV exception: %s", e.what());
     inactive_ = true;
     return;
   }
 
-  try_send_image(output_size_image, last_frame_);
+  try_send_image(output_size_image, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::try_send_image(
   const cv::Mat & img,
-  const std::chrono::steady_clock::time_point & /* time */)
+  const std::chrono::steady_clock::time_point & /* time */,
+  rclcpp::Node & node)
 {
   try {
     std::scoped_lock lock(send_mutex_);
     send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(logger_, "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
+    auto & clk = *node.get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+    auto & clk = *node.get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception");
     inactive_ = true;
     return;
   }

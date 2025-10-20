@@ -78,10 +78,10 @@ namespace streamers
 
 LibavStreamerBase::LibavStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node,
-  const std::string & format_name, const std::string & codec_name,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node,
+  std::string logger_name, const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
-: ImageTransportStreamerBase(request, connection, node), format_context_(0), codec_(0),
+: ImageTransportStreamerBase(request, connection, node, logger_name), format_context_(0), codec_(0),
   codec_context_(0), video_stream_(0), opt_(0), frame_(0), sws_context_(0),
   first_image_received_(false), first_image_time_(), format_name_(format_name),
   codec_name_(codec_name), content_type_(content_type), io_buffer_(0)
@@ -294,9 +294,9 @@ void LibavStreamerBase::send_image(
 
   int ret = avcodec_send_frame(codec_context_, frame_);
   if (ret == AVERROR_EOF) {
-    RCLCPP_DEBUG_STREAM(node_->get_logger(), "avcodec_send_frame() encoder flushed\n");
+    RCLCPP_DEBUG_STREAM(logger_, "avcodec_send_frame() encoder flushed\n");
   } else if (ret == AVERROR(EAGAIN)) {
-    RCLCPP_DEBUG_STREAM(node_->get_logger(), "avcodec_send_frame() need output read out\n");
+    RCLCPP_DEBUG_STREAM(logger_, "avcodec_send_frame() need output read out\n");
   }
   if (ret < 0) {
     throw std::runtime_error("Error encoding video frame");
@@ -305,9 +305,9 @@ void LibavStreamerBase::send_image(
   ret = avcodec_receive_packet(codec_context_, pkt);
   bool got_packet = pkt->size > 0;
   if (ret == AVERROR_EOF) {
-    RCLCPP_DEBUG_STREAM(node_->get_logger(), "avcodec_receive_packet() encoder flushed\n");
+    RCLCPP_DEBUG_STREAM(logger_, "avcodec_receive_packet() encoder flushed\n");
   } else if (ret == AVERROR(EAGAIN)) {
-    RCLCPP_DEBUG_STREAM(node_->get_logger(), "avcodec_receive_packet() needs more input\n");
+    RCLCPP_DEBUG_STREAM(logger_, "avcodec_receive_packet() needs more input\n");
     got_packet = false;
   }
 

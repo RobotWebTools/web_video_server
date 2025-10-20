@@ -55,7 +55,7 @@ public:
   MjpegStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   ~MjpegStreamer();
 
 protected:
@@ -73,7 +73,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
 };
 
 class JpegSnapshotStreamer : public ImageTransportStreamerBase
@@ -81,7 +81,8 @@ class JpegSnapshotStreamer : public ImageTransportStreamerBase
 public:
   JpegSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
   ~JpegSnapshotStreamer();
 
 protected:
@@ -99,7 +100,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
 };
 
 }  // namespace streamers

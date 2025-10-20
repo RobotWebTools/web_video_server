@@ -72,15 +72,15 @@ using sensor_msgs::msg::CompressedImage;
 rclcpp::QoS make_compressed_qos(
   const std::string & compressed_topic,
   const std::string & qos_profile_name,
-  rclcpp::Node & node)
+  const rclcpp::Logger & logger)
 {
   RCLCPP_INFO(
-    node.get_logger(), "Streaming topic %s with QoS profile %s",
+    logger, "Streaming topic %s with QoS profile %s",
     compressed_topic.c_str(), qos_profile_name.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name);
   if (!qos_profile) {
     RCLCPP_ERROR(
-      node.get_logger(),
+      logger,
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name.c_str());
     qos_profile = rmw_qos_profile_default;
@@ -111,11 +111,12 @@ template<typename CallbackT>
 rclcpp::Subscription<CompressedImage>::SharedPtr create_compressed_image_subscription(
   const std::string & topic,
   const std::string & qos_profile_name,
-  rclcpp::Node::SharedPtr node,
+  const rclcpp::Node::SharedPtr & node,
+  const rclcpp::Logger & logger,
   CallbackT && callback)
 {
   const std::string compressed_topic = topic + "/compressed";
-  const auto qos = make_compressed_qos(compressed_topic, qos_profile_name, *node);
+  const auto qos = make_compressed_qos(compressed_topic, qos_profile_name, logger);
   return node->create_subscription<CompressedImage>(
     compressed_topic, qos, std::forward<CallbackT>(callback));
 }
@@ -162,8 +163,9 @@ std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
 
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: StreamerInterface(request, connection, node), stream_(connection)
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node)
+: StreamerInterface(request, connection, node, "ros_compressed_streamer"), stream_(connection)
 {
   stream_.send_initial_header();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -177,8 +179,14 @@ RosCompressedStreamer::~RosCompressedStreamer()
 
 void RosCompressedStreamer::start()
 {
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
   image_sub_ = create_compressed_image_subscription(
-    topic_, qos_profile_name_, node_,
+    topic_, qos_profile_name_, node, logger_,
     std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1));
 }
 
@@ -199,26 +207,32 @@ void RosCompressedStreamer::send_image(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
-  try {
-    auto content_type = resolve_content_type(msg->format, node_->get_logger());
-    if (!content_type) {
-      return;
-    }
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
 
+  auto content_type = resolve_content_type(msg->format, logger_);
+  if (!content_type) {
+    return;
+  }
+
+  try {
     stream_.send_part(time, *content_type, boost::asio::buffer(msg->data), msg);
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(logger_, "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception");
     inactive_ = true;
     return;
   }
@@ -238,12 +252,20 @@ void RosCompressedStreamer::image_callback(
 std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
-  std::string topic = request.get_query_param_value_or_default("topic", "");
-  if (!has_compressed_topic(*node, topic)) {
+  auto node_locked = node.lock();
+  if (!node_locked) {
     RCLCPP_WARN(
-      node->get_logger().get_child("RosCompressedStreamerFactory"),
+      rclcpp::get_logger("web_video_server.RosCompressedStreamerFactory"),
+      "Cannot create ROS compressed streamer because the node has expired");
+    return nullptr;
+  }
+
+  std::string topic = request.get_query_param_value_or_default("topic", "");
+  if (!has_compressed_topic(*node_locked, topic)) {
+    RCLCPP_WARN(
+      node_locked->get_logger().get_child("RosCompressedStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
     return std::make_shared<MjpegStreamer>(request, connection, node);
   }
@@ -259,8 +281,8 @@ std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
 
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: StreamerInterface(request, connection, node)
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
+: StreamerInterface(request, connection, node, "ros_compressed_snapshot_streamer")
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
@@ -272,8 +294,14 @@ RosCompressedSnapshotStreamer::~RosCompressedSnapshotStreamer()
 
 void RosCompressedSnapshotStreamer::start()
 {
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
   image_sub_ = create_compressed_image_subscription(
-    topic_, qos_profile_name_, node_,
+    topic_, qos_profile_name_, node, logger_,
     std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1));
 }
 
@@ -286,7 +314,13 @@ void RosCompressedSnapshotStreamer::send_image(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
   const std::chrono::steady_clock::time_point & time)
 {
-  auto content_type = resolve_content_type(msg->format, node_->get_logger());
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
+  auto content_type = resolve_content_type(msg->format, node->get_logger());
   if (!content_type) {
     return;
   }
@@ -313,17 +347,17 @@ void RosCompressedSnapshotStreamer::send_image(
     connection_->write(boost::asio::buffer(msg->data), msg);
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(logger_, "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception");
     inactive_ = true;
     return;
   }
@@ -342,12 +376,20 @@ std::shared_ptr<StreamerInterface>
 RosCompressedSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
-  std::string topic = request.get_query_param_value_or_default("topic", "");
-  if (!has_compressed_topic(*node, topic)) {
+  auto node_locked = node.lock();
+  if (!node_locked) {
     RCLCPP_WARN(
-      node->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
+      rclcpp::get_logger("web_video_server.RosCompressedSnapshotStreamerFactory"),
+      "Cannot create ROS compressed snapshot streamer because the node has expired");
+    return nullptr;
+  }
+
+  std::string topic = request.get_query_param_value_or_default("topic", "");
+  if (!has_compressed_topic(*node_locked, topic)) {
+    RCLCPP_WARN(
+      node_locked->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
     return std::make_shared<JpegSnapshotStreamer>(request, connection, node);
   }

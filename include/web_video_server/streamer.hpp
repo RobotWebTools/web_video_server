@@ -37,6 +37,7 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/logger.hpp"
 #include "rclcpp/node.hpp"
 
 namespace web_video_server
@@ -51,7 +52,8 @@ public:
   StreamerInterface(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name = "streamer");
   virtual ~StreamerInterface();
 
   /**
@@ -84,9 +86,12 @@ public:
   }
 
 protected:
+  rclcpp::Node::SharedPtr lock_node() const;
+
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
-  rclcpp::Node::SharedPtr node_;
+  rclcpp::Node::WeakPtr node_;
+  rclcpp::Logger logger_;
   bool inactive_;
   std::string topic_;
 };
@@ -116,7 +121,7 @@ public:
   virtual std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node) = 0;
+    rclcpp::Node::WeakPtr node) = 0;
 
   /**
    * @brief Creates HTML code for embedding a viewer for this streamer.

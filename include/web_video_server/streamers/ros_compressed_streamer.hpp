@@ -56,7 +56,7 @@ public:
   RosCompressedStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   ~RosCompressedStreamer();
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
@@ -83,7 +83,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
@@ -93,7 +93,7 @@ public:
   RosCompressedSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   ~RosCompressedSnapshotStreamer();
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
@@ -117,7 +117,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 

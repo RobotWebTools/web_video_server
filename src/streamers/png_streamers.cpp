@@ -64,8 +64,8 @@ namespace streamers
 
 PngStreamer::PngStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageTransportStreamerBase(request, connection, node), stream_(connection)
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
+: ImageTransportStreamerBase(request, connection, node, "png_streamer"), stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
   stream_.send_initial_header();
@@ -105,7 +105,7 @@ void PngStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<PngStreamer>(request, connection, node);
 }
@@ -113,7 +113,7 @@ std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
 PngSnapshotStreamer::PngSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 : ImageTransportStreamerBase(request, connection, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
@@ -170,7 +170,7 @@ void PngSnapshotStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<PngSnapshotStreamer>(request, connection, node);
 }

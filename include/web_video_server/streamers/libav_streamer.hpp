@@ -68,7 +68,10 @@ public:
   LibavStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node, const std::string & format_name, const std::string & codec_name,
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name,
+    const std::string & format_name,
+    const std::string & codec_name,
     const std::string & content_type);
 
   ~LibavStreamerBase();

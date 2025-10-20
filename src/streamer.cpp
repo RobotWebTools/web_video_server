@@ -34,6 +34,7 @@
 #include <sstream>
 
 #include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -43,14 +44,26 @@ namespace web_video_server
 
 StreamerInterface::StreamerInterface(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: connection_(connection), request_(request), node_(node), inactive_(false)
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node,
+  std::string logger_name)
+: connection_(connection), request_(request), node_(std::move(node)),
+  logger_(node_.lock()->get_logger().get_child(logger_name)), inactive_(false),
+  topic_(request.get_query_param_value_or_default("topic", ""))
 {
-  topic_ = request.get_query_param_value_or_default("topic", "");
 }
 
 StreamerInterface::~StreamerInterface()
 {
+}
+
+rclcpp::Node::SharedPtr StreamerInterface::lock_node() const
+{
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
+  }
+  return node;
 }
 
 std::string StreamerFactoryInterface::create_viewer(

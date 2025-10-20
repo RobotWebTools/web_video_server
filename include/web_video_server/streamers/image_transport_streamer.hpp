@@ -30,6 +30,7 @@
 #pragma once
 
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -60,7 +61,8 @@ public:
   ImageTransportStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name = "image_transport_streamer");
   virtual ~ImageTransportStreamerBase();
 
   virtual void start();
@@ -86,7 +88,9 @@ private:
   bool initialized_;
 
   void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  void try_send_image(const cv::Mat & img, const std::chrono::steady_clock::time_point & time);
+  void try_send_image(
+    const cv::Mat & img, const std::chrono::steady_clock::time_point & time,
+    rclcpp::Node & node);
 };
 
 class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface

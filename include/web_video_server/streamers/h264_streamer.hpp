@@ -50,7 +50,7 @@ public:
   H264Streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   ~H264Streamer();
 
 protected:
@@ -65,7 +65,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
 };
 
 }  // namespace streamers

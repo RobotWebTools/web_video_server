@@ -203,7 +203,7 @@ bool WebVideoServer::handle_stream(
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
     std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
-      request, connection, shared_from_this());
+      request, connection, weak_from_this());
     streamer->start();
     std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
@@ -223,7 +223,7 @@ bool WebVideoServer::handle_snapshot(
   if (snapshot_streamer_factories_.find(type) != snapshot_streamer_factories_.end()) {
     std::shared_ptr<StreamerInterface> streamer =
       snapshot_streamer_factories_[type]->create_streamer(
-      request, connection, shared_from_this());
+      request, connection, weak_from_this());
     streamer->start();
     std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
