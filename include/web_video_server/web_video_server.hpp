@@ -98,6 +98,7 @@ private:
   void restream_frames(std::chrono::duration<double> max_age);
   void cleanup_inactive_streams();
 
+  rclcpp::TimerBase::SharedPtr restream_timer_;
   rclcpp::TimerBase::SharedPtr cleanup_timer_;
 
   // Parameters
