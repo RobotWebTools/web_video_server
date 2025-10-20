@@ -1,9 +1,8 @@
-Original Authors
-----------------
+# Original Authors
 
- * Mitchell Wills (mwills@wpi.edu)
+ * Mitchell Wills <mwills@wpi.edu>
 
-Contributors
-------------
+# Contributors
 
- * [Russell Toris](http://users.wpi.edu/~rctoris/) (rctoris@wpi.edu)
+ * Russell Toris <rctoris@wpi.edu>
+ * Błażej Sowa <blazej@fictionlab.pl>
