@@ -49,12 +49,7 @@ namespace web_video_server
 class StreamerInterface
 {
 public:
-  StreamerInterface(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::WeakPtr node,
-    std::string logger_name = "streamer");
-  virtual ~StreamerInterface();
+  virtual ~StreamerInterface() {}
 
   /**
    * @brief Starts the streaming process.
@@ -67,10 +62,7 @@ public:
    * This could be because the connection was closed or snapshot was successfully sent (in case
    * of snapshot streamers).
    */
-  bool is_inactive()
-  {
-    return inactive_;
-  }
+  virtual bool is_inactive() = 0;
 
   /**
    * @brief Restreams the last received image frame if older than max_age.
@@ -80,7 +72,27 @@ public:
   /**
    * @brief Returns the topic being streamed.
    */
-  std::string get_topic()
+  virtual std::string get_topic() = 0;
+};
+
+/**
+ * @brief A base class providing common functionality for streamers.
+ */
+class StreamerBase : public StreamerInterface
+{
+public:
+  StreamerBase(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name = "streamer");
+
+  bool is_inactive() override
+  {
+    return inactive_;
+  }
+
+  std::string get_topic() override
   {
     return topic_;
   }

@@ -91,7 +91,7 @@ ImageTransportStreamerBase::ImageTransportStreamerBase(
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: StreamerInterface(request, connection, node, logger_name), initialized_(false)
+: StreamerBase(request, connection, node, logger_name), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);

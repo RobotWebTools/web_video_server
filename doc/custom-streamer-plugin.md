@@ -25,7 +25,7 @@ This tutorial will guide you through the steps to create a simple custom streame
     namespace test_streamer_plugin
     {
 
-    class TestStreamer : public web_video_server::StreamerInterface
+    class TestStreamer : public web_video_server::StreamerBase
     {
     public:
       TestStreamer(
@@ -66,7 +66,7 @@ This tutorial will guide you through the steps to create a simple custom streame
       const async_web_server_cpp::HttpRequest & request,
       async_web_server_cpp::HttpConnectionPtr connection,
       rclcpp::Node::WeakPtr node)
-    : web_video_server::StreamerInterface(request, connection, node, "test_streamer")
+    : web_video_server::StreamerBase(request, connection, node, "test_streamer")
     {
       RCLCPP_INFO(logger_, "TestStreamer created for topic: %s", topic_.c_str());
     }
@@ -137,8 +137,8 @@ This tutorial will guide you through the steps to create a simple custom streame
 
 ## Implementation hints
 - You can access query parameters from the HTTP request in your streamer constructor using `request.get_query_param_value_or_default` method.
-- Use `logger_` member variable from the base `StreamerInterface` class for logging.
-- Inherit from `web_video_server::streamers::ImageTransportStreamerBase` instead of `web_video_server::StreamerInterface` if you want to use image transport functionality without writing boilerplate code.
+- Use `logger_` member variable from the base `StreamerBase` class for logging.
+- Inherit from `web_video_server::streamers::ImageTransportStreamerBase` instead of `web_video_server::StreamerBase` if you want to use image transport functionality without writing boilerplate code.
 - By default, in the topic list view, your custom streamer will not be shown for any topic. To change it, overwrite `get_available_topics` method in your `StreamerFactory` class or inherit from `ImageTransportStreamerFactoryBase` to make your format available for all topics using `sensor_msgs/msg/Image` message type.
 - Link specific targets in `CMakeLists.txt`. For example, replace:
     ```cmake

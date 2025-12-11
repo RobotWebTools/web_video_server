@@ -55,7 +55,7 @@ namespace streamers
  * @brief A common base class for all streaming plugins using image_transport to subscribe to image
  * topics.
  */
-class ImageTransportStreamerBase : public StreamerInterface
+class ImageTransportStreamerBase : public StreamerBase
 {
 public:
   ImageTransportStreamerBase(

@@ -42,7 +42,7 @@
 namespace web_video_server
 {
 
-StreamerInterface::StreamerInterface(
+StreamerBase::StreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::WeakPtr node,
@@ -53,11 +53,7 @@ StreamerInterface::StreamerInterface(
 {
 }
 
-StreamerInterface::~StreamerInterface()
-{
-}
-
-rclcpp::Node::SharedPtr StreamerInterface::lock_node() const
+rclcpp::Node::SharedPtr StreamerBase::lock_node() const
 {
   auto node = node_.lock();
   if (!node) {

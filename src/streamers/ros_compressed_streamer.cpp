@@ -165,7 +165,7 @@ RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   rclcpp::Node::WeakPtr node)
-: StreamerInterface(request, connection, node, "ros_compressed_streamer"), stream_(connection)
+: StreamerBase(request, connection, node, "ros_compressed_streamer"), stream_(connection)
 {
   stream_.send_initial_header();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -282,7 +282,7 @@ std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
-: StreamerInterface(request, connection, node, "ros_compressed_snapshot_streamer")
+: StreamerBase(request, connection, node, "ros_compressed_snapshot_streamer")
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }

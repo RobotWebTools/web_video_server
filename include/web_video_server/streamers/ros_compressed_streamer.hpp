@@ -50,7 +50,7 @@ namespace web_video_server
 namespace streamers
 {
 
-class RosCompressedStreamer : public StreamerInterface
+class RosCompressedStreamer : public StreamerBase
 {
 public:
   RosCompressedStreamer(
@@ -87,7 +87,7 @@ public:
   std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
-class RosCompressedSnapshotStreamer : public StreamerInterface
+class RosCompressedSnapshotStreamer : public StreamerBase
 {
 public:
   RosCompressedSnapshotStreamer(
