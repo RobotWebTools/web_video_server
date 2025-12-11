@@ -151,8 +151,8 @@ std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
           topic_name.substr(topic_name.size() - 11) == "/compressed")
         {
           topic_name = topic_name.substr(0, topic_name.size() - 11);
+          result.push_back(topic_name);
         }
-        result.push_back(topic_name);
       }
     }
   }
