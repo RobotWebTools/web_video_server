@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,35 +28,70 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/image_streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
+
+#include <chrono>
+#include <exception>
+#include <functional>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include <boost/system/system_error.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/core/mat.hpp>
+#include <opencv2/core/types.hpp>
+#include <opencv2/imgproc.hpp>
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
-#include <cv_bridge/cv_bridge.h>
+#include "cv_bridge/cv_bridge.h"
 #else
-#include <cv_bridge/cv_bridge.hpp>
+#include "cv_bridge/cv_bridge.hpp"
 #endif
 
-#include <iostream>
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/transport_hints.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
+#include "rmw/qos_profiles.h"
+#include "sensor_msgs/msg/image.hpp"
+
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {
-
-ImageStreamer::ImageStreamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: connection_(connection), request_(request), node_(node), inactive_(false)
+namespace streamers
 {
-  topic_ = request.get_query_param_value_or_default("topic", "");
+
+namespace
+{
+
+std::vector<std::string> get_image_topics(rclcpp::Node & node)
+{
+  std::vector<std::string> result;
+  auto topic_names_and_types = node.get_topic_names_and_types();
+  for (const auto & topic_and_types : topic_names_and_types) {
+    for (const auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/Image") {
+        result.push_back(topic_and_types.first);
+        break;
+      }
+    }
+  }
+  return result;
 }
 
-ImageStreamer::~ImageStreamer()
-{
-}
+}  // namespace
 
-ImageTransportImageStreamer::ImageTransportImageStreamer(
+ImageTransportStreamerBase::ImageTransportStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageStreamer(request, connection, node), it_(node), initialized_(false)
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node,
+  std::string logger_name)
+: StreamerBase(request, connection, node, logger_name), initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -65,14 +100,20 @@ ImageTransportImageStreamer::ImageTransportImageStreamer(
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
-ImageTransportImageStreamer::~ImageTransportImageStreamer()
+ImageTransportStreamerBase::~ImageTransportStreamerBase()
 {
 }
 
-void ImageTransportImageStreamer::start()
+void ImageTransportStreamerBase::start()
 {
-  image_transport::TransportHints hints(node_.get(), default_transport_);
-  auto tnat = node_->get_topic_names_and_types();
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
+  image_transport::TransportHints hints(node.get(), default_transport_);
+  auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
     if (topic_and_types.second.size() > 1) {
@@ -88,86 +129,58 @@ void ImageTransportImageStreamer::start()
 
   // Get QoS profile from query parameter
   RCLCPP_INFO(
-    node_->get_logger(), "Streaming topic %s with QoS profile %s", topic_.c_str(),
+    logger_, "Streaming topic %s with QoS profile %s", topic_.c_str(),
     qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
-      node_->get_logger(),
+      logger_,
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name_.c_str());
   }
 
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
-    node_.get(), topic_,
-    std::bind(&ImageTransportImageStreamer::imageCallback, this, std::placeholders::_1),
+    node.get(), topic_,
+    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
 
-void ImageTransportImageStreamer::initialize(const cv::Mat &)
+void ImageTransportStreamerBase::initialize(const cv::Mat &)
 {
 }
 
-void ImageTransportImageStreamer::restreamFrame(std::chrono::duration<double> max_age)
+void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
 {
   if (inactive_ || !initialized_) {
     return;
   }
-  try {
-    if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
-      std::scoped_lock lock(send_mutex_);
-      // don't update last_frame, it may remain an old value.
-      sendImage(output_size_image, std::chrono::steady_clock::now());
-    }
-  } catch (boost::system::system_error & e) {
-    // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
-    inactive_ = true;
-    return;
-  } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
-    inactive_ = true;
-    return;
-  } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+
+  auto node = lock_node();
+  if (!node) {
     inactive_ = true;
     return;
   }
+
+  try_send_image(output_size_image, last_frame_, *node);
 }
 
-cv::Mat ImageTransportImageStreamer::decodeImage(
-  const sensor_msgs::msg::Image::ConstSharedPtr & msg)
-{
-  if (msg->encoding.find("F") != std::string::npos) {
-    // scale floating point images
-    cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
-    cv::Mat_<float> float_image = float_image_bridge;
-    double max_val;
-    cv::minMaxIdx(float_image, 0, &max_val);
-
-    if (max_val > 0) {
-      float_image *= (255 / max_val);
-    }
-    return float_image;
-  } else {
-    // Convert to OpenCV native BGR color
-    return cv_bridge::toCvCopy(msg, "bgr8")->image;
-  }
-}
-
-void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
   }
 
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
   cv::Mat img;
   try {
-    img = decodeImage(msg);
+    img = decode_image(msg);
     int input_width = img.cols;
     int input_height = img.rows;
 
@@ -200,33 +213,78 @@ void ImageTransportImageStreamer::imageCallback(const sensor_msgs::msg::Image::C
     }
 
     last_frame_ = std::chrono::steady_clock::now();
-    sendImage(output_size_image, last_frame_);
   } catch (cv_bridge::Exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "cv_bridge exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (cv::Exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "cv_bridge exception: %s", e.what());
+    auto & clk = *node->get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "OpenCV exception: %s", e.what());
     inactive_ = true;
     return;
+  }
+
+  try_send_image(output_size_image, last_frame_, *node);
+}
+
+void ImageTransportStreamerBase::try_send_image(
+  const cv::Mat & img,
+  const std::chrono::steady_clock::time_point & /* time */,
+  rclcpp::Node & node)
+{
+  try {
+    std::scoped_lock lock(send_mutex_);
+    send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
-    RCLCPP_DEBUG(node_->get_logger(), "system_error exception: %s", e.what());
+    RCLCPP_DEBUG(logger_, "system_error exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (std::exception & e) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception: %s", e.what());
+    auto & clk = *node.get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception: %s", e.what());
     inactive_ = true;
     return;
   } catch (...) {
-    auto & clk = *node_->get_clock();
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), clk, 40, "exception");
+    auto & clk = *node.get_clock();
+    RCLCPP_ERROR_THROTTLE(logger_, clk, 40, "exception");
     inactive_ = true;
     return;
   }
 }
 
+cv::Mat ImageTransportStreamerBase::decode_image(
+  const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+{
+  if (msg->encoding.find("F") != std::string::npos) {
+    // scale floating point images
+    cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
+    cv::Mat_<float> float_image = float_image_bridge;
+    double max_val;
+    cv::minMaxIdx(float_image, 0, &max_val);
+
+    if (max_val > 0) {
+      float_image *= (255 / max_val);
+    }
+    return float_image;
+  } else {
+    // Convert to OpenCV native BGR color
+    return cv_bridge::toCvCopy(msg, "bgr8")->image;
+  }
+}
+
+std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
+  rclcpp::Node & node)
+{
+  return get_image_topics(node);
+}
+
+std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
+  rclcpp::Node & node)
+{
+  return get_image_topics(node);
+}
+
+}  // namespace streamers
 }  // namespace web_video_server

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,42 +27,45 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/vp9_streamer.hpp"
+#pragma once
+
+#include <memory>
+#include <string>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {
-
-Vp9Streamer::Vp9Streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "webm", "libvpx-vp9", "video/webm")
+namespace streamers
 {
-}
-Vp9Streamer::~Vp9Streamer()
-{
-}
 
-void Vp9Streamer::initializeEncoder()
+class Vp9Streamer : public LibavStreamerBase
 {
-  // codec options set up to provide somehow reasonable performance in cost of poor quality
-  // should be updated as soon as VP9 encoding matures
-  av_opt_set_int(codec_context_->priv_data, "pass", 1, 0);
-  av_opt_set_int(codec_context_->priv_data, "speed", 8, 0);
-  av_opt_set_int(codec_context_->priv_data, "cpu-used", 4, 0);  // 8 is max
-  av_opt_set_int(codec_context_->priv_data, "crf", 20, 0);      // 0..63 (higher is lower quality)
-}
+public:
+  Vp9Streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+  ~Vp9Streamer();
 
-Vp9StreamerType::Vp9StreamerType()
-: LibavStreamerType("webm", "libvpx-vp9", "video/webm")
+protected:
+  virtual void initialize_encoder();
+};
+
+class Vp9StreamerFactory : public LibavStreamerFactoryBase
 {
-}
+public:
+  std::string get_type() {return "vp9";}
+  std::shared_ptr<StreamerInterface> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+};
 
-std::shared_ptr<ImageStreamer> Vp9StreamerType::create_streamer(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
-{
-  return std::make_shared<Vp9Streamer>(request, connection, node);
-}
-
+}  // namespace streamers
 }  // namespace web_video_server

@@ -1,4 +1,5 @@
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2014, Worcester Polytechnic Institute
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,39 +28,54 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+#include "web_video_server/streamer.hpp"
 
-#include <memory>
+#include <vector>
+#include <sstream>
 
-#include "image_transport/image_transport.hpp"
-#include "web_video_server/libav_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
+
 #include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
 
 namespace web_video_server
 {
 
-class Vp9Streamer : public LibavStreamer
+StreamerBase::StreamerBase(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node,
+  std::string logger_name)
+: connection_(connection), request_(request), node_(std::move(node)),
+  logger_(node_.lock()->get_logger().get_child(logger_name)), inactive_(false),
+  topic_(request.get_query_param_value_or_default("topic", ""))
 {
-public:
-  Vp9Streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  ~Vp9Streamer();
+}
 
-protected:
-  virtual void initializeEncoder();
-};
-
-class Vp9StreamerType : public LibavStreamerType
+rclcpp::Node::SharedPtr StreamerBase::lock_node() const
 {
-public:
-  Vp9StreamerType();
-  std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-};
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
+  }
+  return node;
+}
+
+std::string StreamerFactoryInterface::create_viewer(
+  const async_web_server_cpp::HttpRequest & request)
+{
+  std::stringstream ss;
+  ss << "<img src=\"/stream?";
+  ss << request.query;
+  ss << "\"></img>";
+  return ss.str();
+}
+
+std::vector<std::string> StreamerFactoryInterface::get_available_topics(
+  rclcpp::Node & /* node */)
+{
+  return {};
+}
 
 }  // namespace web_video_server

@@ -1,6 +1,6 @@
-# web_video_server - HTTP Streaming of ROS Image Topics in Multiple Formats
+# web_video_server - HTTP Streaming of ROS Topics in Multiple Formats
 
-This node provides HTTP streaming of ROS image topics in various formats, making it easy to view robot camera feeds and other image topics in a web browser without requiring special plugins or extensions.
+This node provides HTTP streaming of ROS topics in various formats, making it easy to view robot camera feeds and other topics in a web browser without requiring special plugins or extensions.
 
 ## Features
 
@@ -10,10 +10,14 @@ This node provides HTTP streaming of ROS image topics in various formats, making
   - VP9 (WebM)
   - H264 (MP4)
   - PNG streams
-  - ROS compressed image topics
+  - ROS compressed image streams
+- Query snapshots of image topics in multiple formats:
+  - JPEG
+  - PNG
+  - ROS compressed image
+- Plugin-based architecture for easy addition of new streaming formats
 - Adjustable quality, size, and other streaming parameters
 - Web interface to browse available image topics
-- Single image snapshot capability
 - Support for different QoS profiles in ROS 2
 
 ## Installation
@@ -109,7 +113,7 @@ http://localhost:8080/
 The interface allows quick navigation between different topics and formats without having to manually construct URLs.
 
 This page displays:
-- All available ROS image topics currently being published
+- All available streamable ROS topics
 - Direct links to view each topic in different formats:
   - Web page with streaming image
   - Direct stream
@@ -166,6 +170,7 @@ http://localhost:8080/snapshot?topic=/camera/image_raw
 | Parameter | Type | Default | Possible Values | Description |
 |-----------|------|---------|----------------|-------------|
 | `topic` | string | (required) | Any valid ROS image topic | The ROS image topic to stream |
+| `type` | string | "jpeg" | "jpeg", "png", "ros_compressed" | Snapshot image format |
 | `width` | int | 0 | 0+ | Width of output picture (0 = original width) |
 | `height` | int | 0 | 0+ | Height of output picture (0 = original height) |
 | `quality` | int | 95 | 1-100 | Quality for JPEG snapshots |
@@ -173,12 +178,14 @@ http://localhost:8080/snapshot?topic=/camera/image_raw
 | `default_transport` | string | "raw" | "raw", "compressed", "theora" | Image transport to use |
 | `qos_profile` | string | "default" | "default", "system_default", "sensor_data", "services_default" | QoS profile for ROS 2 subscribers |
 
-## About
+## Creating custom streamer plugins
+See the [custom streamer plugin tutorial](doc/custom-streamer-plugin.md) for information on how to write your own streamer plugins.
 
+## About
 This project is released as part of the [Robot Web Tools](https://robotwebtools.github.io/) effort.
 
-## License
+### License
 web_video_server is released with a BSD license. For full terms and conditions, see the [LICENSE](LICENSE) file.
 
-## Authors
+### Authors
 See the [AUTHORS](AUTHORS.md) file for a full list of contributors.

@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,6 +29,18 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/multipart_stream.hpp"
+
+#include <chrono>
+#include <cstddef>
+#include <cstdio>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <boost/asio/buffer.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_header.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
 
 namespace web_video_server
@@ -36,12 +48,12 @@ namespace web_video_server
 
 MultipartStream::MultipartStream(
   async_web_server_cpp::HttpConnectionPtr & connection,
-  const std::string & boundry,
+  const std::string & boundary,
   std::size_t max_queue_size)
-: max_queue_size_(max_queue_size), connection_(connection), boundry_(boundry)
+: max_queue_size_(max_queue_size), connection_(connection), boundary_(boundary)
 {}
 
-void MultipartStream::sendInitialHeader()
+void MultipartStream::send_initial_header()
 {
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
   .header("Connection", "close")
@@ -50,13 +62,13 @@ void MultipartStream::sendInitialHeader()
     "Cache-Control",
     "no-cache, no-store, must-revalidate, pre-check=0, post-check=0, max-age=0")
   .header("Pragma", "no-cache")
-  .header("Content-type", "multipart/x-mixed-replace;boundary=" + boundry_)
+  .header("Content-type", "multipart/x-mixed-replace;boundary=" + boundary_)
   .header("Access-Control-Allow-Origin", "*")
   .write(connection_);
-  connection_->write("--" + boundry_ + "\r\n");
+  connection_->write("--" + boundary_ + "\r\n");
 }
 
-void MultipartStream::sendPartHeader(
+void MultipartStream::send_part_header(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   size_t payload_size)
 {
@@ -74,9 +86,9 @@ void MultipartStream::sendPartHeader(
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
-void MultipartStream::sendPartFooter(const std::chrono::steady_clock::time_point & time)
+void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & time)
 {
-  std::shared_ptr<std::string> str(new std::string("\r\n--" + boundry_ + "\r\n"));
+  std::shared_ptr<std::string> str(new std::string("\r\n--" + boundary_ + "\r\n"));
   PendingFooter pf;
   pf.timestamp = time;
   pf.contents = str;
@@ -84,30 +96,30 @@ void MultipartStream::sendPartFooter(const std::chrono::steady_clock::time_point
   if (max_queue_size_ > 0) {pending_footers_.push(pf);}
 }
 
-void MultipartStream::sendPartAndClear(
+void MultipartStream::send_part_and_clear(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   std::vector<unsigned char> & data)
 {
-  if (!isBusy()) {
-    sendPartHeader(time, type, data.size());
+  if (!is_busy()) {
+    send_part_header(time, type, data.size());
     connection_->write_and_clear(data);
-    sendPartFooter(time);
+    send_part_footer(time);
   }
 }
 
-void MultipartStream::sendPart(
+void MultipartStream::send_part(
   const std::chrono::steady_clock::time_point & time, const std::string & type,
   const boost::asio::const_buffer & buffer,
   async_web_server_cpp::HttpConnection::ResourcePtr resource)
 {
-  if (!isBusy()) {
-    sendPartHeader(time, type, boost::asio::buffer_size(buffer));
+  if (!is_busy()) {
+    send_part_header(time, type, boost::asio::buffer_size(buffer));
     connection_->write(buffer, resource);
-    sendPartFooter(time);
+    send_part_footer(time);
   }
 }
 
-bool MultipartStream::isBusy()
+bool MultipartStream::is_busy()
 {
   auto current_time = std::chrono::steady_clock::now();
   while (!pending_footers_.empty()) {

@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,36 +30,44 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
 
-#include "sensor_msgs/msg/compressed_image.hpp"
-#include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/subscription.hpp"
+#include "sensor_msgs/msg/compressed_image.hpp"
+
 #include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamer.hpp"
 
 namespace web_video_server
 {
+namespace streamers
+{
 
-class RosCompressedStreamer : public ImageStreamer
+class RosCompressedStreamer : public StreamerBase
 {
 public:
   RosCompressedStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
   ~RosCompressedStreamer();
   virtual void start();
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual void restream_frame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual void sendImage(
+  virtual void send_image(
     const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void imageCallback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
@@ -68,14 +76,50 @@ private:
   std::string qos_profile_name_;
 };
 
-class RosCompressedStreamerType : public ImageStreamerType
+class RosCompressedStreamerFactory : public StreamerFactoryInterface
 {
 public:
-  std::shared_ptr<ImageStreamer> create_streamer(
+  std::string get_type() {return "ros_compressed";}
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+    rclcpp::Node::WeakPtr node);
+  std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
+class RosCompressedSnapshotStreamer : public StreamerBase
+{
+public:
+  RosCompressedSnapshotStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+  ~RosCompressedSnapshotStreamer();
+  virtual void start();
+  virtual void restream_frame(std::chrono::duration<double> max_age);
+
+protected:
+  virtual void send_image(
+    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+    const std::chrono::steady_clock::time_point & time);
+
+private:
+  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+
+  rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
+  std::string qos_profile_name_;
+};
+
+class RosCompressedSnapshotStreamerFactory : public SnapshotStreamerFactoryInterface
+{
+public:
+  std::string get_type() {return "ros_compressed";}
+  std::shared_ptr<StreamerInterface> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+};
+
+}  // namespace streamers
 }  // namespace web_video_server

@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,58 +30,86 @@
 
 #pragma once
 
-#include <memory>
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavcodec/codec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/dict.h>
+#include <libavutil/frame.h>
+#include <libswscale/swscale.h>
+}
+
+#include <chrono>
+#include <cstdint>
+#include <mutex>
 #include <string>
 
-#include "image_transport/image_transport.hpp"
-#include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_request.hpp"
+#include <opencv2/core/mat.hpp>
+
 #include "async_web_server_cpp/http_connection.hpp"
-#include "web_video_server/multipart_stream.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
+namespace streamers
+{
 
-class MjpegStreamer : public ImageTransportImageStreamer
+/**
+ * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * topics and libav to encode and stream video.
+ */
+class LibavStreamerBase : public ImageTransportStreamerBase
 {
 public:
-  MjpegStreamer(
+  LibavStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  ~MjpegStreamer();
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name,
+    const std::string & format_name,
+    const std::string & codec_name,
+    const std::string & content_type);
+
+  ~LibavStreamerBase();
 
 protected:
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void initialize_encoder() = 0;
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void initialize(const cv::Mat &);
+  AVFormatContext * format_context_;
+  const AVCodec * codec_;
+  AVCodecContext * codec_context_;
+  AVStream * video_stream_;
+
+  AVDictionary * opt_;   // container format options
 
 private:
-  MultipartStream stream_;
-  int quality_;
+  AVFrame * frame_;
+  struct SwsContext * sws_context_;
+  std::mutex encode_mutex_;
+  bool first_image_received_;
+  std::chrono::steady_clock::time_point first_image_time_;
+
+  std::string format_name_;
+  std::string codec_name_;
+  std::string content_type_;
+  int bitrate_;
+  int qmin_;
+  int qmax_;
+  int gop_;
+
+  uint8_t * io_buffer_;  // custom IO buffer
 };
 
-class MjpegStreamerType : public ImageStreamerType
+class LibavStreamerFactoryBase : public ImageTransportStreamerFactoryBase
 {
 public:
-  std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
+  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
 };
 
-class JpegSnapshotStreamer : public ImageTransportImageStreamer
-{
-public:
-  JpegSnapshotStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node);
-  ~JpegSnapshotStreamer();
-
-protected:
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-
-private:
-  int quality_;
-};
-
+}  // namespace streamers
 }  // namespace web_video_server

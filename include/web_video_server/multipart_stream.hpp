@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,12 +30,15 @@
 
 #pragma once
 
+#include <chrono>
+#include <cstddef>
 #include <queue>
 #include <memory>
 #include <vector>
 #include <string>
 
-#include "rclcpp/rclcpp.hpp"
+#include <boost/asio/buffer.hpp>
+
 #include "async_web_server_cpp/http_connection.hpp"
 
 namespace web_video_server
@@ -47,34 +50,37 @@ struct PendingFooter
   std::weak_ptr<std::string> contents;
 };
 
+/**
+ * Helper class to manage sending multipart HTTP responses.
+ */
 class MultipartStream
 {
 public:
   MultipartStream(
     async_web_server_cpp::HttpConnectionPtr & connection,
-    const std::string & boundry = "boundarydonotcross",
+    const std::string & boundary = "boundarydonotcross",
     std::size_t max_queue_size = 1);
 
-  void sendInitialHeader();
-  void sendPartHeader(
+  void send_initial_header();
+  void send_part_header(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     size_t payload_size);
-  void sendPartFooter(const std::chrono::steady_clock::time_point & time);
-  void sendPartAndClear(
+  void send_part_footer(const std::chrono::steady_clock::time_point & time);
+  void send_part_and_clear(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     std::vector<unsigned char> & data);
-  void sendPart(
+  void send_part(
     const std::chrono::steady_clock::time_point & time, const std::string & type,
     const boost::asio::const_buffer & buffer,
     async_web_server_cpp::HttpConnection::ResourcePtr resource);
 
 private:
-  bool isBusy();
+  bool is_busy();
 
 private:
   const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
-  std::string boundry_;
+  std::string boundary_;
   std::queue<PendingFooter> pending_footers_;
 };
 

@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,22 +30,33 @@
 
 #include "web_video_server/web_video_server.hpp"
 
+#include <algorithm>
 #include <chrono>
+#include <cstring>
+#include <exception>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <string>
+#include <sstream>
 #include <vector>
 
-#include <boost/algorithm/string/predicate.hpp>
-#include <opencv2/opencv.hpp>
+#include <boost/algorithm/string/join.hpp>
+#include <boost/bind/bind.hpp>
+#include <boost/bind/placeholders.hpp>
+#include <boost/exception/exception.hpp>
 
-#include "rclcpp/rclcpp.hpp"
-
-#include "sensor_msgs/image_encodings.hpp"
-#include "web_video_server/ros_compressed_streamer.hpp"
-#include "web_video_server/jpeg_streamers.hpp"
-#include "web_video_server/png_streamers.hpp"
-#include "web_video_server/vp8_streamer.hpp"
-#include "web_video_server/h264_streamer.hpp"
-#include "web_video_server/vp9_streamer.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_server.hpp"
+#include "pluginlib/exceptions.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/logging.hpp"
+
+#include "web_video_server/streamer.hpp"
 
 using namespace std::chrono_literals;
 using namespace boost::placeholders;  // NOLINT
@@ -55,7 +66,10 @@ namespace web_video_server
 
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
-    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found))
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
+  streamer_factory_loader_("web_video_server", "web_video_server::StreamerFactoryInterface"),
+  snapshot_streamer_factory_loader_("web_video_server",
+    "web_video_server::SnapshotStreamerFactoryInterface")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
@@ -63,6 +77,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   declare_parameter("server_threads", 1);
   declare_parameter("publish_rate", -1.0);
   declare_parameter("default_stream_type", "mjpeg");
+  declare_parameter("default_snapshot_type", "jpeg");
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -71,13 +86,27 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("server_threads", server_threads);
   get_parameter("publish_rate", publish_rate_);
   get_parameter("default_stream_type", default_stream_type_);
+  get_parameter("default_snapshot_type", default_snapshot_type_);
 
-  stream_types_["mjpeg"] = std::make_shared<MjpegStreamerType>();
-  stream_types_["png"] = std::make_shared<PngStreamerType>();
-  stream_types_["ros_compressed"] = std::make_shared<RosCompressedStreamerType>();
-  stream_types_["vp8"] = std::make_shared<Vp8StreamerType>();
-  stream_types_["h264"] = std::make_shared<H264StreamerType>();
-  stream_types_["vp9"] = std::make_shared<Vp9StreamerType>();
+  for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
+    RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
+    try {
+      auto streamer = streamer_factory_loader_.createSharedInstance(cls);
+      streamer_factories_[streamer->get_type()] = streamer;
+    } catch (pluginlib::PluginlibException & ex) {
+      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+    }
+  }
+
+  for (auto cls : snapshot_streamer_factory_loader_.getDeclaredClasses()) {
+    RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
+    try {
+      auto streamer = snapshot_streamer_factory_loader_.createSharedInstance(cls);
+      snapshot_streamer_factories_[streamer->get_type()] = streamer;
+    } catch (pluginlib::PluginlibException & ex) {
+      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+    }
+  }
 
   handler_group_.addHandlerForPath(
     "/",
@@ -110,7 +139,9 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Waiting For connections on %s:%d", address_.c_str(), port_);
 
   if (publish_rate_ > 0) {
-    create_wall_timer(1s / publish_rate_, [this]() {restreamFrames(1s / publish_rate_);});
+    restream_timer_ = create_wall_timer(
+      1s / publish_rate_,
+      [this]() {restream_frames(1s / publish_rate_);});
   }
 
   cleanup_timer_ = create_wall_timer(500ms, [this]() {cleanup_inactive_streams();});
@@ -123,28 +154,28 @@ WebVideoServer::~WebVideoServer()
   server_->stop();
 }
 
-void WebVideoServer::restreamFrames(std::chrono::duration<double> max_age)
+void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 {
-  std::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(streamers_mutex_);
 
-  for (auto & subscriber : image_subscribers_) {
-    subscriber->restreamFrame(max_age);
+  for (auto & streamer : streamers_) {
+    streamer->restream_frame(max_age);
   }
 }
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  std::unique_lock lock(subscriber_mutex_, std::try_to_lock);
+  std::unique_lock lock(streamers_mutex_, std::try_to_lock);
   if (lock) {
     auto new_end = std::partition(
-      image_subscribers_.begin(), image_subscribers_.end(),
-      [](const std::shared_ptr<ImageStreamer> & streamer) {return !streamer->isInactive();});
+      streamers_.begin(), streamers_.end(),
+      [](const std::shared_ptr<StreamerInterface> & streamer) {return !streamer->is_inactive();});
     if (verbose_) {
-      for (auto itr = new_end; itr < image_subscribers_.end(); ++itr) {
-        RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->getTopic().c_str());
+      for (auto itr = new_end; itr < streamers_.end(); ++itr) {
+        RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->get_topic().c_str());
       }
     }
-    image_subscribers_.erase(new_end, image_subscribers_.end());
+    streamers_.erase(new_end, streamers_.end());
   }
 }
 
@@ -171,38 +202,12 @@ bool WebVideoServer::handle_stream(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (stream_types_.find(type) != stream_types_.end()) {
-    std::string topic = request.get_query_param_value_or_default("topic", "");
-    // Fallback for topics without corresponding compressed topics
-    if (type == std::string("ros_compressed")) {
-      std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = get_topic_names_and_types();
-      bool did_find_compressed_topic = false;
-      for (auto topic_and_types : tnat) {
-        if (topic_and_types.second.size() > 1) {
-          // skip over topics with more than one type
-          continue;
-        }
-        auto & topic_name = topic_and_types.first;
-        if (topic_name == compressed_topic_name ||
-          (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-        {
-          did_find_compressed_topic = true;
-          break;
-        }
-      }
-      if (!did_find_compressed_topic) {
-        RCLCPP_WARN(
-          get_logger(),
-          "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
-        type = "mjpeg";
-      }
-    }
-    std::shared_ptr<ImageStreamer> streamer = stream_types_[type]->create_streamer(
-      request, connection, shared_from_this());
+  if (streamer_factories_.find(type) != streamer_factories_.end()) {
+    std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
+      request, connection, weak_from_this());
     streamer->start();
-    std::scoped_lock lock(subscriber_mutex_);
-    image_subscribers_.push_back(streamer);
+    std::scoped_lock lock(streamers_mutex_);
+    streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);
@@ -212,15 +217,21 @@ bool WebVideoServer::handle_stream(
 
 bool WebVideoServer::handle_snapshot(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
-  const char * /* end */)
+  async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
+  const char * end)
 {
-  std::shared_ptr<ImageStreamer> streamer = std::make_shared<JpegSnapshotStreamer>(
-    request, connection, shared_from_this());
-  streamer->start();
-
-  std::scoped_lock lock(subscriber_mutex_);
-  image_subscribers_.push_back(streamer);
+  std::string type = request.get_query_param_value_or_default("type", default_snapshot_type_);
+  if (snapshot_streamer_factories_.find(type) != snapshot_streamer_factories_.end()) {
+    std::shared_ptr<StreamerInterface> streamer =
+      snapshot_streamer_factories_[type]->create_streamer(
+      request, connection, weak_from_this());
+    streamer->start();
+    std::scoped_lock lock(streamers_mutex_);
+    streamers_.push_back(streamer);
+  } else {
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
+      request, connection, begin, end);
+  }
   return true;
 }
 
@@ -230,33 +241,8 @@ bool WebVideoServer::handle_stream_viewer(
   const char * end)
 {
   std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
-  if (stream_types_.find(type) != stream_types_.end()) {
+  if (streamer_factories_.find(type) != streamer_factories_.end()) {
     std::string topic = request.get_query_param_value_or_default("topic", "");
-    // Fallback for topics without corresponding compressed topics
-    if (type == std::string("ros_compressed")) {
-      std::string compressed_topic_name = topic + "/compressed";
-      auto tnat = get_topic_names_and_types();
-      bool did_find_compressed_topic = false;
-      for (auto topic_and_types : tnat) {
-        if (topic_and_types.second.size() > 1) {
-          // skip over topics with more than one type
-          continue;
-        }
-        auto & topic_name = topic_and_types.first;
-        if (topic_name == compressed_topic_name ||
-          (topic_name.find("/") == 0 && topic_name.substr(1) == compressed_topic_name))
-        {
-          did_find_compressed_topic = true;
-          break;
-        }
-      }
-      if (!did_find_compressed_topic) {
-        RCLCPP_WARN(
-          get_logger(),
-          "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
-        type = "mjpeg";
-      }
-    }
 
     async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
     .header("Connection", "close")
@@ -267,7 +253,7 @@ bool WebVideoServer::handle_stream_viewer(
     std::stringstream ss;
     ss << "<html><head><title>" << topic << "</title></head><body>";
     ss << "<h1>" << topic << "</h1>";
-    ss << stream_types_[type]->create_viewer(request);
+    ss << streamer_factories_[type]->create_viewer(request);
     ss << "</body></html>";
     connection->write(ss.str());
   } else {
@@ -282,21 +268,35 @@ bool WebVideoServer::handle_list_streams(
   async_web_server_cpp::HttpConnectionPtr connection, const char * /* begin */,
   const char * /* end */)
 {
-  std::vector<std::string> image_topics;
-  std::vector<std::string> camera_info_topics;
-  auto tnat = get_topic_names_and_types();
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    auto & topic_name = topic_and_types.first;
-    auto & topic_type = topic_and_types.second[0];  // explicitly take the first
+  std::map<std::string, std::vector<std::string>> topics_by_streamer_type;
+  std::map<std::string, std::vector<std::string>> topics_by_snapshot_type;
+  std::set<std::string> all_topics;
 
-    if (topic_type == "sensor_msgs/msg/Image") {
-      image_topics.push_back(topic_name);
-    } else if (topic_type == "sensor_msgs/msg/CameraInfo") {
-      camera_info_topics.push_back(topic_name);
+  for (const auto & factory_pair : streamer_factories_) {
+    RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
+    std::vector<std::string> factory_topics =
+      factory_pair.second->get_available_topics(*this);
+    RCLCPP_DEBUG(
+      get_logger(), "Factory %s returned %zu topics",
+      factory_pair.first.c_str(), factory_topics.size());
+    for (const auto & topic : factory_topics) {
+      RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
+      topics_by_streamer_type[factory_pair.first].push_back(topic);
+      all_topics.insert(topic);
+    }
+  }
+
+  for (const auto & factory_pair : snapshot_streamer_factories_) {
+    RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
+    std::vector<std::string> factory_topics =
+      factory_pair.second->get_available_topics(*this);
+    RCLCPP_DEBUG(
+      get_logger(), "Factory %s returned %zu topics",
+      factory_pair.first.c_str(), factory_topics.size());
+    for (const auto & topic : factory_topics) {
+      RCLCPP_DEBUG(get_logger(), "  Topic: %s", topic.c_str());
+      topics_by_snapshot_type[factory_pair.first].push_back(topic);
+      all_topics.insert(topic);
     }
   }
 
@@ -310,61 +310,64 @@ bool WebVideoServer::handle_list_streams(
 
   connection->write(
     "<html>"
-    "<head><title>ROS Image Topic List</title></head>"
-    "<body><h1>Available ROS Image Topics:</h1>");
+    "<head><title>ROS Streamable Topic List</title></head>"
+    "<body><h1>Available ROS Topics for streaming:</h1>");
   connection->write("<ul>");
-  for (std::string & camera_info_topic : camera_info_topics) {
-    if (boost::algorithm::ends_with(camera_info_topic, "/camera_info")) {
-      std::string base_topic = camera_info_topic.substr(
-        0,
-        camera_info_topic.size() - strlen("camera_info"));
-      connection->write("<li>");
-      connection->write(base_topic);
-      connection->write("<ul>");
-      std::vector<std::string>::iterator image_topic_itr = image_topics.begin();
-      for (; image_topic_itr != image_topics.end(); ) {
-        if (boost::starts_with(*image_topic_itr, base_topic)) {
-          connection->write("<li><a href=\"/stream_viewer?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">");
-          connection->write(image_topic_itr->substr(base_topic.size()));
-          connection->write("</a> (");
-          connection->write("<a href=\"/stream?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">Stream</a>) (");
-          connection->write("<a href=\"/snapshot?topic=");
-          connection->write(*image_topic_itr);
-          connection->write("\">Snapshot</a>)");
-          connection->write("</li>");
+  for (const std::string & topic : all_topics) {
+    std::vector<std::string> available_stream_viewers;
+    std::vector<std::string> available_streams;
+    std::vector<std::string> available_snapshots;
 
-          image_topic_itr = image_topics.erase(image_topic_itr);
-        } else {
-          ++image_topic_itr;
-        }
+    for (const auto & factory_pair : topics_by_streamer_type) {
+      const auto & type = factory_pair.first;
+      const auto & topics = factory_pair.second;
+      if (std::find(topics.begin(), topics.end(), topic) != topics.end()) {
+        available_stream_viewers.push_back(
+          "<a href=\"/stream_viewer?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
+        available_streams.push_back(
+          "<a href=\"/stream?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
       }
-      connection->write("</ul>");
     }
-    connection->write("</li>");
-  }
-  connection->write("</ul>");
-  // Add the rest of the image topics that don't have camera_info.
-  connection->write("<ul>");
-  std::vector<std::string>::iterator image_topic_itr = image_topics.begin();
-  for (; image_topic_itr != image_topics.end(); ) {
-    connection->write("<li><a href=\"/stream_viewer?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">");
-    connection->write(*image_topic_itr);
-    connection->write("</a> (");
-    connection->write("<a href=\"/stream?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">Stream</a>) (");
-    connection->write("<a href=\"/snapshot?topic=");
-    connection->write(*image_topic_itr);
-    connection->write("\">Snapshot</a>)");
-    connection->write("</li>");
 
-    image_topic_itr = image_topics.erase(image_topic_itr);
+    for (const auto & factory_pair : topics_by_snapshot_type) {
+      const auto & type = factory_pair.first;
+      const auto & topics = factory_pair.second;
+      if (std::find(topics.begin(), topics.end(), topic) != topics.end()) {
+        available_snapshots.push_back(
+          "<a href=\"/snapshot?topic=" + topic +
+          "&type=" + type + "\">" + type + "</a>");
+      }
+    }
+
+    connection->write("<li>");
+    connection->write(topic);
+    connection->write("<ul>");
+    if (!available_streams.empty()) {
+      connection->write("<li>");
+      connection->write("<a href=\"/stream_viewer?topic=" + topic + "\">");
+      connection->write("Stream Viewer</a> (");
+      connection->write(boost::algorithm::join(available_stream_viewers, ", "));
+      connection->write(")");
+      connection->write("</li>");
+      connection->write("<li>");
+      connection->write("<a href=\"/stream?topic=" + topic + "\">");
+      connection->write("Stream</a> (");
+      connection->write(boost::algorithm::join(available_streams, ", "));
+      connection->write(")");
+      connection->write("</li>");
+    }
+    if (!available_snapshots.empty()) {
+      connection->write("<li>");
+      connection->write("<a href=\"/snapshot?topic=" + topic + "\">");
+      connection->write("Snapshot</a> (");
+      connection->write(boost::algorithm::join(available_snapshots, ", "));
+      connection->write(")");
+      connection->write("</li>");
+    }
+    connection->write("</ul>");
+    connection->write("</li>");
   }
   connection->write("</ul></body></html>");
   return true;

@@ -1,4 +1,5 @@
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2014, Worcester Polytechnic Institute
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,39 +30,78 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <string>
 
-#include "image_transport/image_transport.hpp"
-#include "web_video_server/libav_streamer.hpp"
+#include <opencv2/core/mat.hpp>
+
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
+namespace streamers
+{
 
-class H264Streamer : public LibavStreamer
+class MjpegStreamer : public ImageTransportStreamerBase
 {
 public:
-  H264Streamer(
+  MjpegStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  ~H264Streamer();
+    rclcpp::Node::WeakPtr node);
+  ~MjpegStreamer();
 
 protected:
-  virtual void initializeEncoder();
-  std::string preset_;
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+
+private:
+  MultipartStream stream_;
+  int quality_;
 };
 
-class H264StreamerType : public LibavStreamerType
+class MjpegStreamerFactory : public ImageTransportStreamerFactoryBase
 {
 public:
-  H264StreamerType();
-  std::shared_ptr<ImageStreamer> create_streamer(
+  std::string get_type() {return "mjpeg";}
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
+    rclcpp::Node::WeakPtr node);
 };
 
+class JpegSnapshotStreamer : public ImageTransportStreamerBase
+{
+public:
+  JpegSnapshotStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+  ~JpegSnapshotStreamer();
+
+protected:
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+
+private:
+  int quality_;
+};
+
+class JpegSnapshotStreamerFactory : public ImageTransportSnapshotStreamerFactoryBase
+{
+public:
+  std::string get_type() {return "jpeg";}
+
+  std::shared_ptr<StreamerInterface> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+};
+
+}  // namespace streamers
 }  // namespace web_video_server

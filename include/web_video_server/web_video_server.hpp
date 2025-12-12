@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,22 +30,23 @@
 
 #pragma once
 
+#include <chrono>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
-#ifdef CV_BRIDGE_USES_OLD_HEADERS
-#include "cv_bridge/cv_bridge.h"
-#else
-#include "cv_bridge/cv_bridge.hpp"
-#endif
-
-#include "rclcpp/rclcpp.hpp"
-#include "web_video_server/image_streamer.hpp"
-#include "async_web_server_cpp/http_server.hpp"
-#include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "async_web_server_cpp/http_request_handler.hpp"
+#include "async_web_server_cpp/http_server.hpp"
+#include "pluginlib/class_loader.hpp"
+#include "rclcpp/node.hpp"
+#include "rclcpp/node_options.hpp"
+#include "rclcpp/timer.hpp"
+
+#include "web_video_server/streamer.hpp"
 
 namespace web_video_server
 {
@@ -94,9 +95,10 @@ public:
     const char * begin, const char * end);
 
 private:
-  void restreamFrames(std::chrono::duration<double> max_age);
+  void restream_frames(std::chrono::duration<double> max_age);
   void cleanup_inactive_streams();
 
+  rclcpp::TimerBase::SharedPtr restream_timer_;
   rclcpp::TimerBase::SharedPtr cleanup_timer_;
 
   // Parameters
@@ -106,13 +108,17 @@ private:
   std::string address_;
   bool verbose_;
   std::string default_stream_type_;
+  std::string default_snapshot_type_;
 
   std::shared_ptr<async_web_server_cpp::HttpServer> server_;
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
-  std::vector<std::shared_ptr<ImageStreamer>> image_subscribers_;
-  std::map<std::string, std::shared_ptr<ImageStreamerType>> stream_types_;
-  std::mutex subscriber_mutex_;
+  std::vector<std::shared_ptr<StreamerInterface>> streamers_;
+  pluginlib::ClassLoader<StreamerFactoryInterface> streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> streamer_factories_;
+  pluginlib::ClassLoader<SnapshotStreamerFactoryInterface> snapshot_streamer_factory_loader_;
+  std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> snapshot_streamer_factories_;
+  std::mutex streamers_mutex_;
 };
 
 }  // namespace web_video_server

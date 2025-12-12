@@ -1,5 +1,4 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,88 +29,81 @@
 
 #pragma once
 
-extern "C"
-{
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
-#include <libavutil/intreadwrite.h>
-#include <libavformat/avio.h>
-#include <libswscale/swscale.h>
-#include <libavutil/opt.h>
-#include <libavutil/mathematics.h>
-#include <libavutil/imgutils.h>
-}
-
 #include <chrono>
 #include <memory>
 #include <string>
 
-#include "image_transport/image_transport.hpp"
-#include "web_video_server/image_streamer.hpp"
+#include <opencv2/core/mat.hpp>
+
 #include "async_web_server_cpp/http_request.hpp"
 #include "async_web_server_cpp/http_connection.hpp"
+#include "rclcpp/node.hpp"
+#include "sensor_msgs/msg/image.hpp"
+
+#include "web_video_server/multipart_stream.hpp"
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
 {
+namespace streamers
+{
 
-class LibavStreamer : public ImageTransportImageStreamer
+class PngStreamer : public ImageTransportStreamerBase
 {
 public:
-  LibavStreamer(
+  PngStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node, const std::string & format_name, const std::string & codec_name,
-    const std::string & content_type);
-
-  ~LibavStreamer();
+    rclcpp::Node::WeakPtr node);
+  ~PngStreamer();
 
 protected:
-  virtual void initializeEncoder();
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
-  virtual void initialize(const cv::Mat &);
-  AVFormatContext * format_context_;
-  const AVCodec * codec_;
-  AVCodecContext * codec_context_;
-  AVStream * video_stream_;
-
-  AVDictionary * opt_;   // container format options
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
-  AVFrame * frame_;
-  struct SwsContext * sws_context_;
-  std::mutex encode_mutex_;
-  bool first_image_received_;
-  std::chrono::steady_clock::time_point first_image_time_;
-
-  std::string format_name_;
-  std::string codec_name_;
-  std::string content_type_;
-  int bitrate_;
-  int qmin_;
-  int qmax_;
-  int gop_;
-
-  uint8_t * io_buffer_;  // custom IO buffer
+  MultipartStream stream_;
+  int quality_;
 };
 
-class LibavStreamerType : public ImageStreamerType
+class PngStreamerFactory : public ImageTransportStreamerFactoryBase
 {
 public:
-  LibavStreamerType(
-    const std::string & format_name, const std::string & codec_name,
-    const std::string & content_type);
-
-  std::shared_ptr<ImageStreamer> create_streamer(
+  std::string get_type() {return "png";}
+  std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-
-  std::string create_viewer(const async_web_server_cpp::HttpRequest & request);
-
-private:
-  const std::string format_name_;
-  const std::string codec_name_;
-  const std::string content_type_;
+    rclcpp::Node::WeakPtr node);
 };
 
+class PngSnapshotStreamer : public ImageTransportStreamerBase
+{
+public:
+  PngSnapshotStreamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+  ~PngSnapshotStreamer();
+
+protected:
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+
+private:
+  int quality_;
+};
+
+class PngSnapshotStreamerFactory : public ImageTransportSnapshotStreamerFactoryBase
+{
+public:
+  std::string get_type() {return "png";}
+
+  std::shared_ptr<StreamerInterface> create_streamer(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    rclcpp::Node::WeakPtr node);
+};
+
+}  // namespace streamers
 }  // namespace web_video_server

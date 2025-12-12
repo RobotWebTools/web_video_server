@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,29 +28,50 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/jpeg_streamers.hpp"
+#include "web_video_server/streamers/jpeg_streamers.hpp"
+
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <mutex>
+#include <string>
+#include <vector>
+
+#include <opencv2/core/mat.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/image_transport_streamer.hpp"
 
 namespace web_video_server
+{
+namespace streamers
 {
 
 MjpegStreamer::MjpegStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node),
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
+: ImageTransportStreamerBase(request, connection, node, "mjpeg_streamer"),
   stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
-  stream_.sendInitialHeader();
+  stream_.send_initial_header();
 }
 
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-void MjpegStreamer::sendImage(
+void MjpegStreamer::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -58,34 +79,25 @@ void MjpegStreamer::sendImage(
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
-  std::vector<uchar> encoded_buffer;
+  std::vector<uint8_t> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
-  stream_.sendPartAndClear(time, "image/jpeg", encoded_buffer);
+  stream_.send_part_and_clear(time, "image/jpeg", encoded_buffer);
 }
 
-std::shared_ptr<ImageStreamer> MjpegStreamerType::create_streamer(
+std::shared_ptr<StreamerInterface> MjpegStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<MjpegStreamer>(request, connection, node);
-}
-
-std::string MjpegStreamerType::create_viewer(const async_web_server_cpp::HttpRequest & request)
-{
-  std::stringstream ss;
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\"></img>";
-  return ss.str();
 }
 
 JpegSnapshotStreamer::JpegSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
-: ImageTransportImageStreamer(request, connection, node)
+  rclcpp::Node::WeakPtr node)
+: ImageTransportStreamerBase(request, connection, node, "jpeg_snapshot_streamer")
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 95);
 }
@@ -93,10 +105,10 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects sendImage.
+  std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
-void JpegSnapshotStreamer::sendImage(
+void JpegSnapshotStreamer::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {
@@ -104,7 +116,7 @@ void JpegSnapshotStreamer::sendImage(
   encode_params.push_back(cv::IMWRITE_JPEG_QUALITY);
   encode_params.push_back(quality_);
 
-  std::vector<uchar> encoded_buffer;
+  std::vector<uint8_t> encoded_buffer;
   cv::imencode(".jpeg", img, encoded_buffer, encode_params);
 
   char stamp[20];
@@ -127,4 +139,22 @@ void JpegSnapshotStreamer::sendImage(
   inactive_ = true;
 }
 
+std::shared_ptr<StreamerInterface> JpegSnapshotStreamerFactory::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node)
+{
+  return std::make_shared<JpegSnapshotStreamer>(request, connection, std::move(node));
+}
+
+}  // namespace streamers
 }  // namespace web_video_server
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server::streamers::MjpegStreamerFactory,
+  web_video_server::StreamerFactoryInterface)
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server::streamers::JpegSnapshotStreamerFactory,
+  web_video_server::SnapshotStreamerFactoryInterface)

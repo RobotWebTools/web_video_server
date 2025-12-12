@@ -1,5 +1,5 @@
 // Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,34 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/vp8_streamer.hpp"
+#include "web_video_server/streamers/vp8_streamer.hpp"
+
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavutil/opt.h>
+}
+
+#include <cstring>
+#include <map>
+#include <memory>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
+{
+namespace streamers
 {
 
 Vp8Streamer::Vp8Streamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::SharedPtr node)
-: LibavStreamer(request, connection, node, "webm", "libvpx", "video/webm")
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
+: LibavStreamerBase(request, connection, node, "vp8_streamer", "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
@@ -44,7 +63,7 @@ Vp8Streamer::~Vp8Streamer()
 {
 }
 
-void Vp8Streamer::initializeEncoder()
+void Vp8Streamer::initialize_encoder()
 {
   typedef std::map<std::string, std::string> AvOptMap;
   AvOptMap av_opt_map;
@@ -70,17 +89,19 @@ void Vp8Streamer::initializeEncoder()
   av_opt_set_int(codec_context_->priv_data, "skip_threshold", 10, 0);
 }
 
-Vp8StreamerType::Vp8StreamerType()
-: LibavStreamerType("webm", "libvpx", "video/webm")
-{
-}
-
-std::shared_ptr<ImageStreamer> Vp8StreamerType::create_streamer(
+std::shared_ptr<StreamerInterface> Vp8StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  rclcpp::Node::SharedPtr node)
+  rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<Vp8Streamer>(request, connection, node);
 }
 
+}  // namespace streamers
 }  // namespace web_video_server
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server::streamers::Vp8StreamerFactory,
+  web_video_server::StreamerFactoryInterface)

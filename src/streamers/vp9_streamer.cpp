@@ -27,28 +27,62 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/utils.hpp"
+#include "web_video_server/streamers/vp9_streamer.hpp"
 
-#include <optional>
-#include <string>
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavutil/opt.h>
+}
 
-#include "rmw/qos_profiles.h"
-#include "rmw/types.h"
+#include <cstring>
+#include <memory>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/streamers/libav_streamer.hpp"
 
 namespace web_video_server
 {
-
-std::optional<rmw_qos_profile_t> get_qos_profile_from_name(const std::string name)
+namespace streamers
 {
-  if (name == "default") {
-    return rmw_qos_profile_default;
-  } else if (name == "system_default") {
-    return rmw_qos_profile_system_default;
-  } else if (name == "sensor_data") {
-    return rmw_qos_profile_sensor_data;
-  } else {
-    return std::nullopt;
-  }
+
+Vp9Streamer::Vp9Streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
+: LibavStreamerBase(request, connection, node, "vp9_streamer", "webm", "libvpx-vp9", "video/webm")
+{
+}
+Vp9Streamer::~Vp9Streamer()
+{
 }
 
+void Vp9Streamer::initialize_encoder()
+{
+  // codec options set up to provide somehow reasonable performance in cost of poor quality
+  // should be updated as soon as VP9 encoding matures
+  av_opt_set_int(codec_context_->priv_data, "pass", 1, 0);
+  av_opt_set_int(codec_context_->priv_data, "speed", 8, 0);
+  av_opt_set_int(codec_context_->priv_data, "cpu-used", 4, 0);  // 8 is max
+  av_opt_set_int(codec_context_->priv_data, "crf", 20, 0);      // 0..63 (higher is lower quality)
+}
+
+std::shared_ptr<StreamerInterface> Vp9StreamerFactory::create_streamer(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection,
+  rclcpp::Node::WeakPtr node)
+{
+  return std::make_shared<Vp9Streamer>(request, connection, node);
+}
+
+}  // namespace streamers
 }  // namespace web_video_server
+
+#include "pluginlib/class_list_macros.hpp"
+
+PLUGINLIB_EXPORT_CLASS(
+  web_video_server::streamers::Vp9StreamerFactory,
+  web_video_server::StreamerFactoryInterface)

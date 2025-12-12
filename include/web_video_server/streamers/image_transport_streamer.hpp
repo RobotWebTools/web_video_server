@@ -1,5 +1,4 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -32,71 +31,46 @@
 
 #include <chrono>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <vector>
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core/mat.hpp>
 
-#include "rclcpp/rclcpp.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
-#include "web_video_server/utils.hpp"
-#include "async_web_server_cpp/http_server.hpp"
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/subscriber.hpp"
+#include "rclcpp/node.hpp"
+#include "sensor_msgs/msg/image.hpp"
+
+#include "web_video_server/streamer.hpp"
 
 namespace web_video_server
 {
+namespace streamers
+{
 
-class ImageStreamer
+/**
+ * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * topics.
+ */
+class ImageTransportStreamerBase : public StreamerBase
 {
 public:
-  ImageStreamer(
+  ImageTransportStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-
-  virtual void start() = 0;
-  virtual ~ImageStreamer();
-
-  bool isInactive()
-  {
-    return inactive_;
-  }
-
-  /**
-   * Restreams the last received image frame if older than max_age.
-   */
-  virtual void restreamFrame(std::chrono::duration<double> max_age) = 0;
-
-  std::string getTopic()
-  {
-    return topic_;
-  }
-
-protected:
-  async_web_server_cpp::HttpConnectionPtr connection_;
-  async_web_server_cpp::HttpRequest request_;
-  rclcpp::Node::SharedPtr node_;
-  bool inactive_;
-  image_transport::Subscriber image_sub_;
-  std::string topic_;
-};
-
-
-class ImageTransportImageStreamer : public ImageStreamer
-{
-public:
-  ImageTransportImageStreamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node);
-  virtual ~ImageTransportImageStreamer();
+    rclcpp::Node::WeakPtr node,
+    std::string logger_name = "image_transport_streamer");
+  virtual ~ImageTransportStreamerBase();
 
   virtual void start();
+  virtual void restream_frame(std::chrono::duration<double> max_age);
 
 protected:
-  virtual cv::Mat decodeImage(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  virtual void sendImage(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
-  virtual void restreamFrame(std::chrono::duration<double> max_age);
+  virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
   virtual void initialize(const cv::Mat &);
 
   image_transport::Subscriber image_sub_;
@@ -111,21 +85,25 @@ protected:
   std::mutex send_mutex_;
 
 private:
-  image_transport::ImageTransport it_;
   bool initialized_;
 
-  void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  void try_send_image(
+    const cv::Mat & img, const std::chrono::steady_clock::time_point & time,
+    rclcpp::Node & node);
 };
 
-class ImageStreamerType
+class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
-  virtual std::shared_ptr<ImageStreamer> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::SharedPtr node) = 0;
-
-  virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request) = 0;
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
+class ImageTransportSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
+{
+public:
+  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+};
+
+}  // namespace streamers
 }  // namespace web_video_server

@@ -1,0 +1,48 @@
+<library path="web_video_server_streamers">
+  <class name="web_video_server/stream/mjpeg"
+    type="web_video_server::streamers::MjpegStreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images as multipart/x-mixed-replace (MJPEG).</description>
+  </class>
+  <class name="web_video_server/stream/png"
+    type="web_video_server::streamers::PngStreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images as multipart/x-mixed-replace (PNG).</description>
+  </class>
+  <class name="web_video_server/stream/ros_compressed"
+    type="web_video_server::streamers::RosCompressedStreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images published using compressed_image_transport as
+      multipart/x-mixed-replace.</description>
+  </class>
+  <class name="web_video_server/stream/h264"
+    type="web_video_server::streamers::H264StreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images as H.264 encoded video in an MP4 container.</description>
+  </class>
+  <class name="web_video_server/stream/vp8"
+    type="web_video_server::streamers::Vp8StreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images as VP8 encoded video in a WebM container.</description>
+  </class>
+  <class name="web_video_server/stream/vp9"
+    type="web_video_server::streamers::Vp9StreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Streams images as VP9 encoded video in a WebM container.</description>
+  </class>
+  <class name="web_video_server/snapshot/jpeg"
+    type="web_video_server::streamers::JpegSnapshotStreamerFactory"
+    base_class_type="web_video_server::SnapshotStreamerFactoryInterface">
+    <description>Provides single JPEG images.</description>
+  </class>
+  <class name="web_video_server/snapshot/png"
+    type="web_video_server::streamers::PngSnapshotStreamerFactory"
+    base_class_type="web_video_server::SnapshotStreamerFactoryInterface">
+    <description>Provides single PNG images.</description>
+  </class>
+  <class name="web_video_server/snapshot/ros_compressed"
+    type="web_video_server::streamers::RosCompressedSnapshotStreamerFactory"
+    base_class_type="web_video_server::SnapshotStreamerFactoryInterface">
+    <description>Provides single images published using compressed_image_transport as JPEG or PNG.</description>
+  </class>
+</library>

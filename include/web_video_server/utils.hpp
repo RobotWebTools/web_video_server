@@ -1,4 +1,4 @@
-// Copyright (c) 2024, The Robot Web Tools Contributors
+// Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,8 @@
 
 #include <string>
 #include <optional>
-#include "rmw/qos_profiles.h"
+
+#include "rmw/types.h"
 
 namespace web_video_server
 {
