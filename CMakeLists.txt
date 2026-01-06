@@ -165,17 +165,16 @@ if(BUILD_TESTING)
     )
   endif()
 
-  # Skip ament_clang_tidy check for all distros except rolling
-  # to avoid issues with multiple versions of clang being used
-  if(NOT $ENV{ROS_DISTRO} STREQUAL "rolling")
+  option(ENABLE_CLANG_TIDY "Enable ament_clang_tidy test" OFF)
+  if(ENABLE_CLANG_TIDY)
+    include(ProcessorCount)
+    processorcount(N)
+    set(ament_cmake_clang_tidy_JOBS ${N})
+  else()
     list(APPEND AMENT_LINT_AUTO_EXCLUDE
       ament_cmake_clang_tidy
     )
   endif()
-
-  include(ProcessorCount)
-  processorcount(N)
-  set(ament_cmake_clang_tidy_JOBS ${N})
 
   ament_lint_auto_find_test_dependencies()
 endif()
