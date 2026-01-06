@@ -112,7 +112,8 @@ LibavStreamerBase::~LibavStreamerBase()
   }
 }
 
-namespace {
+namespace
+{
 // output callback for ffmpeg IO context
 #if LIBAVFORMAT_VERSION_MAJOR < 61  // NOLINT(misc-include-cleaner)
 int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
