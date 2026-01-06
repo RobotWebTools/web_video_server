@@ -156,7 +156,7 @@ WebVideoServer::~WebVideoServer()
 
 void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 {
-  std::scoped_lock lock(streamers_mutex_);
+  const std::scoped_lock lock(streamers_mutex_);
 
   for (auto & streamer : streamers_) {
     streamer->restream_frame(max_age);
@@ -165,7 +165,7 @@ void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  std::unique_lock lock(streamers_mutex_, std::try_to_lock);
+  const std::unique_lock lock(streamers_mutex_, std::try_to_lock);
   if (lock) {
     auto new_end = std::partition(
       streamers_.begin(), streamers_.end(),
@@ -201,12 +201,12 @@ bool WebVideoServer::handle_stream(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
+  const std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
-    std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
+    const std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
       request, connection, weak_from_this());
     streamer->start();
-    std::scoped_lock lock(streamers_mutex_);
+    const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
@@ -220,13 +220,13 @@ bool WebVideoServer::handle_snapshot(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  std::string type = request.get_query_param_value_or_default("type", default_snapshot_type_);
+  const std::string type = request.get_query_param_value_or_default("type", default_snapshot_type_);
   if (snapshot_streamer_factories_.find(type) != snapshot_streamer_factories_.end()) {
-    std::shared_ptr<StreamerInterface> streamer =
+    const std::shared_ptr<StreamerInterface> streamer =
       snapshot_streamer_factories_[type]->create_streamer(
       request, connection, weak_from_this());
     streamer->start();
-    std::scoped_lock lock(streamers_mutex_);
+    const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
@@ -240,9 +240,9 @@ bool WebVideoServer::handle_stream_viewer(
   async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
   const char * end)
 {
-  std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
+  const std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
-    std::string topic = request.get_query_param_value_or_default("topic", "");
+    const std::string topic = request.get_query_param_value_or_default("topic", "");
 
     async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
     .header("Connection", "close")
@@ -274,7 +274,7 @@ bool WebVideoServer::handle_list_streams(
 
   for (const auto & factory_pair : streamer_factories_) {
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
-    std::vector<std::string> factory_topics =
+    const std::vector<std::string> factory_topics =
       factory_pair.second->get_available_topics(*this);
     RCLCPP_DEBUG(
       get_logger(), "Factory %s returned %zu topics",
@@ -288,7 +288,7 @@ bool WebVideoServer::handle_list_streams(
 
   for (const auto & factory_pair : snapshot_streamer_factories_) {
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
-    std::vector<std::string> factory_topics =
+    const std::vector<std::string> factory_topics =
       factory_pair.second->get_available_topics(*this);
     RCLCPP_DEBUG(
       get_logger(), "Factory %s returned %zu topics",

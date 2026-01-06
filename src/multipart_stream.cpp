@@ -76,7 +76,7 @@ void MultipartStream::send_part_header(
   snprintf(
     stamp, sizeof(stamp), "%.06lf",
     std::chrono::duration_cast<std::chrono::duration<double>>(time.time_since_epoch()).count());
-  std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader>> headers(
+  const std::shared_ptr<std::vector<async_web_server_cpp::HttpHeader>> headers(
     new std::vector<async_web_server_cpp::HttpHeader>());
   headers->push_back(async_web_server_cpp::HttpHeader("Content-type", type));
   headers->push_back(async_web_server_cpp::HttpHeader("X-Timestamp", stamp));
@@ -88,7 +88,7 @@ void MultipartStream::send_part_header(
 
 void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & time)
 {
-  std::shared_ptr<std::string> str(new std::string("\r\n--" + boundary_ + "\r\n"));
+  const std::shared_ptr<std::string> str(new std::string("\r\n--" + boundary_ + "\r\n"));
   PendingFooter pf;
   pf.timestamp = time;
   pf.contents = str;

@@ -112,20 +112,22 @@ LibavStreamerBase::~LibavStreamerBase()
   }
 }
 
+namespace {
 // output callback for ffmpeg IO context
 #if LIBAVFORMAT_VERSION_MAJOR < 61  // NOLINT(misc-include-cleaner)
-static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
+int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
 #else
-static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buffer_size)
+int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buffer_size)
 #endif
 {
-  async_web_server_cpp::HttpConnectionPtr connection =
+  const async_web_server_cpp::HttpConnectionPtr connection =
     *(static_cast<async_web_server_cpp::HttpConnectionPtr *>(opaque));
   std::vector<uint8_t> encoded_frame;
   encoded_frame.assign(buffer, buffer + buffer_size);
   connection->write_and_clear(encoded_frame);
   return 0;
 }
+}  // namespace
 
 void LibavStreamerBase::initialize(const cv::Mat & /* img */)
 {
@@ -145,7 +147,7 @@ void LibavStreamerBase::initialize(const cv::Mat & /* img */)
   }
 
   // Set up custom IO callback.
-  size_t io_buffer_size = 3 * 1024;    // 3M seen elsewhere and adjudged good
+  const size_t io_buffer_size = 3 * 1024;    // 3M seen elsewhere and adjudged good
   io_buffer_ = new unsigned char[io_buffer_size];
   AVIOContext * io_ctx = avio_alloc_context(
     io_buffer_, io_buffer_size, AVIO_FLAG_WRITE,
@@ -255,13 +257,13 @@ void LibavStreamerBase::send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & time)
 {
-  std::scoped_lock lock(encode_mutex_);
+  const std::scoped_lock lock(encode_mutex_);
   if (!first_image_received_) {
     first_image_received_ = true;
     first_image_time_ = time;
   }
 
-  AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
+  const AVPixelFormat input_coding_format = AV_PIX_FMT_BGR24;
 
   AVFrame * raw_frame = av_frame_alloc();
   av_image_fill_arrays(
@@ -270,7 +272,7 @@ void LibavStreamerBase::send_image(
 
   // Convert from opencv to libav
   if (sws_context_ == nullptr) {
-    static int sws_flags = SWS_BICUBIC;
+    static const int sws_flags = SWS_BICUBIC;
     sws_context_ = sws_getContext(
       output_width_, output_height_, input_coding_format, output_width_,
       output_height_, codec_context_->pix_fmt, sws_flags, NULL, NULL, NULL);
@@ -310,7 +312,7 @@ void LibavStreamerBase::send_image(
   }
 
   if (got_packet) {
-    double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(
+    const double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(
       time - first_image_time_).count();
     // Encode video at 1/0.95 to minimize delay
     pkt->pts = static_cast<int64_t>(seconds / av_q2d(video_stream_->time_base) * 0.95);

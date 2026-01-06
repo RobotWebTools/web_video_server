@@ -80,7 +80,7 @@ void Vp8Streamer::initialize_encoder()
   }
 
   // Buffering settings
-  int bufsize = 10;
+  const int bufsize = 10;
   codec_context_->rc_buffer_size = bufsize;
   codec_context_->rc_initial_buffer_occupancy = bufsize;  // bitrate/3;
   av_opt_set_int(codec_context_->priv_data, "bufsize", bufsize, 0);

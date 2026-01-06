@@ -74,7 +74,7 @@ PngStreamer::PngStreamer(
 PngStreamer::~PngStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 cv::Mat PngStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -121,7 +121,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
 PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 cv::Mat PngSnapshotStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)

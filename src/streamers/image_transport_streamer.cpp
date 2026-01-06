@@ -118,7 +118,7 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
-  image_transport::TransportHints hints(node.get(), default_transport_);
+  const image_transport::TransportHints hints(node.get(), default_transport_);
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -190,8 +190,8 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
   cv::Mat img;
   try {
     img = decode_image(msg);
-    int input_width = img.cols;
-    int input_height = img.rows;
+    const int input_width = img.cols;
+    const int input_height = img.rows;
 
     if (output_width_ == -1) {
       output_width_ = input_width;
@@ -206,10 +206,10 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
       cv::flip(img, img, 1);
     }
 
-    std::scoped_lock lock(send_mutex_);  // protects output_size_image_
+    const std::scoped_lock lock(send_mutex_);  // protects output_size_image_
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
-      cv::Size new_size(output_width_, output_height_);
+      const cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
       output_size_image_ = img_resized;
     } else {
@@ -243,7 +243,7 @@ void ImageTransportStreamerBase::try_send_image(
   rclcpp::Node & node)
 {
   try {
-    std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex_);
     send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -268,7 +268,7 @@ cv::Mat ImageTransportStreamerBase::decode_image(
 {
   if (msg->encoding.find("F") != std::string::npos) {
     // scale floating point images
-    cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
+    const cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
     cv::Mat_<float> float_image = float_image_bridge;
     double max_val;
     cv::minMaxIdx(float_image, 0, &max_val);
