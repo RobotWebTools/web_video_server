@@ -163,7 +163,7 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
     return;
   }
 
-  try_send_image(output_size_image, last_frame_, *node);
+  try_send_image(output_size_image_, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -197,18 +197,18 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
       cv::flip(img, img, true);
     }
 
-    std::scoped_lock lock(send_mutex_);  // protects output_size_image
+    std::scoped_lock lock(send_mutex_);  // protects output_size_image_
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
-      output_size_image = img_resized;
+      output_size_image_ = img_resized;
     } else {
-      output_size_image = img;
+      output_size_image_ = img;
     }
 
     if (!initialized_) {
-      initialize(output_size_image);
+      initialize(output_size_image_);
       initialized_ = true;
     }
 
@@ -225,7 +225,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
     return;
   }
 
-  try_send_image(output_size_image, last_frame_, *node);
+  try_send_image(output_size_image_, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::try_send_image(

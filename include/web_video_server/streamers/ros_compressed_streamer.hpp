@@ -71,7 +71,7 @@ private:
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
-  sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg;
+  sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg_;
   std::mutex send_mutex_;
   std::string qos_profile_name_;
 };

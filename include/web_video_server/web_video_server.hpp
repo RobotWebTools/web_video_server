@@ -102,7 +102,6 @@ private:
   rclcpp::TimerBase::SharedPtr cleanup_timer_;
 
   // Parameters
-  int ros_threads_;
   double publish_rate_;
   int port_;
   std::string address_;

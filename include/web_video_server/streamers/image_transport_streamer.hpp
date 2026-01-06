@@ -81,7 +81,7 @@ protected:
   std::string qos_profile_name_;
 
   std::chrono::steady_clock::time_point last_frame_;
-  cv::Mat output_size_image;
+  cv::Mat output_size_image_;
   std::mutex send_mutex_;
 
 private:
