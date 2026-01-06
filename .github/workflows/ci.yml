@@ -25,3 +25,5 @@ jobs:
         uses: actions/checkout@v4
       - name: Source tests
         uses: "ros-industrial/industrial_ci@master"
+        env:
+          CMAKE_ARGS: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
