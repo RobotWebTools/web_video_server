@@ -32,6 +32,8 @@
 
 #include <vector>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"

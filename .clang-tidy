@@ -2,9 +2,11 @@
 Checks: >
   -clang-analyzer-*,
   -clang-diagnostic-*,
+  misc-include-cleaner,
   readability-identifier-naming,
 
 CheckOptions:
+  misc-include-cleaner.IgnoreHeaders: bits/chrono.h
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassMemberCase: lower_case
   readability-identifier-naming.ConstexprVariableCase: CamelCase

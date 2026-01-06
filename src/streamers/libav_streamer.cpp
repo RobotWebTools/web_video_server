@@ -115,7 +115,7 @@ LibavStreamerBase::~LibavStreamerBase()
 }
 
 // output callback for ffmpeg IO context
-#if LIBAVFORMAT_VERSION_MAJOR < 61
+#if LIBAVFORMAT_VERSION_MAJOR < 61  // NOLINT(misc-include-cleaner)
 static int dispatch_output_packet(void * opaque, uint8_t * buffer, int buffer_size)
 #else
 static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buffer_size)
