@@ -173,6 +173,10 @@ if(BUILD_TESTING)
     )
   endif()
 
+  include(ProcessorCount)
+  processorcount(N)
+  set(ament_cmake_clang_tidy_JOBS ${N})
+
   ament_lint_auto_find_test_dependencies()
 endif()
 
