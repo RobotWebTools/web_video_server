@@ -126,13 +126,14 @@ bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
 {
   const auto compressed_topic_name = topic + "/compressed";
   const auto tnat = node.get_topic_names_and_types();
-  return std::any_of(tnat.begin(), tnat.end(), [&](const auto & topic_and_types) {
-             if (topic_and_types.second.size() > 1) {
-               return false;
-             }
-             const auto & topic_name = topic_and_types.first;
-             return topic_name == compressed_topic_name ||
-                    (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name);
+  return std::any_of(
+    tnat.begin(), tnat.end(), [&](const auto & topic_and_types) {
+      if (topic_and_types.second.size() > 1) {
+        return false;
+      }
+      const auto & topic_name = topic_and_types.first;
+      return topic_name == compressed_topic_name ||
+             (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name);
   });
 }
 
