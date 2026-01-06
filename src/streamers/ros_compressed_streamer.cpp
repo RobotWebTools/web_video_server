@@ -132,9 +132,11 @@ bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
         return false;
       }
       const auto & topic_name = topic_and_types.first;
+      /* *INDENT-OFF* */
       return topic_name == compressed_topic_name ||
              (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name);
-  });
+      /* *INDENT-ON* */
+    });
 }
 
 std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
