@@ -15,21 +15,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ROS_DISTRO: [humble, jazzy, kilted]
+        ROS_DISTRO: [humble, jazzy, kilted, rolling]
         ROS_REPO: [testing, main]
-        include:
-          - ROS_DISTRO: rolling
-            ROS_REPO: testing
-            CMAKE_ARGS: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON"
-          - ROS_DISTRO: rolling
-            ROS_REPO: main
-            CMAKE_ARGS: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON"
     env:
       ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
       ROS_REPO: ${{ matrix.ROS_REPO }}
-      CMAKE_ARGS: ${{ matrix.CMAKE_ARGS }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Source tests
+        if: ${{ matrix.ROS_DISTRO != 'rolling' }}
         uses: "ros-industrial/industrial_ci@master"
+      - name: Source tests (with clang-tidy)
+        if: ${{ matrix.ROS_DISTRO == 'rolling' }}
+        uses: "ros-industrial/industrial_ci@master"
+        env:
+          CMAKE_ARGS: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON"
