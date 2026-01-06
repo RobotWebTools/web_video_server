@@ -1,6 +1,7 @@
 ---
 Checks: >
-  -clang-analyzer-*,
+  clang-analyzer-*,
+  -clang-analyzer-optin.cplusplus.VirtualCall,
   clang-diagnostic-*,
   google-*,
   misc-*,
