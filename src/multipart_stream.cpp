@@ -136,7 +136,7 @@ bool MultipartStream::is_busy()
       }
     }
   }
-  return !(max_queue_size_ == 0 || pending_footers_.size() < max_queue_size_);
+  return max_queue_size_ != 0 && pending_footers_.size() >= max_queue_size_;
 }
 
 }  // namespace web_video_server

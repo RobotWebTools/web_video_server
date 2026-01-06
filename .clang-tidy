@@ -4,10 +4,13 @@ Checks: >
   clang-diagnostic-*,
   google-*,
   misc-include-cleaner,
-  readability-identifier-naming,
+  readability-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
 
 CheckOptions:
   misc-include-cleaner.IgnoreHeaders: bits/chrono.h
+  readability-function-cognitive-complexity.IgnoreMacros: true
   readability-identifier-naming.ClassCase: CamelCase
   readability-identifier-naming.ClassMemberCase: lower_case
   readability-identifier-naming.ConstexprVariableCase: CamelCase

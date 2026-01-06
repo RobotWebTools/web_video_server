@@ -30,6 +30,7 @@
 
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <exception>
@@ -125,18 +126,14 @@ bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
 {
   const auto compressed_topic_name = topic + "/compressed";
   const auto tnat = node.get_topic_names_and_types();
-  for (const auto & topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      continue;
-    }
-    const auto & topic_name = topic_and_types.first;
-    if (topic_name == compressed_topic_name ||
-      (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name))
-    {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(tnat.begin(), tnat.end(), [&](const auto & topic_and_types) {
+             if (topic_and_types.second.size() > 1) {
+               return false;
+             }
+             const auto & topic_name = topic_and_types.first;
+             return topic_name == compressed_topic_name ||
+                    (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name);
+  });
 }
 
 std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)

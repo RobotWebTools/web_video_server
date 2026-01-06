@@ -59,7 +59,7 @@ public:
   ~PngStreamer();
 
 protected:
-  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void send_image(const cv::Mat & img, const std::chrono::steady_clock::time_point & time);
   virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:
@@ -87,7 +87,7 @@ public:
   ~PngSnapshotStreamer();
 
 protected:
-  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time);
+  virtual void send_image(const cv::Mat & img, const std::chrono::steady_clock::time_point & time);
   virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
 
 private:

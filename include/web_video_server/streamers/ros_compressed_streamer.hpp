@@ -63,11 +63,11 @@ public:
 
 protected:
   virtual void send_image(
-    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+    sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void image_callback(sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
   MultipartStream stream_;
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
@@ -100,11 +100,11 @@ public:
 
 protected:
   virtual void send_image(
-    const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
+    sensor_msgs::msg::CompressedImage::ConstSharedPtr msg,
     const std::chrono::steady_clock::time_point & time);
 
 private:
-  void image_callback(const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
+  void image_callback(sensor_msgs::msg::CompressedImage::ConstSharedPtr msg);
 
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::string qos_profile_name_;

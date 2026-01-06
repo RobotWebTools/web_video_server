@@ -82,10 +82,9 @@ cv::Mat PngStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr 
   // Handle alpha values since PNG supports it
   if (sensor_msgs::image_encodings::hasAlpha(msg->encoding)) {
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
-  } else {
-    // Use the normal decode otherwise
-    return ImageTransportStreamerBase::decode_image(msg);
   }
+  // Use the normal decode otherwise
+  return ImageTransportStreamerBase::decode_image(msg);
 }
 
 void PngStreamer::send_image(
@@ -130,10 +129,9 @@ cv::Mat PngSnapshotStreamer::decode_image(const sensor_msgs::msg::Image::ConstSh
   // Handle alpha values since PNG supports it
   if (sensor_msgs::image_encodings::hasAlpha(msg->encoding)) {
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
-  } else {
-    // Use the normal decode otherwise
-    return ImageTransportStreamerBase::decode_image(msg);
   }
+  // Use the normal decode otherwise
+  return ImageTransportStreamerBase::decode_image(msg);
 }
 
 void PngSnapshotStreamer::send_image(

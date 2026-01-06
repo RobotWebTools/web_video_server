@@ -126,7 +126,7 @@ void ImageTransportStreamerBase::start()
       // skip over topics with more than one type
       continue;
     }
-    auto & topic_name = topic_and_types.first;
+    const auto & topic_name = topic_and_types.first;
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
       break;
@@ -156,7 +156,7 @@ void ImageTransportStreamerBase::start()
 #pragma GCC diagnostic pop
 // NOLINTEND(clang-diagnostic-deprecated-declarations)
 
-void ImageTransportStreamerBase::initialize(const cv::Mat &)
+void ImageTransportStreamerBase::initialize(const cv::Mat & /*img*/)
 {
 }
 
@@ -202,8 +202,8 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
 
     if (invert_) {
       // Rotate 180 degrees
-      cv::flip(img, img, false);
-      cv::flip(img, img, true);
+      cv::flip(img, img, 0);
+      cv::flip(img, img, 1);
     }
 
     std::scoped_lock lock(send_mutex_);  // protects output_size_image_
@@ -277,10 +277,9 @@ cv::Mat ImageTransportStreamerBase::decode_image(
       float_image *= (255 / max_val);
     }
     return float_image;
-  } else {
-    // Convert to OpenCV native BGR color
-    return cv_bridge::toCvCopy(msg, "bgr8")->image;
   }
+  // Convert to OpenCV native BGR color
+  return cv_bridge::toCvCopy(msg, "bgr8")->image;
 }
 
 std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(

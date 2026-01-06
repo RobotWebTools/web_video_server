@@ -78,7 +78,7 @@ void H264Streamer::initialize_encoder()
   av_opt_set_int(codec_context_->priv_data, "g", 1, 0);
 
   // container format options
-  if (!strcmp(format_context_->oformat->name, "mp4")) {
+  if (strcmp(format_context_->oformat->name, "mp4") == 0) {
     // set up mp4 for streaming (instead of seekable file output)
     av_dict_set(&opt_, "movflags", "+frag_keyframe+empty_moov+faststart", 0);
   }

@@ -77,7 +77,6 @@ public:
 private:
   bool is_busy();
 
-private:
   const std::size_t max_queue_size_;
   async_web_server_cpp::HttpConnectionPtr connection_;
   std::string boundary_;
