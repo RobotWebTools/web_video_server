@@ -104,6 +104,12 @@ ImageTransportStreamerBase::~ImageTransportStreamerBase()
 {
 }
 
+// We disable deprecation warnings for image_transport API usage
+// to maintain compatibility with older ROS 2 distributions.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
+
 void ImageTransportStreamerBase::start()
 {
   auto node = lock_node();
@@ -146,6 +152,9 @@ void ImageTransportStreamerBase::start()
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
+
+#pragma GCC diagnostic pop
+// NOLINTEND(clang-diagnostic-deprecated-declarations)
 
 void ImageTransportStreamerBase::initialize(const cv::Mat &)
 {

@@ -1,7 +1,8 @@
 ---
 Checks: >
   -clang-analyzer-*,
-  -clang-diagnostic-*,
+  clang-diagnostic-*,
+  google-*,
   misc-include-cleaner,
   readability-identifier-naming,
 

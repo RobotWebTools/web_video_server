@@ -56,7 +56,7 @@ struct PendingFooter
 class MultipartStream
 {
 public:
-  MultipartStream(
+  explicit MultipartStream(
     async_web_server_cpp::HttpConnectionPtr & connection,
     const std::string & boundary = "boundarydonotcross",
     std::size_t max_queue_size = 1);

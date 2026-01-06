@@ -122,7 +122,7 @@ static int dispatch_output_packet(void * opaque, const uint8_t * buffer, int buf
 #endif
 {
   async_web_server_cpp::HttpConnectionPtr connection =
-    *((async_web_server_cpp::HttpConnectionPtr *) opaque);
+    *(static_cast<async_web_server_cpp::HttpConnectionPtr *>(opaque));
   std::vector<uint8_t> encoded_frame;
   encoded_frame.assign(buffer, buffer + buffer_size);
   connection->write_and_clear(encoded_frame);
@@ -284,7 +284,7 @@ void LibavStreamerBase::send_image(
 
   sws_scale(
     sws_context_,
-    (const uint8_t * const *)raw_frame->data, raw_frame->linesize, 0,
+    static_cast<const uint8_t * const *>(raw_frame->data), raw_frame->linesize, 0,
     output_height_, frame_->data, frame_->linesize);
 
   av_frame_free(&raw_frame);
@@ -315,7 +315,7 @@ void LibavStreamerBase::send_image(
     double seconds = std::chrono::duration_cast<std::chrono::duration<double>>(
       time - first_image_time_).count();
     // Encode video at 1/0.95 to minimize delay
-    pkt->pts = (int64_t)(seconds / av_q2d(video_stream_->time_base) * 0.95);
+    pkt->pts = static_cast<int64_t>(seconds / av_q2d(video_stream_->time_base) * 0.95);
     if (pkt->pts <= 0) {
       pkt->pts = 1;
     }
