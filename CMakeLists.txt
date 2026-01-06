@@ -165,6 +165,14 @@ if(BUILD_TESTING)
     )
   endif()
 
+  # Skip ament_clang_tidy check for all distros except rolling
+  # to avoid issues with multiple versions of clang being used
+  if(NOT $ENV{ROS_DISTRO} STREQUAL "rolling")
+    list(APPEND AMENT_LINT_AUTO_EXCLUDE
+      ament_cmake_clang_tidy
+    )
+  endif()
+
   ament_lint_auto_find_test_dependencies()
 endif()
 
