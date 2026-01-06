@@ -38,7 +38,6 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend condition="$ROS_DISTRO == rolling">ament_cmake_clang_tidy</test_depend>
   <test_depend>ament_cmake_copyright</test_depend>
-  <test_depend>ament_cmake_cpplint</test_depend>
   <test_depend>ament_cmake_lint_cmake</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>ament_cmake_uncrustify</test_depend>
