@@ -20,14 +20,9 @@ jobs:
     env:
       ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
       ROS_REPO: ${{ matrix.ROS_REPO }}
+      CMAKE_ARGS: ${{ matrix.ROS_DISTRO == 'rolling' && '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON' || '' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
       - name: Source tests
-        if: ${{ matrix.ROS_DISTRO != 'rolling' }}
         uses: "ros-industrial/industrial_ci@master"
-      - name: Source tests (with clang-tidy)
-        if: ${{ matrix.ROS_DISTRO == 'rolling' }}
-        uses: "ros-industrial/industrial_ci@master"
-        env:
-          CMAKE_ARGS: "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON"
