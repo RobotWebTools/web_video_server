@@ -70,8 +70,10 @@ public:
 
 protected:
   virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
-  virtual void send_image(const cv::Mat &, const std::chrono::steady_clock::time_point & time) = 0;
-  virtual void initialize(const cv::Mat &);
+  virtual void send_image(
+    const cv::Mat & img,
+    const std::chrono::steady_clock::time_point & time) = 0;
+  virtual void initialize(const cv::Mat & img);
 
   image_transport::Subscriber image_sub_;
   int output_width_;
@@ -81,7 +83,7 @@ protected:
   std::string qos_profile_name_;
 
   std::chrono::steady_clock::time_point last_frame_;
-  cv::Mat output_size_image;
+  cv::Mat output_size_image_;
   std::mutex send_mutex_;
 
 private:

@@ -37,6 +37,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <opencv2/core/mat.hpp>
@@ -68,7 +69,7 @@ MjpegStreamer::MjpegStreamer(
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 void MjpegStreamer::send_image(
@@ -105,7 +106,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 void JpegSnapshotStreamer::send_image(

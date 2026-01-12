@@ -30,6 +30,7 @@
 
 #include "web_video_server/streamers/ros_compressed_streamer.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <exception>
@@ -125,18 +126,17 @@ bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
 {
   const auto compressed_topic_name = topic + "/compressed";
   const auto tnat = node.get_topic_names_and_types();
-  for (const auto & topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      continue;
-    }
-    const auto & topic_name = topic_and_types.first;
-    if (topic_name == compressed_topic_name ||
-      (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name))
-    {
-      return true;
-    }
-  }
-  return false;
+  return std::any_of(
+    tnat.begin(), tnat.end(), [&](const auto & topic_and_types) {
+      if (topic_and_types.second.size() > 1) {
+        return false;
+      }
+      const auto & topic_name = topic_and_types.first;
+      /* *INDENT-OFF* */
+      return topic_name == compressed_topic_name ||
+             (topic_name.rfind('/') == 0 && topic_name.substr(1) == compressed_topic_name);
+      /* *INDENT-ON* */
+    });
 }
 
 std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
@@ -174,7 +174,7 @@ RosCompressedStreamer::RosCompressedStreamer(
 RosCompressedStreamer::~RosCompressedStreamer()
 {
   this->inactive_ = true;
-  std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex_);  // protects send_image.
 }
 
 void RosCompressedStreamer::start()
@@ -192,14 +192,14 @@ void RosCompressedStreamer::start()
 
 void RosCompressedStreamer::restream_frame(std::chrono::duration<double> max_age)
 {
-  if (inactive_ || (last_msg == 0)) {
+  if (inactive_ || (last_msg_ == 0)) {
     return;
   }
 
   if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
-    std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex_);
     // don't update last_frame, it may remain an old value.
-    send_image(last_msg, std::chrono::steady_clock::now());
+    send_image(last_msg_, std::chrono::steady_clock::now());
   }
 }
 
@@ -242,10 +242,10 @@ void RosCompressedStreamer::send_image(
 void RosCompressedStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
-  std::scoped_lock lock(send_mutex_);  // protects last_msg and last_frame
-  last_msg = msg;
+  const std::scoped_lock lock(send_mutex_);  // protects last_msg_ and last_frame_
+  last_msg_ = msg;
   last_frame_ = std::chrono::steady_clock::now();
-  send_image(last_msg, last_frame_);
+  send_image(last_msg_, last_frame_);
 }
 
 
@@ -262,7 +262,7 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
     return nullptr;
   }
 
-  std::string topic = request.get_query_param_value_or_default("topic", "");
+  const std::string topic = request.get_query_param_value_or_default("topic", "");
   if (!has_compressed_topic(*node_locked, topic)) {
     RCLCPP_WARN(
       node_locked->get_logger().get_child("RosCompressedStreamerFactory"),
@@ -386,7 +386,7 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
     return nullptr;
   }
 
-  std::string topic = request.get_query_param_value_or_default("topic", "");
+  const std::string topic = request.get_query_param_value_or_default("topic", "");
   if (!has_compressed_topic(*node_locked, topic)) {
     RCLCPP_WARN(
       node_locked->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),

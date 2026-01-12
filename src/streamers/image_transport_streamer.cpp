@@ -104,6 +104,12 @@ ImageTransportStreamerBase::~ImageTransportStreamerBase()
 {
 }
 
+// We disable deprecation warnings for image_transport API usage
+// to maintain compatibility with older ROS 2 distributions.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
+
 void ImageTransportStreamerBase::start()
 {
   auto node = lock_node();
@@ -112,7 +118,7 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
-  image_transport::TransportHints hints(node.get(), default_transport_);
+  const image_transport::TransportHints hints(node.get(), default_transport_);
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -120,7 +126,7 @@ void ImageTransportStreamerBase::start()
       // skip over topics with more than one type
       continue;
     }
-    auto & topic_name = topic_and_types.first;
+    const auto & topic_name = topic_and_types.first;
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
       break;
@@ -147,7 +153,10 @@ void ImageTransportStreamerBase::start()
     default_transport_, qos_profile.value());
 }
 
-void ImageTransportStreamerBase::initialize(const cv::Mat &)
+#pragma GCC diagnostic pop
+// NOLINTEND(clang-diagnostic-deprecated-declarations)
+
+void ImageTransportStreamerBase::initialize(const cv::Mat & /*img*/)
 {
 }
 
@@ -163,7 +172,7 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
     return;
   }
 
-  try_send_image(output_size_image, last_frame_, *node);
+  try_send_image(output_size_image_, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -181,8 +190,8 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
   cv::Mat img;
   try {
     img = decode_image(msg);
-    int input_width = img.cols;
-    int input_height = img.rows;
+    const int input_width = img.cols;
+    const int input_height = img.rows;
 
     if (output_width_ == -1) {
       output_width_ = input_width;
@@ -193,22 +202,22 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
 
     if (invert_) {
       // Rotate 180 degrees
-      cv::flip(img, img, false);
-      cv::flip(img, img, true);
+      cv::flip(img, img, 0);
+      cv::flip(img, img, 1);
     }
 
-    std::scoped_lock lock(send_mutex_);  // protects output_size_image
+    const std::scoped_lock lock(send_mutex_);  // protects output_size_image_
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
-      cv::Size new_size(output_width_, output_height_);
+      const cv::Size new_size(output_width_, output_height_);
       cv::resize(img, img_resized, new_size);
-      output_size_image = img_resized;
+      output_size_image_ = img_resized;
     } else {
-      output_size_image = img;
+      output_size_image_ = img;
     }
 
     if (!initialized_) {
-      initialize(output_size_image);
+      initialize(output_size_image_);
       initialized_ = true;
     }
 
@@ -225,7 +234,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
     return;
   }
 
-  try_send_image(output_size_image, last_frame_, *node);
+  try_send_image(output_size_image_, last_frame_, *node);
 }
 
 void ImageTransportStreamerBase::try_send_image(
@@ -234,7 +243,7 @@ void ImageTransportStreamerBase::try_send_image(
   rclcpp::Node & node)
 {
   try {
-    std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex_);
     send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -259,7 +268,7 @@ cv::Mat ImageTransportStreamerBase::decode_image(
 {
   if (msg->encoding.find("F") != std::string::npos) {
     // scale floating point images
-    cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
+    const cv::Mat float_image_bridge = cv_bridge::toCvCopy(msg, msg->encoding)->image;
     cv::Mat_<float> float_image = float_image_bridge;
     double max_val;
     cv::minMaxIdx(float_image, 0, &max_val);
@@ -268,10 +277,9 @@ cv::Mat ImageTransportStreamerBase::decode_image(
       float_image *= (255 / max_val);
     }
     return float_image;
-  } else {
-    // Convert to OpenCV native BGR color
-    return cv_bridge::toCvCopy(msg, "bgr8")->image;
   }
+  // Convert to OpenCV native BGR color
+  return cv_bridge::toCvCopy(msg, "bgr8")->image;
 }
 
 std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(

@@ -1,0 +1,38 @@
+---
+Checks: >
+  clang-analyzer-*,
+  -clang-analyzer-optin.cplusplus.VirtualCall,
+  clang-diagnostic-*,
+  google-*,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  readability-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+
+CheckOptions:
+  misc-include-cleaner.IgnoreHeaders: bits/chrono.h
+  readability-function-cognitive-complexity.IgnoreMacros: true
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.ClassMemberCase: lower_case
+  readability-identifier-naming.ConstexprVariableCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.GlobalConstantCase: CamelCase
+  readability-identifier-naming.StaticConstantCase: lower_case
+  readability-identifier-naming.StaticVariableCase: lower_case
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z]+(_[A-Z]+)*_$'
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.PublicMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: _
+  readability-identifier-naming.ProtectedMemberSuffix: _
+  readability-identifier-naming.PublicMemberSuffix: ''
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.IgnoreMainLikeFunctions: true
