@@ -2,6 +2,12 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.0.0 (2026-01-30)
+------------------
+* refactor: Add clang-tidy checks (#195)
+* feat: Use pluginlib to load streamer plugins at runtime, general refactor (#192)
+* Contributors: Błażej Sowa
+
 2.1.1 (2025-09-02)
 ------------------
 * Fix build with the current FFmpeg avformat (#190)
