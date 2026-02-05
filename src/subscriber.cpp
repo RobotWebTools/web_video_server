@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 #include <vector>
 #include <sstream>
@@ -44,23 +44,15 @@
 namespace web_video_server
 {
 
-  StreamerBase::StreamerBase(
-  const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
+SubscriberBase::SubscriberBase(
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: connection_(connection)
-, request_(request)
-, subscriber_factories_(subscriber_factories_)
-, node_(node)
+: node_(node)
 , logger_(node_.lock()->get_logger().get_child(logger_name))
-, inactive_(false)
-, topic_(request.get_query_param_value_or_default("topic", ""))
 {
 }
 
-rclcpp::Node::SharedPtr StreamerBase::lock_node() const
+rclcpp::Node::SharedPtr SubscriberBase::lock_node() const
 {
   auto node = node_.lock();
   if (!node) {
@@ -69,17 +61,49 @@ rclcpp::Node::SharedPtr StreamerBase::lock_node() const
   return node;
 }
 
-std::string StreamerFactoryInterface::create_viewer(
-  const async_web_server_cpp::HttpRequest & request)
+void SubscriberBase::subscribe(
+  const async_web_server_cpp::HttpRequest & request, 
+  const std::string & topic,
+  const ImageCallback & callback)
 {
-  std::stringstream ss;
-  ss << "<img src=\"/stream?";
-  ss << request.query;
-  ss << "\"></img>";
-  return ss.str();
+  std::scoped_lock lock(subscriber_mutex_);
+
+  auto node = lock_node();
+  if (!node) {
+    return;
+  }
+
+  callback_ = callback;
+  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", "default");
+
+  // Get QoS profile from query parameter
+  RCLCPP_INFO(
+    logger_, "Streaming topic %s with QoS profile %s", topic.c_str(),
+    qos_profile_name.c_str());
+  auto qos_profile = get_qos_profile_from_name(qos_profile_name);
+  if (!qos_profile) {
+    qos_profile = rmw_qos_profile_default;
+    RCLCPP_ERROR(
+     logger_, "Invalid QoS profile %s specified. Using default profile.",
+      qos_profile_name.c_str());
+  }
+
+  rclcpp::QoS qos = rclcpp::QoS(
+  rclcpp::QoSInitialization(qos_profile.value().history, 1),
+  qos_profile.value());
+
+  // Create subscriber
+  sub_ = node->create_subscription<sensor_msgs::msg::Image>(topic, qos,
+    std::bind(&SubscriberBase::subscriberCallback, this, std::placeholders::_1));
 }
 
-std::vector<std::string> StreamerFactoryInterface::get_available_topics(
+void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+{
+  std::scoped_lock lock(subscriber_mutex_);
+  callback_(input_msg);
+}
+
+std::vector<std::string> SubscriberFactoryInterface::get_available_topics(
   rclcpp::Node & /* node */)
 {
   return {};

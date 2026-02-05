@@ -42,19 +42,20 @@
 
 #include "web_video_server/multipart_stream.hpp"
 #include "web_video_server/streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
 
 namespace web_video_server
 {
 namespace streamers
 {
 
-class MjpegStreamer : public ImageTransportStreamerBase
+class MjpegStreamer : public ImageStreamerBase
 {
 public:
   MjpegStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node);
   ~MjpegStreamer();
 
@@ -66,22 +67,24 @@ private:
   int quality_;
 };
 
-class MjpegStreamerFactory : public ImageTransportStreamerFactoryBase
+class MjpegStreamerFactory : public ImageStreamerFactoryBase
 {
 public:
   std::string get_type() {return "mjpeg";}
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node);
 };
 
-class JpegSnapshotStreamer : public ImageTransportStreamerBase
+class JpegSnapshotStreamer : public ImageStreamerBase
 {
 public:
   JpegSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,    
     rclcpp::Node::WeakPtr node);
   ~JpegSnapshotStreamer();
 
@@ -92,7 +95,7 @@ private:
   int quality_;
 };
 
-class JpegSnapshotStreamerFactory : public ImageTransportSnapshotStreamerFactoryBase
+class JpegSnapshotStreamerFactory : public ImageSnapshotStreamerFactoryBase
 {
 public:
   std::string get_type() {return "jpeg";}
@@ -100,6 +103,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,    
     rclcpp::Node::WeakPtr node);
 };
 

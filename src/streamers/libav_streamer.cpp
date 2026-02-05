@@ -65,7 +65,7 @@ extern "C"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)
@@ -78,10 +78,13 @@ namespace streamers
 
 LibavStreamerBase::LibavStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node,
+  async_web_server_cpp::HttpConnectionPtr connection, 
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  rclcpp::Node::WeakPtr node,
   std::string logger_name, const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
-: ImageTransportStreamerBase(request, connection, node, logger_name), format_context_(0), codec_(0),
+: ImageStreamerBase(request, connection, subscriber_factories, node, logger_name)
+, format_context_(0), codec_(0),
   codec_context_(0), video_stream_(0), opt_(0), frame_(0), sws_context_(0),
   first_image_received_(false), format_name_(format_name), codec_name_(codec_name),
   content_type_(content_type), io_buffer_(0)

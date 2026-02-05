@@ -118,6 +118,9 @@ private:
   pluginlib::ClassLoader<SnapshotStreamerFactoryInterface> snapshot_streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> snapshot_streamer_factories_;
   std::mutex streamers_mutex_;
+
+  pluginlib::ClassLoader<SubscriberFactoryInterface> subscriber_factory_loader_;
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories_;
 };
 
 }  // namespace web_video_server

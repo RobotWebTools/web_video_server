@@ -1,4 +1,3 @@
-// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -33,44 +32,44 @@
 #include <memory>
 #include <string>
 
-#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/subscriber.hpp"
 
-#include "web_video_server/streamer.hpp"
-#include "web_video_server/streamers/libav_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
-namespace streamers
+namespace subscribers
 {
 
-class Vp8Streamer : public LibavStreamerBase
-{
-public:
-  Vp8Streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
-    rclcpp::Node::WeakPtr node);
-  ~Vp8Streamer();
+class ImageTransportSubscriber : public SubscriberBase
+{    
+  public:
+    ImageTransportSubscriber(rclcpp::Node::WeakPtr node);
 
-protected:
-  virtual void initialize_encoder();
+    ~ImageTransportSubscriber();
 
-private:
-  std::string quality_;
+    void subscribe(const async_web_server_cpp::HttpRequest &request,
+                   const std::string& topic, 
+                   const ImageCallback& callback);    
+    
+    void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);
+  
+  private:
+    image_transport::Subscriber sub_;
+
 };
 
-class Vp8StreamerFactory : public LibavStreamerFactoryBase
+class ImageTransportSubscriberFactory : public SubscriberFactoryInterface
 {
-public:
-  std::string get_type() {return "vp8";}
-  std::shared_ptr<StreamerInterface> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,    
-    rclcpp::Node::WeakPtr node);
+  public:
+    std::string get_type() {return "image_transport";}
+    std::shared_ptr<SubscriberInterface> create_subscriber(
+        rclcpp::Node::WeakPtr node);
+
+    std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
 }  // namespace streamers

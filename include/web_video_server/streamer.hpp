@@ -40,6 +40,8 @@
 #include "rclcpp/logger.hpp"
 #include "rclcpp/node.hpp"
 
+#include "web_video_server/subscriber.hpp"
+
 namespace web_video_server
 {
 
@@ -84,6 +86,7 @@ public:
   StreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
 
@@ -106,6 +109,8 @@ protected:
   rclcpp::Logger logger_;
   bool inactive_;
   std::string topic_;
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories_;
+  std::shared_ptr<SubscriberInterface> subscriber_;  
 };
 
 /**
@@ -133,6 +138,7 @@ public:
   virtual std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node) = 0;
 
   /**

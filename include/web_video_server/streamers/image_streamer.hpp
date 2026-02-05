@@ -52,18 +52,19 @@ namespace streamers
 {
 
 /**
- * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * @brief A common base class for all streaming plugins using an image subscriber to get an image
  * topics.
  */
-class ImageTransportStreamerBase : public StreamerBase
+class ImageStreamerBase : public StreamerBase
 {
 public:
-  ImageTransportStreamerBase(
+  ImageStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "image_transport_streamer");
-  virtual ~ImageTransportStreamerBase();
+  virtual ~ImageStreamerBase();
 
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
@@ -95,13 +96,13 @@ private:
     rclcpp::Node & node);
 };
 
-class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface
+class ImageStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
-class ImageTransportSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
+class ImageSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);

@@ -52,8 +52,11 @@ namespace streamers
 
 Vp9Streamer::Vp9Streamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
-: LibavStreamerBase(request, connection, node, "vp9_streamer", "webm", "libvpx-vp9", "video/webm")
+  async_web_server_cpp::HttpConnectionPtr connection, 
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  rclcpp::Node::WeakPtr node)
+: LibavStreamerBase(request, connection, subscriber_factories, node, 
+                    "vp9_streamer", "webm", "libvpx-vp9", "video/webm")
 {
 }
 Vp9Streamer::~Vp9Streamer()
@@ -73,9 +76,10 @@ void Vp9Streamer::initialize_encoder()
 std::shared_ptr<StreamerInterface> Vp9StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
   rclcpp::Node::WeakPtr node)
 {
-  return std::make_shared<Vp9Streamer>(request, connection, node);
+  return std::make_shared<Vp9Streamer>(request, connection, subscriber_factories, node);
 }
 
 }  // namespace streamers

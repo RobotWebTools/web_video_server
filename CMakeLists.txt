@@ -46,6 +46,7 @@ add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
   src/multipart_stream.cpp
   src/streamer.cpp
+  src/subscriber.cpp  
   src/utils.cpp
 )
 
@@ -61,6 +62,7 @@ target_link_libraries(${PROJECT_NAME}
     async_web_server_cpp::async_web_server_cpp
     pluginlib::pluginlib
     rclcpp::rclcpp
+    ${sensor_msgs_TARGETS}    
     rmw::rmw
     Boost::boost
   PRIVATE
@@ -68,7 +70,7 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 add_library(${PROJECT_NAME}_streamers SHARED
-  src/streamers/image_transport_streamer.cpp
+  src/streamers/image_streamer.cpp
   src/streamers/libav_streamer.cpp
   src/streamers/h264_streamer.cpp
   src/streamers/jpeg_streamers.cpp
@@ -89,6 +91,37 @@ target_include_directories(${PROJECT_NAME}_streamers
 )
 
 target_link_libraries(${PROJECT_NAME}_streamers
+  ${PROJECT_NAME}
+  async_web_server_cpp::async_web_server_cpp
+  cv_bridge::cv_bridge
+  image_transport::image_transport  
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  ${sensor_msgs_TARGETS}
+  Boost::boost
+  Boost::system
+  ${OpenCV_LIBS}
+  ${avcodec_LIBRARIES}
+  ${avformat_LIBRARIES}
+  ${avutil_LIBRARIES}
+  ${swscale_LIBRARIES}
+)
+
+add_library(${PROJECT_NAME}_subscribers SHARED
+  src/subscribers/image_transport_subscriber.cpp
+)
+
+target_include_directories(${PROJECT_NAME}_subscribers
+  PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
+    # ${avcodec_INCLUDE_DIRS}
+    # ${avformat_INCLUDE_DIRS}
+    # ${avutil_INCLUDE_DIRS}
+    # ${swscale_INCLUDE_DIRS}
+)
+
+target_link_libraries(${PROJECT_NAME}_subscribers
   ${PROJECT_NAME}
   async_web_server_cpp::async_web_server_cpp
   cv_bridge::cv_bridge
@@ -116,7 +149,8 @@ target_link_libraries(${PROJECT_NAME}_node
 
 rclcpp_components_register_nodes(${PROJECT_NAME} "web_video_server::WebVideoServer")
 
-pluginlib_export_plugin_description_file(web_video_server plugins.xml)
+pluginlib_export_plugin_description_file(web_video_server streamer_plugins.xml)
+pluginlib_export_plugin_description_file(web_video_server subscriber_plugins.xml)
 
 #############
 ## Install ##
@@ -128,7 +162,7 @@ install(
 )
 
 install(
-  TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_streamers
+  TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_streamers ${PROJECT_NAME}_subscribers
   EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

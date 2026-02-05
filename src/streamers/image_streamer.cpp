@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
 
 #include <chrono>
 #include <exception>
@@ -86,12 +86,14 @@ std::vector<std::string> get_image_topics(rclcpp::Node & node)
 
 }  // namespace
 
-ImageTransportStreamerBase::ImageTransportStreamerBase(
+ImageStreamerBase::ImageStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: StreamerBase(request, connection, node, logger_name), initialized_(false)
+: StreamerBase(request, connection, subscriber_factories, node, logger_name)
+, initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -100,7 +102,7 @@ ImageTransportStreamerBase::ImageTransportStreamerBase(
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
-ImageTransportStreamerBase::~ImageTransportStreamerBase()
+ImageStreamerBase::~ImageStreamerBase()
 {
 }
 
@@ -110,7 +112,7 @@ ImageTransportStreamerBase::~ImageTransportStreamerBase()
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 // NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 
-void ImageTransportStreamerBase::start()
+void ImageStreamerBase::start()
 {
   auto node = lock_node();
   if (!node) {
@@ -149,18 +151,18 @@ void ImageTransportStreamerBase::start()
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
     node.get(), topic_,
-    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
+    std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
 
 #pragma GCC diagnostic pop
 // NOLINTEND(clang-diagnostic-deprecated-declarations)
 
-void ImageTransportStreamerBase::initialize(const cv::Mat & /*img*/)
+void ImageStreamerBase::initialize(const cv::Mat & /*img*/)
 {
 }
 
-void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
+void ImageStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -175,7 +177,7 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
   try_send_image(output_size_image_, last_frame_, *node);
 }
 
-void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
@@ -237,7 +239,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
   try_send_image(output_size_image_, last_frame_, *node);
 }
 
-void ImageTransportStreamerBase::try_send_image(
+void ImageStreamerBase::try_send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & /* time */,
   rclcpp::Node & node)
@@ -263,7 +265,7 @@ void ImageTransportStreamerBase::try_send_image(
   }
 }
 
-cv::Mat ImageTransportStreamerBase::decode_image(
+cv::Mat ImageStreamerBase::decode_image(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (msg->encoding.find("F") != std::string::npos) {
@@ -282,13 +284,13 @@ cv::Mat ImageTransportStreamerBase::decode_image(
   return cv_bridge::toCvCopy(msg, "bgr8")->image;
 }
 
-std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
+std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
   rclcpp::Node & node)
 {
   return get_image_topics(node);
 }
 
-std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
+std::vector<std::string> ImageSnapshotStreamerFactoryBase::get_available_topics(
   rclcpp::Node & node)
 {
   return get_image_topics(node);

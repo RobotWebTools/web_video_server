@@ -1,0 +1,7 @@
+<library path="web_video_server_subscribers">
+  <class name="web_video_server/subscriber/image_transport"
+    type="web_video_server::subscribers::ImageTransportFactory"
+    base_class_type="web_video_server::SubscriberFactoryInterface">
+    <description>Subscribes to images using image_transport.</description>
+  </class>
+</library>

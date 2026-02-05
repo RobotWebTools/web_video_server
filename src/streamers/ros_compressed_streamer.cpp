@@ -164,8 +164,10 @@ std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
   rclcpp::Node::WeakPtr node)
-: StreamerBase(request, connection, node, "ros_compressed_streamer"), stream_(connection)
+: StreamerBase(request, connection, subscriber_factories, node, "ros_compressed_streamer")
+, stream_(connection)
 {
   stream_.send_initial_header();
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
@@ -252,6 +254,7 @@ void RosCompressedStreamer::image_callback(
 std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
   rclcpp::Node::WeakPtr node)
 {
   auto node_locked = node.lock();
@@ -267,10 +270,10 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
     RCLCPP_WARN(
       node_locked->get_logger().get_child("RosCompressedStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to mjpeg", topic.c_str());
-    return std::make_shared<MjpegStreamer>(request, connection, node);
+    return std::make_shared<MjpegStreamer>(request, connection, subscriber_factories, node);
   }
 
-  return std::make_shared<RosCompressedStreamer>(request, connection, node);
+  return std::make_shared<RosCompressedStreamer>(request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
@@ -281,8 +284,10 @@ std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
 
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
-: StreamerBase(request, connection, node, "ros_compressed_snapshot_streamer")
+  async_web_server_cpp::HttpConnectionPtr connection, 
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories, 
+  rclcpp::Node::WeakPtr node)
+: StreamerBase(request, connection, subscriber_factories, node, "ros_compressed_snapshot_streamer")
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
@@ -376,6 +381,7 @@ std::shared_ptr<StreamerInterface>
 RosCompressedSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
   rclcpp::Node::WeakPtr node)
 {
   auto node_locked = node.lock();
@@ -391,9 +397,9 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
     RCLCPP_WARN(
       node_locked->get_logger().get_child("RosCompressedSnapshotStreamerFactory"),
       "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
-    return std::make_shared<JpegSnapshotStreamer>(request, connection, node);
+    return std::make_shared<JpegSnapshotStreamer>(request, connection, subscriber_factories, node);
   }
-  return std::make_shared<RosCompressedSnapshotStreamer>(request, connection, node);
+  return std::make_shared<RosCompressedSnapshotStreamer>(request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
