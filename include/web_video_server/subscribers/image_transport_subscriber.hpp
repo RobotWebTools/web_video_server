@@ -65,7 +65,7 @@ class ImageTransportSubscriber : public SubscriberBase
 class ImageTransportSubscriberFactory : public SubscriberFactoryInterface
 {
   public:
-    std::string get_type() {return "image_transport";}
+    std::string get_type() {return "sensor_msgs/msg/Image";}
     std::shared_ptr<SubscriberInterface> create_subscriber(
         rclcpp::Node::WeakPtr node);
 

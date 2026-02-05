@@ -51,8 +51,6 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 #include "rmw/qos_profiles.h"
@@ -66,26 +64,6 @@ namespace web_video_server
 namespace streamers
 {
 
-namespace
-{
-
-std::vector<std::string> get_image_topics(rclcpp::Node & node)
-{
-  std::vector<std::string> result;
-  auto topic_names_and_types = node.get_topic_names_and_types();
-  for (const auto & topic_and_types : topic_names_and_types) {
-    for (const auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/Image") {
-        result.push_back(topic_and_types.first);
-        break;
-      }
-    }
-  }
-  return result;
-}
-
-}  // namespace
-
 ImageStreamerBase::ImageStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
@@ -98,19 +76,11 @@ ImageStreamerBase::ImageStreamerBase(
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
-  default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
-  qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
 ImageStreamerBase::~ImageStreamerBase()
 {
 }
-
-// We disable deprecation warnings for image_transport API usage
-// to maintain compatibility with older ROS 2 distributions.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 
 void ImageStreamerBase::start()
 {
@@ -120,7 +90,6 @@ void ImageStreamerBase::start()
     return;
   }
 
-  const image_transport::TransportHints hints(node.get(), default_transport_);
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -128,31 +97,18 @@ void ImageStreamerBase::start()
       // skip over topics with more than one type
       continue;
     }
-    const auto & topic_name = topic_and_types.first;
+    auto & topic_name = topic_and_types.first;
+    auto & topic_type = topic_and_types.second[0];    
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
+
+      subscriber_ = subscriber_factories_[topic_type]->create_subscriber(node);
+      subscriber_->subscribe(request_, topic_, 
+                  std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
+      
       break;
     }
   }
-
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(
-    logger_, "Streaming topic %s with QoS profile %s", topic_.c_str(),
-    qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
-  if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
-    RCLCPP_ERROR(
-      logger_,
-      "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name_.c_str());
-  }
-
-  // Create subscriber
-  image_sub_ = image_transport::create_subscription(
-    node.get(), topic_,
-    std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1),
-    default_transport_, qos_profile.value());
 }
 
 #pragma GCC diagnostic pop
@@ -285,15 +241,33 @@ cv::Mat ImageStreamerBase::decode_image(
 }
 
 std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
-  rclcpp::Node & node)
-{
-  return get_image_topics(node);
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+) {
+  std::vector<std::string> results;
+  
+  for (auto subscriber: subscriber_factories)
+  {
+    std::vector<std::string> entries = subscriber.second->get_available_topics(node);
+    results.insert(results.end(), entries.begin(), entries.end());
+  }
+
+  return results;
 }
 
 std::vector<std::string> ImageSnapshotStreamerFactoryBase::get_available_topics(
-  rclcpp::Node & node)
-{
-  return get_image_topics(node);
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+) {
+  std::vector<std::string> results;
+
+  for (auto subscriber: subscriber_factories)
+  {
+    std::vector<std::string> entries = subscriber.second->get_available_topics(node);
+    results.insert(results.end(), entries.begin(), entries.end());
+  }
+
+  return results;
 }
 
 }  // namespace streamers

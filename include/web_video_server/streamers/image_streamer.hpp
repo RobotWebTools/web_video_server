@@ -39,8 +39,6 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/subscriber.hpp"
 #include "rclcpp/node.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
@@ -63,7 +61,7 @@ public:
     async_web_server_cpp::HttpConnectionPtr connection,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node,
-    std::string logger_name = "image_transport_streamer");
+    std::string logger_name = "image_streamer");
   virtual ~ImageStreamerBase();
 
   virtual void start();
@@ -76,12 +74,9 @@ protected:
     const std::chrono::steady_clock::time_point & time) = 0;
   virtual void initialize(const cv::Mat & img);
 
-  image_transport::Subscriber image_sub_;
   int output_width_;
   int output_height_;
   bool invert_;
-  std::string default_transport_;
-  std::string qos_profile_name_;
 
   std::chrono::steady_clock::time_point last_frame_;
   cv::Mat output_size_image_;
@@ -99,13 +94,19 @@ private:
 class ImageStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 class ImageSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 }  // namespace streamers

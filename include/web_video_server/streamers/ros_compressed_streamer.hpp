@@ -86,7 +86,10 @@ public:
     async_web_server_cpp::HttpConnectionPtr connection,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 class RosCompressedSnapshotStreamer : public StreamerBase
@@ -122,7 +125,10 @@ public:
     async_web_server_cpp::HttpConnectionPtr connection,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
     rclcpp::Node::WeakPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 }  // namespace streamers

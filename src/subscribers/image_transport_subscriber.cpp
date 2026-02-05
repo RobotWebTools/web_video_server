@@ -29,6 +29,12 @@
 
 #include "web_video_server/subscribers/image_transport_subscriber.hpp"
 
+// We disable deprecation warnings for image_transport API usage
+// to maintain compatibility with older ROS 2 distributions.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
+
 namespace web_video_server
 {
 namespace subscribers
@@ -55,7 +61,7 @@ void ImageTransportSubscriber::subscribe(const async_web_server_cpp::HttpRequest
   }
 
   callback_ = callback;
-  std::string transport = request.get_query_param_value_or_default("transport", "raw");
+  std::string transport = request.get_query_param_value_or_default("default_transport", "raw");
   auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", "default");
 
   // Get QoS profile from query parameter
@@ -92,9 +98,19 @@ std::shared_ptr<SubscriberInterface> ImageTransportSubscriberFactory::create_sub
 }
 
 std::vector<std::string> ImageTransportSubscriberFactory::get_available_topics(
-  rclcpp::Node & node)
-{
-  return std::vector<std::string>(); //TBD
+  rclcpp::Node & node
+) {
+  std::vector<std::string> result;
+  auto topic_names_and_types = node.get_topic_names_and_types();
+  for (const auto & topic_and_types : topic_names_and_types) {
+    for (const auto & type : topic_and_types.second) {
+      if (type == "sensor_msgs/msg/Image") {
+        result.push_back(topic_and_types.first);
+        break;
+      }
+    }
+  }
+  return result;
 }
 
 }

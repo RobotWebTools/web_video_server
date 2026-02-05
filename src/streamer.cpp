@@ -52,7 +52,7 @@ namespace web_video_server
   std::string logger_name)
 : connection_(connection)
 , request_(request)
-, subscriber_factories_(subscriber_factories_)
+, subscriber_factories_(subscriber_factories)
 , node_(node)
 , logger_(node_.lock()->get_logger().get_child(logger_name))
 , inactive_(false)
@@ -80,8 +80,9 @@ std::string StreamerFactoryInterface::create_viewer(
 }
 
 std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */)
-{
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+) {
   return {};
 }
 

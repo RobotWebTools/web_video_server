@@ -104,8 +104,8 @@ void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstShar
 }
 
 std::vector<std::string> SubscriberFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */)
-{
+  rclcpp::Node & /* node */
+) {
   return {};
 }
 

@@ -277,8 +277,9 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
 }
 
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
-  rclcpp::Node & node)
-{
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+) {
   return collect_compressed_topics(node);
 }
 
@@ -403,8 +404,9 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
 }
 
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
-  rclcpp::Node & node)
-{
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+) {
   return collect_compressed_topics(node);
 }
 

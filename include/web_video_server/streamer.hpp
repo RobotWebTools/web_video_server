@@ -139,7 +139,8 @@ public:
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
-    rclcpp::Node::WeakPtr node) = 0;
+    rclcpp::Node::WeakPtr node
+  ) = 0;
 
   /**
    * @brief Creates HTML code for embedding a viewer for this streamer.
@@ -152,7 +153,10 @@ public:
    * @param node The ROS2 node to use for discovering topics.
    * @return A vector of topic names.
    */
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,   
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 /**
