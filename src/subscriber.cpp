@@ -45,20 +45,11 @@ namespace web_video_server
 {
 
 SubscriberBase::SubscriberBase(
-  rclcpp::Node::WeakPtr node,
+  rclcpp::Node::SharedPtr node,
   std::string logger_name)
 : node_(node)
-, logger_(node_.lock()->get_logger().get_child(logger_name))
+, logger_(node->get_logger().get_child(logger_name))
 {
-}
-
-rclcpp::Node::SharedPtr SubscriberBase::lock_node() const
-{
-  auto node = node_.lock();
-  if (!node) {
-    RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
-  }
-  return node;
 }
 
 void SubscriberBase::subscribe(
@@ -68,13 +59,9 @@ void SubscriberBase::subscribe(
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  auto node = lock_node();
-  if (!node) {
-    return;
-  }
-
   callback_ = callback;
-  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", "default");
+  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();    
+  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", default_qos_profile);
 
   // Get QoS profile from query parameter
   RCLCPP_INFO(
@@ -93,7 +80,7 @@ void SubscriberBase::subscribe(
   qos_profile.value());
 
   // Create subscriber
-  sub_ = node->create_subscription<sensor_msgs::msg::Image>(topic, qos,
+  sub_ = node_->create_subscription<sensor_msgs::msg::Image>(topic, qos,
     std::bind(&SubscriberBase::subscriberCallback, this, std::placeholders::_1));
 }
 

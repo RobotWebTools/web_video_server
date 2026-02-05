@@ -4,6 +4,9 @@ This node provides HTTP streaming of ROS topics in various formats, making it ea
 
 ## Features
 
+- Subscribe to ROS topics in multiple format
+  - image_transport
+ 
 - Stream ROS image topics over HTTP in multiple formats:
   - MJPEG (Motion JPEG)
   - VP8 (WebM)
@@ -15,7 +18,7 @@ This node provides HTTP streaming of ROS topics in various formats, making it ea
   - JPEG
   - PNG
   - ROS compressed image
-- Plugin-based architecture for easy addition of new streaming formats
+- Plugin-based architecture for easy addition of new subscribers or streamer formats
 - Adjustable quality, size, and other streaming parameters
 - Web interface to browse available image topics
 - Support for different QoS profiles in ROS 2
@@ -91,6 +94,7 @@ ros2 run web_video_server web_video_server
 | `server_threads` | int | 1 | 1+ | Number of server threads for handling HTTP requests |
 | `ros_threads` | int | 2 | 1+ | Number of threads for ROS message handling |
 | `verbose` | bool | false | true, false | Enable verbose logging |
+| `default_qos_profile` | string | "default" | "default", "system_default", "sensor_data", "services_default" | QoS profile for ROS 2 subscribers |
 | `default_stream_type` | string | "mjpeg" | "mjpeg", "vp8", "vp9", "h264", "png", "ros_compressed" | Default format for video streams |
 | `publish_rate` | double | -1.0 | -1.0 or positive value | Rate for republishing images (-1.0 means no republishing) |
 
@@ -180,6 +184,9 @@ http://localhost:8080/snapshot?topic=/camera/image_raw
 
 ## Creating custom streamer plugins
 See the [custom streamer plugin tutorial](doc/custom-streamer-plugin.md) for information on how to write your own streamer plugins.
+
+## Creating custom subscriber plugins
+See the [custom subscriber plugin tutorial](doc/custom-subscriber-plugin.md) for information on how to write your own subscriber plugins.
 
 ## About
 This project is released as part of the [Robot Web Tools](https://robotwebtools.github.io/) effort.

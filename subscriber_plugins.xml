@@ -4,4 +4,9 @@
     base_class_type="web_video_server::SubscriberFactoryInterface">
     <description>Subscribes to images using image_transport.</description>
   </class>
+  <class name="web_video_server/subscriber/pointcloud2"
+    type="web_video_server::subscribers::PointCloud2SubscriberFactory"
+    base_class_type="web_video_server::SubscriberFactoryInterface">
+    <description>Subscribes to pointcloud2 topics and converts to image.</description>
+  </class>  
 </library>

@@ -16,6 +16,11 @@ find_package(rclcpp_components REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_sensor_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 
@@ -109,6 +114,7 @@ target_link_libraries(${PROJECT_NAME}_streamers
 
 add_library(${PROJECT_NAME}_subscribers SHARED
   src/subscribers/image_transport_subscriber.cpp
+  src/subscribers/pointcloud2_subscriber.cpp  
 )
 
 target_include_directories(${PROJECT_NAME}_subscribers
@@ -120,6 +126,8 @@ target_include_directories(${PROJECT_NAME}_subscribers
     # ${avutil_INCLUDE_DIRS}
     # ${swscale_INCLUDE_DIRS}
 )
+
+ament_target_dependencies(${PROJECT_NAME}_subscribers rclcpp tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs)
 
 target_link_libraries(${PROJECT_NAME}_subscribers
   ${PROJECT_NAME}

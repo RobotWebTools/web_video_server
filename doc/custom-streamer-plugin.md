@@ -15,10 +15,7 @@ This tutorial will guide you through the steps to create a simple custom streame
 
 1. Add `TestStreamer` and `TestStreamerFactory` classes to `include/test_streamer_plugin/test_streamer_plugin.hpp` header file:
     ```cpp
-    #ifndef TEST_STREAMER_PLUGIN__TEST_STREAMER_PLUGIN_HPP_
-    #define TEST_STREAMER_PLUGIN__TEST_STREAMER_PLUGIN_HPP_
-
-    #include "test_streamer_plugin/visibility_control.h"
+    #pragma once
 
     #include "web_video_server/streamer.hpp"
 
@@ -52,7 +49,6 @@ This tutorial will guide you through the steps to create a simple custom streame
 
     }  // namespace test_streamer_plugin
 
-    #endif  // TEST_STREAMER_PLUGIN__TEST_STREAMER_PLUGIN_HPP_
     ```
 
 1. Implement the `TestStreamer` and `TestStreamerFactory` classes in `src/test_streamer_plugin.cpp`:

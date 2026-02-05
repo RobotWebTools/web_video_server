@@ -33,7 +33,9 @@
 #include <string>
 
 #include "async_web_server_cpp/http_request.hpp"
+
 #include "rclcpp/node.hpp"
+
 #include "image_transport/image_transport.hpp"
 #include "image_transport/subscriber.hpp"
 
@@ -47,7 +49,7 @@ namespace subscribers
 class ImageTransportSubscriber : public SubscriberBase
 {    
   public:
-    ImageTransportSubscriber(rclcpp::Node::WeakPtr node);
+    ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
 
     ~ImageTransportSubscriber();
 
@@ -55,19 +57,19 @@ class ImageTransportSubscriber : public SubscriberBase
                    const std::string& topic, 
                    const ImageCallback& callback);    
     
+  private:
     void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);
   
-  private:
     image_transport::Subscriber sub_;
-
 };
 
 class ImageTransportSubscriberFactory : public SubscriberFactoryInterface
 {
   public:
     std::string get_type() {return "sensor_msgs/msg/Image";}
+
     std::shared_ptr<SubscriberInterface> create_subscriber(
-        rclcpp::Node::WeakPtr node);
+        rclcpp::Node::SharedPtr node);
 
     std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };

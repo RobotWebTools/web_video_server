@@ -61,6 +61,7 @@ public:
                          const std::string & topic,
                          const ImageCallback & callback) = 0;
 
+protected:
   virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg) = 0;                         
 };
 
@@ -71,7 +72,7 @@ class SubscriberBase : public SubscriberInterface
 {
 public:
   SubscriberBase(
-    rclcpp::Node::WeakPtr node,
+    rclcpp::Node::SharedPtr node,
     std::string logger_name = "subscriber");
 
   std::mutex subscriber_mutex_;  
@@ -80,13 +81,10 @@ public:
                  const std::string & topic,
                  const ImageCallback & callback);
 
+protected:
   void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);                         
 
-
-protected:
-  rclcpp::Node::SharedPtr lock_node() const;
-
-  rclcpp::Node::WeakPtr node_;
+  rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;
 
   ImageCallback callback_;
@@ -115,7 +113,7 @@ public:
    * @return A shared pointer to the created Subscriber instance.
    */
   virtual std::shared_ptr<SubscriberInterface> create_subscriber(
-    rclcpp::Node::WeakPtr node) = 0;
+    rclcpp::Node::SharedPtr node) = 0;
 
   /**
    * @brief Returns a list of available topics that can be streamed by this subscriber.
