@@ -105,7 +105,7 @@ std::vector<std::string> ImageTransportSubscriberFactory::get_available_topics(
   auto topic_names_and_types = node.get_topic_names_and_types();
   for (const auto & topic_and_types : topic_names_and_types) {
     for (const auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/Image") {
+      if (type == this->get_type()) {
         result.push_back(topic_and_types.first);
         break;
       }

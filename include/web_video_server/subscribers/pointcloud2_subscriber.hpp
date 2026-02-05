@@ -29,29 +29,21 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
+#include "web_video_server/subscriber.hpp"
 
-#include "async_web_server_cpp/http_request.hpp"
-
-#include "rclcpp/node.hpp"
-#include "rclcpp/logger.hpp"
 #include <opencv2/opencv.hpp>
-#include "sensor_msgs/msg/point_cloud2.hpp"
-
-// #include <tf2/exceptions.h>
-#include <tf2_ros/buffer.h>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include <cv_bridge/cv_bridge.h>
 #else
 #include <cv_bridge/cv_bridge.hpp>
 #endif
 
-#include "web_video_server/subscriber.hpp"
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <sensor_msgs/msg/point_cloud2.hpp>
 
 namespace web_video_server
 {
@@ -108,6 +100,7 @@ class PointCloud2SubscriberFactory : public SubscriberFactoryInterface
 {
   public:
     std::string get_type() {return "sensor_msgs/msg/PointCloud2";}
+    
     std::shared_ptr<SubscriberInterface> create_subscriber(
         rclcpp::Node::SharedPtr node);
 
