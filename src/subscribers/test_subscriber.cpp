@@ -17,6 +17,7 @@
     TestSubscriber::~TestSubscriber()
     {
       std::scoped_lock lock(subscriber_mutex_);
+      inactive_ = true;
       
       RCLCPP_INFO(logger_, "TestSubscriber destroyed!");
     }
@@ -69,6 +70,8 @@
     {
       std::scoped_lock lock(subscriber_mutex_);
 
+      if(inactive_) return;      
+
       RCLCPP_INFO_STREAM(logger_,  "New TestSubscriber msg: " << input_msg->data);
       
       // Convert input msg to image
@@ -80,7 +83,7 @@
       sensor_msgs::msg::Image output_msg;
       bridge_image.toImageMsg(output_msg);
       sensor_msgs::msg::Image::ConstSharedPtr output_ptr = std::make_shared<sensor_msgs::msg::Image>(output_msg);
-     callback_(output_ptr);
+        try_forward_image(output_ptr);
     }
 
     std::shared_ptr<web_video_server::SubscriberInterface> TestSubscriberFactory::create_subscriber(

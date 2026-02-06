@@ -74,7 +74,6 @@ public:
     const std::string & format_name,
     const std::string & codec_name,
     const std::string & content_type);
-
   ~LibavStreamerBase();
 
 protected:

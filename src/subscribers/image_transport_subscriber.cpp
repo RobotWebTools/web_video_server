@@ -49,7 +49,8 @@ ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr _node
 
 ImageTransportSubscriber::~ImageTransportSubscriber()
 {
-    std::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(subscriber_mutex_);
+  inactive_ = true;
 }
 
 void ImageTransportSubscriber::subscribe(const async_web_server_cpp::HttpRequest &request,
@@ -88,8 +89,10 @@ void ImageTransportSubscriber::subscribe(const async_web_server_cpp::HttpRequest
 void ImageTransportSubscriber::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
+
+  if(inactive_) return;
   
-  callback_(input_msg);
+  try_forward_image(input_msg);
 }
 
 std::shared_ptr<SubscriberInterface> ImageTransportSubscriberFactory::create_subscriber(

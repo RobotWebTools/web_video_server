@@ -49,6 +49,7 @@ SubscriberBase::SubscriberBase(
   std::string logger_name)
 : node_(node)
 , logger_(node->get_logger().get_child(logger_name))
+, inactive_(false)
 {
 }
 
@@ -87,7 +88,8 @@ void SubscriberBase::subscribe(
 void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
-  callback_(input_msg);
+
+  try_forward_image(input_msg);
 }
 
 std::vector<std::string> SubscriberFactoryInterface::get_available_topics(

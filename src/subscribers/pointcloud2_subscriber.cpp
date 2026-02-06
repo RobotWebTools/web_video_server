@@ -61,7 +61,8 @@ PointCloud2Subscriber::PointCloud2Subscriber(rclcpp::Node::SharedPtr node)
 
 PointCloud2Subscriber::~PointCloud2Subscriber()
 {
-    std::scoped_lock lock(subscriber_mutex_);
+  std::scoped_lock lock(subscriber_mutex_);
+  inactive_ = true;
 }
 
 void PointCloud2Subscriber::subscribe(const async_web_server_cpp::HttpRequest &request,
@@ -124,6 +125,8 @@ void PointCloud2Subscriber::subscribe(const async_web_server_cpp::HttpRequest &r
 void PointCloud2Subscriber::subscriberCallback(const sensor_msgs::msg::PointCloud2::ConstSharedPtr &input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
+
+  if(inactive_) return;
 
   if (input_msg->data.size() == 0)
   {
@@ -300,7 +303,7 @@ void PointCloud2Subscriber::subscriberCallback(const sensor_msgs::msg::PointClou
   sensor_msgs::msg::Image output_msg;
   colorImage.toImageMsg(output_msg);
   sensor_msgs::msg::Image::ConstSharedPtr output_ptr = std::make_shared<sensor_msgs::msg::Image>(output_msg);
-  callback_(output_ptr);
+  try_forward_image(output_ptr);
 
   return;
 }

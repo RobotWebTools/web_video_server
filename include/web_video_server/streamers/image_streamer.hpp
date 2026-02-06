@@ -31,7 +31,6 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -80,7 +79,6 @@ protected:
 
   std::chrono::steady_clock::time_point last_frame_;
   cv::Mat output_size_image_;
-  std::mutex send_mutex_;
 
 private:
   bool initialized_;

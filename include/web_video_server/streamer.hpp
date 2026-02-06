@@ -89,6 +89,8 @@ public:
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
+  
+    std::mutex send_mutex_;
 
   bool is_inactive() override
   {

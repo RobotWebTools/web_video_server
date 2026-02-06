@@ -81,11 +81,21 @@ public:
                  const std::string & topic,
                  const ImageCallback & callback);
 
-protected:
+  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+  {
+    try {
+      callback_(input_msg);
+    } catch (...) {
+      RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
+    }
+  }                 
+
+ protected:
   void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);                         
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;
+  bool inactive_;
 
   ImageCallback callback_;
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr sub_;
