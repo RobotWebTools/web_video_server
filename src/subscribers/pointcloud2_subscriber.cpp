@@ -175,32 +175,31 @@ void PointCloud2Subscriber::subscriberCallback(const sensor_msgs::msg::PointClou
     int u = int(img_pts[i].x);
     int v = int(img_pts[i].y);
 
-    // Check if point is inside field of view and has valid projection
-    // Filter out rear points that are incorrectly projected into front view
-    // Keep points that are properly in front of sensor for current camera view
-    // RELAXED BOUNDS: Allow points slightly outside FOV to capture more lidar data
+    // Check if inflated point is inside field of view. 
+    // The scaling requires capturing points that slightly outside FOV.
+    // Take care transfering to image since it will crash if the pixels 
+    // outside FOV are applied to image.
     if ((u >= -pixel_size_) && (u < width_ + pixel_size_) &&  
         (v >= -pixel_size_) && (v < height_ + pixel_size_) &&
         obj_pts[i].z > 0.1)  // Filter out points behind/very close to sensor that cause incorrect projection
     {
-      // update depth image
-      if(depthImage.image.at<float>(v, u) > obj_pts[i].z)
+      // draw box around each pixel based on pixel_size param
+      int shift = pixel_size_ / 2;
+      int lowerIndex1 = v - shift;
+      if(lowerIndex1 < 0) lowerIndex1 = 0;
+      int upperIndex1 = v + shift;
+      if(upperIndex1 > height_ - 1) upperIndex1 = height_ - 1; 
+      int lowerIndex2 = u - shift; 
+      if(lowerIndex2 < 0) lowerIndex2 = 0;                           
+      int upperIndex2 = u + shift;
+      if(upperIndex2 > width_ - 1) upperIndex2 = width_ - 1;
+      for(int j = lowerIndex1; j <= upperIndex1; j++)
       {
-        // draw box around each pixel based on pixel_size param
-        int shift = pixel_size_ / 2;
-        int lowerIndex1 = v - shift;
-        if(lowerIndex1 < 0) lowerIndex1 = 0;
-        int upperIndex1 = v + shift;
-        if(upperIndex1 > height_ - 1) upperIndex1 = height_ - 1; 
-        int lowerIndex2 = u - shift; 
-        if(lowerIndex2 < 0) lowerIndex2 = 0;                           
-        int upperIndex2 = u + shift;
-        if(upperIndex2 > width_ - 1) upperIndex2 = width_ - 1;
-        for(int j = lowerIndex1; j <= upperIndex1; j++)
+        for(int k = lowerIndex2; k <= upperIndex2; k++)
         {
-          for(int k = lowerIndex2; k <= upperIndex2; k++)
+          // Update the depth image if point is closer to camera that previous values
+          if(depthImage.image.at<float>(j, k) > obj_pts[i].z)
           {
-            // Update the depth image if point is closer to camera
             depthImage.image.at<float>(j, k) = obj_pts[i].z;
             depthMask.at<uint8_t>(j, k) = 255; // 255 = has data, 0 = no data
             
