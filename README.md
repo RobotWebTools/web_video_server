@@ -4,7 +4,7 @@ This node provides HTTP streaming of ROS topics in various formats, making it ea
 
 ## Features
 
-- Subscribe to ROS topics in multiple format
+- Subscribe to ROS topics in multiple formats:
   - image_transport
  
 - Stream ROS image topics over HTTP in multiple formats:
@@ -14,6 +14,7 @@ This node provides HTTP streaming of ROS topics in various formats, making it ea
   - H264 (MP4)
   - PNG streams
   - ROS compressed image streams
+  
 - Query snapshots of image topics in multiple formats:
   - JPEG
   - PNG

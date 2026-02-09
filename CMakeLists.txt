@@ -99,7 +99,6 @@ target_link_libraries(${PROJECT_NAME}_streamers
   ${PROJECT_NAME}
   async_web_server_cpp::async_web_server_cpp
   cv_bridge::cv_bridge
-  image_transport::image_transport  
   pluginlib::pluginlib
   rclcpp::rclcpp
   ${sensor_msgs_TARGETS}
