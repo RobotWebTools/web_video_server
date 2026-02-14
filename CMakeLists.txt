@@ -113,7 +113,6 @@ target_link_libraries(${PROJECT_NAME}_streamers
 
 add_library(${PROJECT_NAME}_subscribers SHARED
   src/subscribers/image_transport_subscriber.cpp
-  src/subscribers/pointcloud2_subscriber.cpp  
 )
 
 target_include_directories(${PROJECT_NAME}_subscribers
