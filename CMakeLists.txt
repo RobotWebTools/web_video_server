@@ -16,11 +16,6 @@ find_package(rclcpp_components REQUIRED)
 find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
-find_package(tf2 REQUIRED)
-find_package(tf2_ros REQUIRED)
-find_package(tf2_sensor_msgs REQUIRED)
-find_package(tf2_geometry_msgs REQUIRED)
-
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system)
 
@@ -119,29 +114,15 @@ target_include_directories(${PROJECT_NAME}_subscribers
   PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>"
-    # ${avcodec_INCLUDE_DIRS}
-    # ${avformat_INCLUDE_DIRS}
-    # ${avutil_INCLUDE_DIRS}
-    # ${swscale_INCLUDE_DIRS}
 )
-
-ament_target_dependencies(${PROJECT_NAME}_subscribers rclcpp tf2 tf2_ros tf2_sensor_msgs tf2_geometry_msgs)
 
 target_link_libraries(${PROJECT_NAME}_subscribers
   ${PROJECT_NAME}
   async_web_server_cpp::async_web_server_cpp
-  cv_bridge::cv_bridge
   image_transport::image_transport
   pluginlib::pluginlib
   rclcpp::rclcpp
   ${sensor_msgs_TARGETS}
-  Boost::boost
-  Boost::system
-  ${OpenCV_LIBS}
-  ${avcodec_LIBRARIES}
-  ${avformat_LIBRARIES}
-  ${avutil_LIBRARIES}
-  ${swscale_LIBRARIES}
 )
 
 ## Declare a cpp executable

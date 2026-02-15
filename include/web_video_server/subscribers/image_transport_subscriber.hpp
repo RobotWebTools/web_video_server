@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, The Robot Web Tools Contributors
+// Copyright (c) 2024-2026, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
