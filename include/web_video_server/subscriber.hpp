@@ -47,7 +47,7 @@
 
 namespace web_video_server
 {
-typedef std::function<void(const sensor_msgs::msg::Image::ConstSharedPtr &)> ImageCallback;
+typedef std::function<void (const sensor_msgs::msg::Image::ConstSharedPtr &)> ImageCallback;
 
 class SubscriberInterface
 {
