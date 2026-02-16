@@ -176,7 +176,8 @@ RosCompressedStreamer::RosCompressedStreamer(
     return;
   }
 
-  const std::string default_qos_profile = node_locked->get_parameter("default_qos_profile").as_string();
+  const std::string default_qos_profile = 
+    node_locked->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
     "qos_profile",
     default_qos_profile);
@@ -287,7 +288,7 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
 
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /*subscriber_factories*/)
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/*subscriber_factories*/)
 {
   return collect_compressed_topics(node);
 }
@@ -415,7 +416,7 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
 
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /*subscriber_factories*/)
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/*subscriber_factories*/)
 {
   return collect_compressed_topics(node);
 }
