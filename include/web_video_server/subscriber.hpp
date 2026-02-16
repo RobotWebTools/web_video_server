@@ -47,7 +47,7 @@
 
 namespace web_video_server
 {
-typedef std::function<void(const sensor_msgs::msg::Image::ConstSharedPtr&)> ImageCallback;
+typedef std::function<void(const sensor_msgs::msg::Image::ConstSharedPtr &)> ImageCallback;
 
 class SubscriberInterface
 {
@@ -63,7 +63,7 @@ public:
     const ImageCallback & callback) = 0;
 
 protected:
-  virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) = 0;                         
+  virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) = 0;
 };
 
 /**
@@ -90,10 +90,10 @@ public:
     } catch (...) {
       RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
     }
-  }                 
+  }
 
  protected:
-  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);                         
+  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;

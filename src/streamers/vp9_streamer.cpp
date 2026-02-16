@@ -55,8 +55,8 @@ Vp9Streamer::Vp9Streamer(
   async_web_server_cpp::HttpConnectionPtr connection,
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: LibavStreamerBase(request, connection, subscriber_factories, node, 
-  "vp9_streamer", "webm", "libvpx-vp9", "video/webm")
+: LibavStreamerBase(request, connection, subscriber_factories, node,
+    "vp9_streamer", "webm", "libvpx-vp9", "video/webm")
 {
 }
 Vp9Streamer::~Vp9Streamer()

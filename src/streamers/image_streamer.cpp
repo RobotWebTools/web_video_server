@@ -104,9 +104,9 @@ void ImageStreamerBase::start()
 
       subscriber_ = subscriber_factories_[topic_type]->create_subscriber(node);
       subscriber_->subscribe(
-        request_, topic_, 
+        request_, topic_,
         std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
-      
+
       break;
     }
   }
@@ -243,10 +243,10 @@ cv::Mat ImageStreamerBase::decode_image(
 
 std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
-) {
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
+{
   std::vector<std::string> results;
-  
+
   for (auto subscriber: subscriber_factories) {
     std::vector<std::string> entries = subscriber.second->get_available_topics(node);
     results.insert(results.end(), entries.begin(), entries.end());
@@ -257,7 +257,7 @@ std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
 
 std::vector<std::string> ImageSnapshotStreamerFactoryBase::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
 {
   std::vector<std::string> results;
 

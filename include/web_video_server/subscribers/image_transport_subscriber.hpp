@@ -43,14 +43,15 @@ namespace web_video_server
 namespace subscribers
 {
 
-class ImageTransportSubscriber : public SubscriberBase {    
+class ImageTransportSubscriber : public SubscriberBase 
+{
 public:
   ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
 
   ~ImageTransportSubscriber();
 
   void subscribe(
-    const async_web_server_cpp::HttpRequest &request,
+    const async_web_server_cpp::HttpRequest & request,
     const std::string& topic, 
     const ImageCallback& callback);    
     

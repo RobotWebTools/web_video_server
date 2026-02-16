@@ -58,7 +58,7 @@ H264Streamer::H264Streamer(
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : LibavStreamerBase(request, connection, subscriber_factories, node,
-  "h264_streamer", "mp4", "libx264", "video/mp4")
+    "h264_streamer", "mp4", "libx264", "video/mp4")
 {
   /* possible quality presets:
    * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo

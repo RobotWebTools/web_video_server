@@ -57,20 +57,20 @@ ImageTransportSubscriber::~ImageTransportSubscriber()
 
 void ImageTransportSubscriber::subscribe(
   const async_web_server_cpp::HttpRequest & request,
-  const std::string& topic,
-  const ImageCallback& callback)
+  const std::string & topic,
+  const ImageCallback & callback)
 {
   std::scoped_lock lock(subscriber_mutex_);
-  
+
   callback_ = callback;
   std::string default_transport = node_->get_parameter("default_transport").as_string();
   std::string transport = request.get_query_param_value_or_default(
-    "default_transport", 
+    "default_transport",
     default_transport);
 
   std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
-    "qos_profile", 
+    "qos_profile",
     default_qos_profile);
 
   // Get QoS profile from query parameter
@@ -89,17 +89,17 @@ void ImageTransportSubscriber::subscribe(
   const auto qos = qos_profile.value();
   
   sub_ = image_transport::create_subscription(
-    node_.get(), topic, 
-    std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1), 
+    node_.get(), topic,
+    std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1),
     transport, qos);
 }
 
 void ImageTransportSubscriber::subscriberCallback(
-  const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+  const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  if(inactive_) {return;}
+  if (inactive_) {return;}
   
   try_forward_image(input_msg);
 }
@@ -111,7 +111,7 @@ std::shared_ptr<SubscriberInterface> ImageTransportSubscriberFactory::create_sub
 }
 
 std::vector<std::string> ImageTransportSubscriberFactory::get_available_topics(
-  rclcpp::Node & node) 
+  rclcpp::Node & node)
 {
   std::vector<std::string> result;
   auto topic_names_and_types = node.get_topic_names_and_types();

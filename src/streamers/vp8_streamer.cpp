@@ -58,7 +58,7 @@ Vp8Streamer::Vp8Streamer(
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : LibavStreamerBase(request, connection, subscriber_factories, node,
-  "vp8_streamer", "webm", "libvpx", "video/webm")
+    "vp8_streamer", "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }

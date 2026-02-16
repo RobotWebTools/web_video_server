@@ -78,14 +78,14 @@ namespace streamers
 
 LibavStreamerBase::LibavStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
+  async_web_server_cpp::HttpConnectionPtr connection,
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node,
   std::string logger_name, const std::string & format_name, const std::string & codec_name,
   const std::string & content_type)
 : ImageStreamerBase(request, connection, subscriber_factories, node, logger_name),
   format_context_(0), codec_(0), codec_context_(0), video_stream_(0), opt_(0),
-  frame_(0), sws_context_(0), first_image_received_(false), format_name_(format_name), 
+  frame_(0), sws_context_(0), first_image_received_(false), format_name_(format_name),
   codec_name_(codec_name), content_type_(content_type), io_buffer_(0)
 {
   bitrate_ = request.get_query_param_value_or_default<int>("bitrate", 100000);

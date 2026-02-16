@@ -151,7 +151,7 @@ std::shared_ptr<StreamerInterface> JpegSnapshotStreamerFactory::create_streamer(
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<JpegSnapshotStreamer>(
-    request, connection, subscriber_factories, 
+    request, connection, subscriber_factories,
     std::move(node));
 }
 

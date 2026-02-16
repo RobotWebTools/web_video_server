@@ -67,7 +67,7 @@ PngStreamer::PngStreamer(
   async_web_server_cpp::HttpConnectionPtr connection,
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: ImageStreamerBase(request, connection, subscriber_factories, node, "png_streamer"), 
+: ImageStreamerBase(request, connection, subscriber_factories, node, "png_streamer"),
   stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);

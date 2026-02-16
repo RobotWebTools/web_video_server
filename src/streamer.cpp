@@ -80,8 +80,8 @@ std::string StreamerFactoryInterface::create_viewer(
 }
 
 std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node & node,   
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
 {
   return {};
 }

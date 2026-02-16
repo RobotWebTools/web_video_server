@@ -97,7 +97,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       subscriber_factories_[subscriber->get_type()] = subscriber;
     } catch (pluginlib::PluginlibException & ex) {
       RCLCPP_ERROR(
-        get_logger(), 
+        get_logger(),
         "The subscriber plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
@@ -109,7 +109,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
       RCLCPP_ERROR(
-        get_logger(), 
+        get_logger(),
         "The streamer plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
@@ -121,7 +121,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       snapshot_streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
       RCLCPP_ERROR(
-        get_logger(), 
+        get_logger(),
         "The snapshot plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
