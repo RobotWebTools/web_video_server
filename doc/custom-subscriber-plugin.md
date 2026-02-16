@@ -45,7 +45,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
 
       private:
         // replace param in the following line with one appropriate for you data type  
-        void subscriberCallback(const std_msgs::msg::String::ConstSharedPtr &input_msg);
+        void subscriber_callback(const std_msgs::msg::String::ConstSharedPtr &input_msg);
 
         // replace param in the following line with one appropriate for you data type  
         rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
@@ -135,11 +135,11 @@ This tutorial will guide you through the steps to create a simple custom subscri
       
       // Create subscriber (update as appropriate for your subscriber)
       sub_ = node_->create_subscription<std_msgs::msg::String>(
-        topic, qos, std::bind(&TestSubscriber::subscriberCallback, this, std::placeholders::_1), options
+        topic, qos, std::bind(&TestSubscriber::subscriber_callback, this, std::placeholders::_1), options
       );
     }
 
-    void TestSubscriber::subscriberCallback(const std_msgs::msg::String::ConstSharedPtr &input_msg)
+    void TestSubscriber::subscriber_callback(const std_msgs::msg::String::ConstSharedPtr &input_msg)
     {
       std::scoped_lock lock(subscriber_mutex_);
 

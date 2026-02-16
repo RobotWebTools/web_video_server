@@ -56,7 +56,7 @@ public:
     const ImageCallback & callback);
 
 private:
-  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   image_transport::Subscriber sub_;
 };

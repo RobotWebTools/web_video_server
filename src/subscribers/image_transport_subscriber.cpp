@@ -90,11 +90,11 @@ void ImageTransportSubscriber::subscribe(
 
   sub_ = image_transport::create_subscription(
     node_.get(), topic,
-    std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1),
+    std::bind(&ImageTransportSubscriber::subscriber_callback, this, std::placeholders::_1),
     transport, qos);
 }
 
-void ImageTransportSubscriber::subscriberCallback(
+void ImageTransportSubscriber::subscriber_callback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);

@@ -85,10 +85,10 @@ void SubscriberBase::subscribe(
   // Create subscriber
   sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
     topic, qos,
-    std::bind(&SubscriberBase::subscriberCallback, this, std::placeholders::_1));
+    std::bind(&SubscriberBase::subscriber_callback, this, std::placeholders::_1));
 }
 
-void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
+void SubscriberBase::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
 

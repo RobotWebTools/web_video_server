@@ -63,7 +63,7 @@ public:
     const ImageCallback & callback) = 0;
 
 protected:
-  virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) = 0;
+  virtual void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) = 0;
 };
 
 /**
@@ -93,7 +93,7 @@ public:
   }
 
 protected:
-  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;
