@@ -34,10 +34,11 @@
 #include <mutex>
 #include <string>
 #include <functional>
-#include <memory>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
+#include "rclcpp/qos.hpp"
+#include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/image.hpp"
 
 #include "async_web_server_cpp/http_request.hpp"
@@ -79,7 +80,7 @@ void SubscriberBase::subscribe(
       qos_profile_name.c_str());
   }
 
-  rclcpp::QoS qos = rclcpp::QoS(
+  const rclcpp::QoS qos = rclcpp::QoS(
     rclcpp::QoSInitialization(qos_profile.value().history, 1),
     qos_profile.value());
 

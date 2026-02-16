@@ -41,6 +41,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
@@ -59,6 +60,7 @@
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/jpeg_streamers.hpp"
 #include "web_video_server/utils.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
@@ -176,7 +178,7 @@ RosCompressedStreamer::RosCompressedStreamer(
     return;
   }
 
-  const std::string default_qos_profile = 
+  const std::string default_qos_profile =
     node_locked->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
     "qos_profile",

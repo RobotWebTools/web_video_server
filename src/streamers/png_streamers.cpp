@@ -37,6 +37,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -50,6 +51,7 @@
 
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/image_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"

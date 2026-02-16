@@ -39,6 +39,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -50,6 +51,7 @@
 
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/image_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {

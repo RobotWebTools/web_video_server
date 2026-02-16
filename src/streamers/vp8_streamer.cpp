@@ -47,6 +47,7 @@ extern "C"
 
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/libav_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {

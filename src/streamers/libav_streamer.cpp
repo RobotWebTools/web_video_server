@@ -56,6 +56,8 @@ extern "C"
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 
 #include <opencv2/core/mat.hpp>
 
@@ -66,6 +68,7 @@ extern "C"
 #include "rclcpp/logging.hpp"
 
 #include "web_video_server/streamers/image_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 // https://stackoverflow.com/questions/46884682/error-in-building-opencv-with-ffmpeg
 #define AV_CODEC_FLAG_GLOBAL_HEADER (1 << 22)

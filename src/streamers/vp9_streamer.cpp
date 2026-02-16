@@ -38,6 +38,7 @@ extern "C"
 #include <string>
 #include <cstring>
 #include <memory>
+#include <map>
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
@@ -45,6 +46,7 @@ extern "C"
 
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/streamers/libav_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {

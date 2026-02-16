@@ -27,15 +27,28 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#include <mutex>
+#include <memory>
+#include <vector>
+#include <functional>
+
+#include "rclcpp/node.hpp"
+#include "rclcpp/logging.hpp"
+#include "rmw/qos_profiles.h"
+#include "sensor_msgs/msg/image.hpp"
+#include "image_transport/image_transport.hpp"
+
+#include "async_web_server_cpp/http_request.hpp"
 #include "web_video_server/subscribers/image_transport_subscriber.hpp"
 #include "web_video_server/utils.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
 namespace subscribers
 {
-ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr _node)
-: SubscriberBase(_node, "image_transport_subscriber")
+ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr node)
+: SubscriberBase(node, "image_transport_subscriber")
 {
   const std::scoped_lock lock(subscriber_mutex);
 
@@ -64,12 +77,12 @@ void ImageTransportSubscriber::subscribe(
   const std::scoped_lock lock(subscriber_mutex);
 
   callback_ = callback;
-  std::string default_transport = node_->get_parameter("default_transport").as_string();
-  std::string transport = request.get_query_param_value_or_default(
+  const std::string default_transport = node_->get_parameter("default_transport").as_string();
+  const std::string transport = request.get_query_param_value_or_default(
     "default_transport",
     default_transport);
 
-  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
+  const std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
     "qos_profile",
     default_qos_profile);

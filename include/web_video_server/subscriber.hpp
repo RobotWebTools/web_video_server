@@ -134,4 +134,4 @@ public:
   virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
-} // web_video_server
+} // end namespace web_video_server

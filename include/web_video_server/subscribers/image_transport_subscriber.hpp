@@ -72,5 +72,5 @@ public:
   std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
 
-}  // namespace streamers
+}  // namespace subscribers
 }  // namespace web_video_server
