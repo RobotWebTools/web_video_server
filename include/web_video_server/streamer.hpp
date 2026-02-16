@@ -90,7 +90,7 @@ public:
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
 
-  std::mutex send_mutex_;
+  std::mutex send_mutex;
 
   bool is_inactive() override
   {

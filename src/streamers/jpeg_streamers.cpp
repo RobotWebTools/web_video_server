@@ -71,7 +71,7 @@ MjpegStreamer::MjpegStreamer(
 MjpegStreamer::~MjpegStreamer()
 {
   this->inactive_ = true;
-  const std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex);  // protects send_image.
 }
 
 void MjpegStreamer::send_image(
@@ -110,7 +110,7 @@ JpegSnapshotStreamer::JpegSnapshotStreamer(
 JpegSnapshotStreamer::~JpegSnapshotStreamer()
 {
   this->inactive_ = true;
-  const std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex);  // protects send_image.
 }
 
 void JpegSnapshotStreamer::send_image(

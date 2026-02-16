@@ -165,7 +165,7 @@ void ImageStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstShare
       cv::flip(img, img, 1);
     }
 
-    const std::scoped_lock lock(send_mutex_);  // protects output_size_image_
+    const std::scoped_lock lock(send_mutex);  // protects output_size_image_
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       const cv::Size new_size(output_width_, output_height_);
@@ -202,7 +202,7 @@ void ImageStreamerBase::try_send_image(
   rclcpp::Node & node)
 {
   try {
-    const std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex);
     send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects

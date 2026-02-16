@@ -185,7 +185,7 @@ RosCompressedStreamer::RosCompressedStreamer(
 RosCompressedStreamer::~RosCompressedStreamer()
 {
   this->inactive_ = true;
-  const std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex);  // protects send_image.
 }
 
 void RosCompressedStreamer::start()
@@ -208,7 +208,7 @@ void RosCompressedStreamer::restream_frame(std::chrono::duration<double> max_age
   }
 
   if (last_frame_ + max_age < std::chrono::steady_clock::now()) {
-    const std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex);
     // don't update last_frame, it may remain an old value.
     send_image(last_msg_, std::chrono::steady_clock::now());
   }
@@ -253,7 +253,7 @@ void RosCompressedStreamer::send_image(
 void RosCompressedStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
-  const std::scoped_lock lock(send_mutex_);  // protects last_msg_ and last_frame_
+  const std::scoped_lock lock(send_mutex);  // protects last_msg_ and last_frame_
   last_msg_ = msg;
   last_frame_ = std::chrono::steady_clock::now();
   send_image(last_msg_, last_frame_);

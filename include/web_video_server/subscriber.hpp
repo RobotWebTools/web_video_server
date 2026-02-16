@@ -76,12 +76,12 @@ public:
     rclcpp::Node::SharedPtr node,
     std::string logger_name = "subscriber");
 
-  std::mutex subscriber_mutex_;
+  std::mutex subscriber_mutex;
 
   void subscribe(
     const async_web_server_cpp::HttpRequest & request,
     const std::string & topic,
-    const ImageCallback & callback);
+    const ImageCallback & callback) override;
 
   void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
   {
