@@ -43,7 +43,6 @@
 #include "rclcpp/node.hpp"
 
 #include "sensor_msgs/msg/image.hpp"
-#include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {

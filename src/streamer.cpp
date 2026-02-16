@@ -55,8 +55,8 @@ StreamerBase::StreamerBase(
 : connection_(connection),
   request_(request),
   node_(node),
-  subscriber_factories_(subscriber_factories),
   logger_(node_.lock()->get_logger().get_child(logger_name)),
+  subscriber_factories_(subscriber_factories),
   inactive_(false),
   topic_(request.get_query_param_value_or_default("topic", ""))
 {
@@ -82,8 +82,8 @@ std::string StreamerFactoryInterface::create_viewer(
 }
 
 std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
+  rclcpp::Node & /*node*/,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /*subscriber_factories*/)
 {
   return {};
 }

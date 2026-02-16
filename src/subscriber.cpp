@@ -34,12 +34,14 @@
 #include <mutex>
 #include <string>
 #include <functional>
+#include <memory>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
+#include "sensor_msgs/msg/image.hpp"
 
 #include "async_web_server_cpp/http_request.hpp"
-
+#include "web_video_server/utils.hpp"
 namespace web_video_server
 {
 

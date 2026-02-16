@@ -36,6 +36,8 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 
 #include <boost/system/system_error.hpp>
 #include <opencv2/core.hpp>
@@ -57,7 +59,7 @@
 #include "sensor_msgs/msg/image.hpp"
 
 #include "web_video_server/streamer.hpp"
-#include "web_video_server/utils.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
@@ -97,8 +99,8 @@ void ImageStreamerBase::start()
       // skip over topics with more than one type
       continue;
     }
-    auto & topic_name = topic_and_types.first;
-    auto & topic_type = topic_and_types.second[0];
+    const auto & topic_name = topic_and_types.first;
+    const auto & topic_type = topic_and_types.second[0];
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
 
@@ -111,9 +113,6 @@ void ImageStreamerBase::start()
     }
   }
 }
-
-#pragma GCC diagnostic pop
-// NOLINTEND(clang-diagnostic-deprecated-declarations)
 
 void ImageStreamerBase::initialize(const cv::Mat & /*img*/)
 {

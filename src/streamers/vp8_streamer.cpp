@@ -36,6 +36,7 @@ extern "C"
 #include <libavutil/opt.h>
 }
 
+#include <string>
 #include <cstring>
 #include <map>
 #include <memory>

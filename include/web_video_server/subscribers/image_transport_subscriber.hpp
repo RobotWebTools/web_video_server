@@ -46,7 +46,7 @@ namespace subscribers
 class ImageTransportSubscriber : public SubscriberBase
 {
 public:
-  ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
+  explicit ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
 
   ~ImageTransportSubscriber();
 

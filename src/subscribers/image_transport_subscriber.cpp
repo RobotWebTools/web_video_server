@@ -28,12 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/subscribers/image_transport_subscriber.hpp"
-
-// We disable deprecation warnings for image_transport API usage
-// to maintain compatibility with older ROS 2 distributions.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
+#include "web_video_server/utils.hpp"
 
 namespace web_video_server
 {
@@ -54,6 +49,12 @@ ImageTransportSubscriber::~ImageTransportSubscriber()
   const std::scoped_lock lock(subscriber_mutex);
   inactive_ = true;
 }
+
+// We disable deprecation warnings for image_transport API usage
+// to maintain compatibility with older ROS 2 distributions.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
 
 void ImageTransportSubscriber::subscribe(
   const async_web_server_cpp::HttpRequest & request,
@@ -94,6 +95,9 @@ void ImageTransportSubscriber::subscribe(
     transport, qos);
 }
 
+#pragma GCC diagnostic pop
+// NOLINTEND(clang-diagnostic-deprecated-declarations)
+
 void ImageTransportSubscriber::subscriber_callback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
@@ -126,8 +130,8 @@ std::vector<std::string> ImageTransportSubscriberFactory::get_available_topics(
   return result;
 }
 
-}
-}
+}  // namespace subscribers
+}  // namespace web_video_server
 
 #include "pluginlib/class_list_macros.hpp"
 
