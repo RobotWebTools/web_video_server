@@ -58,7 +58,7 @@ public:
   ImageStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "image_streamer");
   virtual ~ImageStreamerBase();
@@ -93,7 +93,7 @@ class ImageStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(
-    rclcpp::Node & node,   
+    rclcpp::Node & node,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
   );
 };
@@ -102,7 +102,7 @@ class ImageSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
   virtual std::vector<std::string> get_available_topics(
-    rclcpp::Node & node,   
+    rclcpp::Node & node,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
   );
 };

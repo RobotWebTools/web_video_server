@@ -56,8 +56,8 @@ ImageTransportSubscriber::~ImageTransportSubscriber()
 }
 
 void ImageTransportSubscriber::subscribe(
-  const async_web_server_cpp::HttpRequest &request,
-  const std::string& topic, 
+  const async_web_server_cpp::HttpRequest & request,
+  const std::string& topic,
   const ImageCallback& callback)
 {
   std::scoped_lock lock(subscriber_mutex_);

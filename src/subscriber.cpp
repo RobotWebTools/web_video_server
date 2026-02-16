@@ -47,8 +47,8 @@ namespace web_video_server
 SubscriberBase::SubscriberBase(
   rclcpp::Node::SharedPtr node,
   std::string logger_name)
-: node_(node), 
-  logger_(node->get_logger().get_child(logger_name)), 
+: node_(node),
+  logger_(node->get_logger().get_child(logger_name)),
   inactive_(false)
 {
 }
@@ -63,7 +63,7 @@ void SubscriberBase::subscribe(
   callback_ = callback;
   std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
-    "qos_profile", 
+    "qos_profile",
     default_qos_profile);
 
   // Get QoS profile from query parameter
@@ -96,7 +96,7 @@ void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstShar
 }
 
 std::vector<std::string> SubscriberFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */) 
+  rclcpp::Node & /* node */)
 {
   return {};
 }

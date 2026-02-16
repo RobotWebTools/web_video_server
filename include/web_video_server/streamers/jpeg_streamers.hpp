@@ -55,7 +55,7 @@ public:
   MjpegStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~MjpegStreamer();
 
@@ -74,7 +74,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
 };
 
@@ -84,7 +84,7 @@ public:
   JpegSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,    
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~JpegSnapshotStreamer();
 
@@ -103,7 +103,7 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,    
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
 };
 

@@ -43,20 +43,19 @@ namespace web_video_server
 namespace subscribers
 {
 
-class ImageTransportSubscriber : public SubscriberBase
-{    
+class ImageTransportSubscriber : public SubscriberBase {    
 public:
   ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
 
   ~ImageTransportSubscriber();
 
-    void subscribe(
-      const async_web_server_cpp::HttpRequest &request,
-      const std::string& topic, 
-      const ImageCallback& callback);    
+  void subscribe(
+    const async_web_server_cpp::HttpRequest &request,
+    const std::string& topic, 
+    const ImageCallback& callback);    
     
 private:
-  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);
+  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   image_transport::Subscriber sub_;
 };
@@ -67,7 +66,7 @@ public:
   std::string get_type() {return "sensor_msgs/msg/Image";}
 
   std::shared_ptr<SubscriberInterface> create_subscriber(
-      rclcpp::Node::SharedPtr node);
+    rclcpp::Node::SharedPtr node);
 
   std::vector<std::string> get_available_topics(rclcpp::Node & node);
 };
