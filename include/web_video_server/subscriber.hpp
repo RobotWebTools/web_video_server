@@ -77,7 +77,7 @@ public:
     std::string logger_name = "subscriber");
 
   std::mutex subscriber_mutex_;
-  
+
   void subscribe(
     const async_web_server_cpp::HttpRequest & request,
     const std::string & topic,
@@ -92,7 +92,7 @@ public:
     }
   }
 
- protected:
+protected:
   void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   rclcpp::Node::SharedPtr node_;

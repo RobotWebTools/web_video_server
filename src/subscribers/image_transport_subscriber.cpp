@@ -87,7 +87,7 @@ void ImageTransportSubscriber::subscribe(
   }
 
   const auto qos = qos_profile.value();
-  
+
   sub_ = image_transport::create_subscription(
     node_.get(), topic,
     std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1),
@@ -100,7 +100,7 @@ void ImageTransportSubscriber::subscriberCallback(
   std::scoped_lock lock(subscriber_mutex_);
 
   if (inactive_) {return;}
-  
+
   try_forward_image(input_msg);
 }
 
