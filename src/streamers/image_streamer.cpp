@@ -67,11 +67,11 @@ namespace streamers
 ImageStreamerBase::ImageStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: StreamerBase(request, connection, subscriber_factories, node, logger_name)
-, initialized_(false)
+: StreamerBase(request, connection, subscriber_factories, node, logger_name),
+  initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
@@ -98,13 +98,14 @@ void ImageStreamerBase::start()
       continue;
     }
     auto & topic_name = topic_and_types.first;
-    auto & topic_type = topic_and_types.second[0];    
+    auto & topic_type = topic_and_types.second[0];
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
 
       subscriber_ = subscriber_factories_[topic_type]->create_subscriber(node);
-      subscriber_->subscribe(request_, topic_, 
-                  std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
+      subscriber_->subscribe(
+        request_, topic_, 
+        std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
       
       break;
     }
@@ -246,8 +247,7 @@ std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
 ) {
   std::vector<std::string> results;
   
-  for (auto subscriber: subscriber_factories)
-  {
+  for (auto subscriber: subscriber_factories) {
     std::vector<std::string> entries = subscriber.second->get_available_topics(node);
     results.insert(results.end(), entries.begin(), entries.end());
   }
@@ -257,12 +257,11 @@ std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
 
 std::vector<std::string> ImageSnapshotStreamerFactoryBase::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
-) {
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+{
   std::vector<std::string> results;
 
-  for (auto subscriber: subscriber_factories)
-  {
+  for (auto subscriber: subscriber_factories) {
     std::vector<std::string> entries = subscriber.second->get_available_topics(node);
     results.insert(results.end(), entries.begin(), entries.end());
   }

@@ -90,7 +90,7 @@ public:
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
   
-    std::mutex send_mutex_;
+  std::mutex send_mutex_;
 
   bool is_inactive() override
   {
@@ -112,7 +112,7 @@ protected:
   bool inactive_;
   std::string topic_;
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories_;
-  std::shared_ptr<SubscriberInterface> subscriber_;  
+  std::shared_ptr<SubscriberInterface> subscriber_;
 };
 
 /**
@@ -140,7 +140,7 @@ public:
   virtual std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,     
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node
   ) = 0;
 
@@ -156,7 +156,7 @@ public:
    * @return A vector of topic names.
    */
   virtual std::vector<std::string> get_available_topics(
-    rclcpp::Node & node,   
+    rclcpp::Node & node,
     std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
   );
 };

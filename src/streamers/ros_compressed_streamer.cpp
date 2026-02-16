@@ -164,10 +164,10 @@ std::vector<std::string> collect_compressed_topics(rclcpp::Node & node)
 RosCompressedStreamer::RosCompressedStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr _node)
-: StreamerBase(request, connection, subscriber_factories, _node, "ros_compressed_streamer")
-, stream_(connection)
+: StreamerBase(request, connection, subscriber_factories, _node, "ros_compressed_streamer"),
+  stream_(connection)
 {
   stream_.send_initial_header();
 
@@ -176,8 +176,10 @@ RosCompressedStreamer::RosCompressedStreamer(
     return;
   }
 
-  std::string default_qos_profile = node->get_parameter("default_qos_profile").as_string();    
-  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", default_qos_profile);
+  std::string default_qos_profile = node->get_parameter("default_qos_profile").as_string();
+  auto qos_profile_name = request.get_query_param_value_or_default(
+    "qos_profile", 
+    default_qos_profile);
 }
 
 RosCompressedStreamer::~RosCompressedStreamer()
@@ -261,7 +263,7 @@ void RosCompressedStreamer::image_callback(
 std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   auto node_locked = node.lock();
@@ -285,15 +287,15 @@ std::shared_ptr<StreamerInterface> RosCompressedStreamerFactory::create_streamer
 
 std::vector<std::string> RosCompressedStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
-) {
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+{
   return collect_compressed_topics(node);
 }
 
 RosCompressedSnapshotStreamer::RosCompressedSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories, 
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : StreamerBase(request, connection, subscriber_factories, node, "ros_compressed_snapshot_streamer")
 {
@@ -389,7 +391,7 @@ std::shared_ptr<StreamerInterface>
 RosCompressedSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   auto node_locked = node.lock();
@@ -407,13 +409,14 @@ RosCompressedSnapshotStreamerFactory::create_streamer(
       "Could not find compressed image topic for %s, falling back to jpeg", topic.c_str());
     return std::make_shared<JpegSnapshotStreamer>(request, connection, subscriber_factories, node);
   }
-  return std::make_shared<RosCompressedSnapshotStreamer>(request, connection, subscriber_factories, node);
+  return std::make_shared<RosCompressedSnapshotStreamer>(
+    request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string> RosCompressedSnapshotStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
-) {
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+{
   return collect_compressed_topics(node);
 }
 

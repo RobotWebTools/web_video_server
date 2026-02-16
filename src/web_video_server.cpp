@@ -69,7 +69,8 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
   subscriber_factory_loader_("web_video_server", "web_video_server::SubscriberFactoryInterface"),
   streamer_factory_loader_("web_video_server", "web_video_server::StreamerFactoryInterface"),
-  snapshot_streamer_factory_loader_("web_video_server", "web_video_server::SnapshotStreamerFactoryInterface")
+  snapshot_streamer_factory_loader_("web_video_server", 
+    "web_video_server::SnapshotStreamerFactoryInterface")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
@@ -95,7 +96,8 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       auto subscriber = subscriber_factory_loader_.createSharedInstance(cls);
       subscriber_factories_[subscriber->get_type()] = subscriber;
     } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_ERROR(get_logger(), "The subscriber plugin failed to load for some reason. Error: %s", ex.what());
+      RCLCPP_ERROR(get_logger(), 
+        "The subscriber plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
 
@@ -105,7 +107,8 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       auto streamer = streamer_factory_loader_.createSharedInstance(cls);
       streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_ERROR(get_logger(), "The streamer plugin failed to load for some reason. Error: %s", ex.what());
+      RCLCPP_ERROR(get_logger(), 
+        "The streamer plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
 
@@ -115,7 +118,8 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       auto streamer = snapshot_streamer_factory_loader_.createSharedInstance(cls);
       snapshot_streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_ERROR(get_logger(), "The snapshot plugin failed to load for some reason. Error: %s", ex.what());
+      RCLCPP_ERROR(get_logger(), 
+        "The snapshot plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
 

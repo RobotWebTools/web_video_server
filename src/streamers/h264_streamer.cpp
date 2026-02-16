@@ -54,11 +54,11 @@ namespace streamers
 
 H264Streamer::H264Streamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories, 
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: LibavStreamerBase(request, connection, subscriber_factories, node, 
-                    "h264_streamer", "mp4", "libx264", "video/mp4")
+: LibavStreamerBase(request, connection, subscriber_factories, node,
+  "h264_streamer", "mp4", "libx264", "video/mp4")
 {
   /* possible quality presets:
    * ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow, placebo
@@ -90,7 +90,7 @@ void H264Streamer::initialize_encoder()
 std::shared_ptr<StreamerInterface> H264StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<H264Streamer>(request, connection, subscriber_factories, node);

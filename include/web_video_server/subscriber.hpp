@@ -47,7 +47,7 @@
 
 namespace web_video_server
 {
-  typedef std::function<void(const sensor_msgs::msg::Image::ConstSharedPtr&)> ImageCallback;
+typedef std::function<void(const sensor_msgs::msg::Image::ConstSharedPtr&)> ImageCallback;
 
 class SubscriberInterface
 {
@@ -57,12 +57,13 @@ public:
   /**
    * @brief Starts the streaming process
    */
-  virtual void subscribe(const async_web_server_cpp::HttpRequest & request,
-                         const std::string & topic,
-                         const ImageCallback & callback) = 0;
+  virtual void subscribe(
+    const async_web_server_cpp::HttpRequest & request,
+    const std::string & topic,
+    const ImageCallback & callback) = 0;
 
 protected:
-  virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg) = 0;                         
+  virtual void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) = 0;                         
 };
 
 /**
@@ -75,13 +76,14 @@ public:
     rclcpp::Node::SharedPtr node,
     std::string logger_name = "subscriber");
 
-  std::mutex subscriber_mutex_;  
+  std::mutex subscriber_mutex_;
   
-  void subscribe(const async_web_server_cpp::HttpRequest & request,
-                 const std::string & topic,
-                 const ImageCallback & callback);
+  void subscribe(
+    const async_web_server_cpp::HttpRequest & request,
+    const std::string & topic,
+    const ImageCallback & callback);
 
-  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
   {
     try {
       callback_(input_msg);
@@ -91,7 +93,7 @@ public:
   }                 
 
  protected:
-  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg);                         
+  void subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);                         
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;

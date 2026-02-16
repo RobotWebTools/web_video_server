@@ -54,11 +54,11 @@ namespace streamers
 
 Vp8Streamer::Vp8Streamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : LibavStreamerBase(request, connection, subscriber_factories, node,
-                    "vp8_streamer", "webm", "libvpx", "video/webm")
+  "vp8_streamer", "webm", "libvpx", "video/webm")
 {
   quality_ = request.get_query_param_value_or_default("quality", "realtime");
 }
@@ -95,7 +95,7 @@ void Vp8Streamer::initialize_encoder()
 std::shared_ptr<StreamerInterface> Vp8StreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<Vp8Streamer>(request, connection, subscriber_factories, node);

@@ -44,19 +44,19 @@
 namespace web_video_server
 {
 
-  StreamerBase::StreamerBase(
+StreamerBase::StreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
   std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: connection_(connection)
-, request_(request)
-, subscriber_factories_(subscriber_factories)
-, node_(node)
-, logger_(node_.lock()->get_logger().get_child(logger_name))
-, inactive_(false)
-, topic_(request.get_query_param_value_or_default("topic", ""))
+: connection_(connection),
+  request_(request),
+  subscriber_factories_(subscriber_factories),
+  node_(node),
+  logger_(node_.lock()->get_logger().get_child(logger_name)),
+  inactive_(false),
+  topic_(request.get_query_param_value_or_default("topic", ""))
 {
 }
 
@@ -80,9 +80,9 @@ std::string StreamerFactoryInterface::create_viewer(
 }
 
 std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-    rclcpp::Node & node,   
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
-) {
+  rclcpp::Node & node,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories) 
+{
   return {};
 }
 

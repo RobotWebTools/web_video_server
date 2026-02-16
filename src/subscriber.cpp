@@ -47,22 +47,24 @@ namespace web_video_server
 SubscriberBase::SubscriberBase(
   rclcpp::Node::SharedPtr node,
   std::string logger_name)
-: node_(node)
-, logger_(node->get_logger().get_child(logger_name))
-, inactive_(false)
+: node_(node), 
+  logger_(node->get_logger().get_child(logger_name)), 
+  inactive_(false)
 {
 }
 
 void SubscriberBase::subscribe(
-  const async_web_server_cpp::HttpRequest & request, 
+  const async_web_server_cpp::HttpRequest & request,
   const std::string & topic,
   const ImageCallback & callback)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
   callback_ = callback;
-  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();    
-  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", default_qos_profile);
+  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
+  auto qos_profile_name = request.get_query_param_value_or_default(
+    "qos_profile", 
+    default_qos_profile);
 
   // Get QoS profile from query parameter
   RCLCPP_INFO(
@@ -72,20 +74,21 @@ void SubscriberBase::subscribe(
   if (!qos_profile) {
     qos_profile = rmw_qos_profile_default;
     RCLCPP_ERROR(
-     logger_, "Invalid QoS profile %s specified. Using default profile.",
+      logger_, "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name.c_str());
   }
 
   rclcpp::QoS qos = rclcpp::QoS(
-  rclcpp::QoSInitialization(qos_profile.value().history, 1),
-  qos_profile.value());
+    rclcpp::QoSInitialization(qos_profile.value().history, 1),
+    qos_profile.value());
 
   // Create subscriber
-  sub_ = node_->create_subscription<sensor_msgs::msg::Image>(topic, qos,
+  sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
+    topic, qos,
     std::bind(&SubscriberBase::subscriberCallback, this, std::placeholders::_1));
 }
 
-void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
@@ -93,8 +96,8 @@ void SubscriberBase::subscriberCallback(const sensor_msgs::msg::Image::ConstShar
 }
 
 std::vector<std::string> SubscriberFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */
-) {
+  rclcpp::Node & /* node */) 
+{
   return {};
 }
 

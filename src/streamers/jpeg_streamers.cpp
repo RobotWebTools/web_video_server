@@ -58,8 +58,8 @@ namespace streamers
 
 MjpegStreamer::MjpegStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : ImageStreamerBase(request, connection, subscriber_factories, node, "mjpeg_streamer"),
   stream_(connection)
@@ -91,7 +91,7 @@ void MjpegStreamer::send_image(
 std::shared_ptr<StreamerInterface> MjpegStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<MjpegStreamer>(request, connection, subscriber_factories, node);
@@ -100,7 +100,7 @@ std::shared_ptr<StreamerInterface> MjpegStreamerFactory::create_streamer(
 JpegSnapshotStreamer::JpegSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories, 
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : ImageStreamerBase(request, connection, subscriber_factories, node, "jpeg_snapshot_streamer")
 {
@@ -147,10 +147,12 @@ void JpegSnapshotStreamer::send_image(
 std::shared_ptr<StreamerInterface> JpegSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
-  return std::make_shared<JpegSnapshotStreamer>(request, connection, subscriber_factories,std::move(node));
+  return std::make_shared<JpegSnapshotStreamer>(
+    request, connection, subscriber_factories, 
+    std::move(node));
 }
 
 }  // namespace streamers

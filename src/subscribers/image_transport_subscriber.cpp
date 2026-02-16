@@ -44,7 +44,9 @@ ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr _node
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  if (!node_->has_parameter("default_transport")) node_->declare_parameter("default_transport", "raw");
+  if (!node_->has_parameter("default_transport")) {
+    node_->declare_parameter("default_transport", "raw");
+  }
 }
 
 ImageTransportSubscriber::~ImageTransportSubscriber()
@@ -53,18 +55,23 @@ ImageTransportSubscriber::~ImageTransportSubscriber()
   inactive_ = true;
 }
 
-void ImageTransportSubscriber::subscribe(const async_web_server_cpp::HttpRequest &request,
-                                         const std::string& topic, 
-                                         const ImageCallback& callback)
+void ImageTransportSubscriber::subscribe(
+  const async_web_server_cpp::HttpRequest &request,
+  const std::string& topic, 
+  const ImageCallback& callback)
 {
   std::scoped_lock lock(subscriber_mutex_);
   
   callback_ = callback;
-  std::string default_transport = node_->get_parameter("default_transport").as_string();  
-  std::string transport = request.get_query_param_value_or_default("default_transport", default_transport);
+  std::string default_transport = node_->get_parameter("default_transport").as_string();
+  std::string transport = request.get_query_param_value_or_default(
+    "default_transport", 
+    default_transport);
 
-  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();    
-  auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", default_qos_profile);
+  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
+  auto qos_profile_name = request.get_query_param_value_or_default(
+    "qos_profile", 
+    default_qos_profile);
 
   // Get QoS profile from query parameter
   RCLCPP_INFO(
@@ -81,29 +88,31 @@ void ImageTransportSubscriber::subscribe(const async_web_server_cpp::HttpRequest
 
   const auto qos = qos_profile.value();
   
-  sub_ = image_transport::create_subscription(node_.get(), topic, 
-             std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1), 
-             transport, qos);
+  sub_ = image_transport::create_subscription(
+    node_.get(), topic, 
+    std::bind(&ImageTransportSubscriber::subscriberCallback, this, std::placeholders::_1), 
+    transport, qos);
 }
 
-void ImageTransportSubscriber::subscriberCallback(const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
+void ImageTransportSubscriber::subscriberCallback(
+  const sensor_msgs::msg::Image::ConstSharedPtr &input_msg)
 {
   std::scoped_lock lock(subscriber_mutex_);
 
-  if(inactive_) return;
+  if(inactive_) {return;}
   
   try_forward_image(input_msg);
 }
 
 std::shared_ptr<SubscriberInterface> ImageTransportSubscriberFactory::create_subscriber(
-    rclcpp::Node::SharedPtr node)
+  rclcpp::Node::SharedPtr node)
 {
   return std::make_shared<ImageTransportSubscriber>(node);
 }
 
 std::vector<std::string> ImageTransportSubscriberFactory::get_available_topics(
-  rclcpp::Node & node
-) {
+  rclcpp::Node & node) 
+{
   std::vector<std::string> result;
   auto topic_names_and_types = node.get_topic_names_and_types();
   for (const auto & topic_and_types : topic_names_and_types) {

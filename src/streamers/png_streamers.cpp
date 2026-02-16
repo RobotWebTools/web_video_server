@@ -64,11 +64,11 @@ namespace streamers
 
 PngStreamer::PngStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, 
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,  
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: ImageStreamerBase(request, connection, subscriber_factories, node, "png_streamer")
-, stream_(connection)
+: ImageStreamerBase(request, connection, subscriber_factories, node, "png_streamer"), 
+  stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
   stream_.send_initial_header();
@@ -107,7 +107,7 @@ void PngStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<PngStreamer>(request, connection, subscriber_factories, node);
@@ -116,7 +116,7 @@ std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
 PngSnapshotStreamer::PngSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 : ImageStreamerBase(request, connection, subscriber_factories, node)
 {
@@ -173,7 +173,7 @@ void PngSnapshotStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,   
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   return std::make_shared<PngSnapshotStreamer>(request, connection, subscriber_factories, node);

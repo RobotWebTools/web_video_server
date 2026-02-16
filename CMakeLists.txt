@@ -46,7 +46,7 @@ add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp
   src/multipart_stream.cpp
   src/streamer.cpp
-  src/subscriber.cpp  
+  src/subscriber.cpp
   src/utils.cpp
 )
 
@@ -62,7 +62,7 @@ target_link_libraries(${PROJECT_NAME}
     async_web_server_cpp::async_web_server_cpp
     pluginlib::pluginlib
     rclcpp::rclcpp
-    ${sensor_msgs_TARGETS}    
+    ${sensor_msgs_TARGETS}
     rmw::rmw
     Boost::boost
   PRIVATE
