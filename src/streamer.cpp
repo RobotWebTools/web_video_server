@@ -29,11 +29,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 #include <vector>
 #include <sstream>
 #include <string>
-#include <utility>
+#include <map>
+#include <memory>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
@@ -52,8 +54,8 @@ StreamerBase::StreamerBase(
   std::string logger_name)
 : connection_(connection),
   request_(request),
-  subscriber_factories_(subscriber_factories),
   node_(node),
+  subscriber_factories_(subscriber_factories),
   logger_(node_.lock()->get_logger().get_child(logger_name)),
   inactive_(false),
   topic_(request.get_query_param_value_or_default("topic", ""))

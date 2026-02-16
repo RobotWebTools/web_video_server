@@ -31,14 +31,13 @@
 #include "web_video_server/subscriber.hpp"
 
 #include <vector>
-#include <sstream>
+#include <mutex>
 #include <string>
-#include <utility>
+#include <functional>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 
-#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 
 namespace web_video_server
@@ -58,10 +57,10 @@ void SubscriberBase::subscribe(
   const std::string & topic,
   const ImageCallback & callback)
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
 
   callback_ = callback;
-  std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
+  const std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
     "qos_profile",
     default_qos_profile);
@@ -90,7 +89,7 @@ void SubscriberBase::subscribe(
 
 void SubscriberBase::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
 
   try_forward_image(input_msg);
 }

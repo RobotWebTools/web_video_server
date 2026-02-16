@@ -42,7 +42,7 @@ namespace subscribers
 ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr _node)
 : SubscriberBase(_node, "image_transport_subscriber")
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
 
   if (!node_->has_parameter("default_transport")) {
     node_->declare_parameter("default_transport", "raw");
@@ -51,7 +51,7 @@ ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr _node
 
 ImageTransportSubscriber::~ImageTransportSubscriber()
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
   inactive_ = true;
 }
 
@@ -60,7 +60,7 @@ void ImageTransportSubscriber::subscribe(
   const std::string & topic,
   const ImageCallback & callback)
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
 
   callback_ = callback;
   std::string default_transport = node_->get_parameter("default_transport").as_string();
@@ -97,7 +97,7 @@ void ImageTransportSubscriber::subscribe(
 void ImageTransportSubscriber::subscriber_callback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
-  std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex);
 
   if (inactive_) {return;}
 

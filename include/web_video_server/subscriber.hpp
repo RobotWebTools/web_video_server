@@ -72,7 +72,7 @@ protected:
 class SubscriberBase : public SubscriberInterface
 {
 public:
-  SubscriberBase(
+  explicit SubscriberBase(
     rclcpp::Node::SharedPtr node,
     std::string logger_name = "subscriber");
 
@@ -93,7 +93,7 @@ public:
   }
 
 protected:
-  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) override;
 
   rclcpp::Node::SharedPtr node_;
   rclcpp::Logger logger_;

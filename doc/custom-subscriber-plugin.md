@@ -79,7 +79,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
     TestSubscriber::TestSubscriber(rclcpp::Node::SharedPtr node)
     : web_video_server::SubscriberBase(node, "test_subscriber")
     {
-      std::scoped_lock lock(subscriber_mutex);
+      const std::scoped_lock lock(subscriber_mutex);
       
       RCLCPP_INFO(logger_, "TestSubscriber created!");
 
@@ -89,7 +89,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
 
     TestSubscriber::~TestSubscriber()
     {
-      std::scoped_lock lock(subscriber_mutex);
+      const std::scoped_lock lock(subscriber_mutex);
       inactive_ = true;
       
       RCLCPP_INFO(logger_, "TestSubscriber destroyed!");
@@ -99,7 +99,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
                                    const std::string& topic, 
                                    const web_video_server::ImageCallback& callback)
     {
-      std::scoped_lock lock(subscriber_mutex);
+      const std::scoped_lock lock(subscriber_mutex);
 
       callback_ = callback;
       
@@ -141,7 +141,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
 
     void TestSubscriber::subscriber_callback(const std_msgs::msg::String::ConstSharedPtr &input_msg)
     {
-      std::scoped_lock lock(subscriber_mutex);
+      const std::scoped_lock lock(subscriber_mutex);
 
       if(inactive_) return;      
 

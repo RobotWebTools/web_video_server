@@ -67,10 +67,12 @@ namespace web_video_server
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
-  subscriber_factory_loader_("web_video_server", "web_video_server::SubscriberFactoryInterface"),
-  streamer_factory_loader_("web_video_server", "web_video_server::StreamerFactoryInterface"),
+  streamer_factory_loader_("web_video_server",
+    "web_video_server::StreamerFactoryInterface"),
   snapshot_streamer_factory_loader_("web_video_server",
-    "web_video_server::SnapshotStreamerFactoryInterface")
+    "web_video_server::SnapshotStreamerFactoryInterface"),
+  subscriber_factory_loader_("web_video_server",
+    "web_video_server::SubscriberFactoryInterface")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
