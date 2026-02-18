@@ -51,7 +51,8 @@ StreamerBase::StreamerBase(
   std::string logger_name)
 : connection_(connection), request_(request), node_(std::move(node)),
   logger_(node_.lock()->get_logger().get_child(logger_name)), inactive_(false),
-  topic_(request.get_query_param_value_or_default("topic", ""))
+  topic_(request.get_query_param_value_or_default("topic", "")),
+  client_id_(request.get_query_param_value_or_default("client_id", ""))
 {
 }
 

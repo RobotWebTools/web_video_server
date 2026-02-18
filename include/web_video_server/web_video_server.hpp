@@ -89,6 +89,11 @@ public:
     async_web_server_cpp::HttpConnectionPtr connection,
     const char * begin, const char * end);
 
+  bool handle_shutdown(
+    const async_web_server_cpp::HttpRequest & request,
+    async_web_server_cpp::HttpConnectionPtr connection,
+    const char * begin, const char * end);
+
   bool handle_list_streams(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,

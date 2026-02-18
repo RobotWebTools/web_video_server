@@ -57,6 +57,11 @@ public:
   virtual void start() = 0;
 
   /**
+   * @brief Stops the streaming process and marks the streamer as inactive.
+   */
+  virtual void stop() {}
+
+  /**
    * @brief Returns true if the streamer is inactive and should be deleted.
    *
    * This could be because the connection was closed or snapshot was successfully sent (in case
@@ -73,6 +78,14 @@ public:
    * @brief Returns the topic being streamed.
    */
   virtual std::string get_topic() = 0;
+
+  /**
+   * @brief Returns the client_id associated with this stream, or an empty string if none.
+   */
+  virtual std::string get_client_id()
+  {
+    return "";
+  }
 };
 
 /**
@@ -87,6 +100,12 @@ public:
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
 
+  void stop() override
+  {
+    inactive_ = true;
+    connection_.reset();
+  }
+
   bool is_inactive() override
   {
     return inactive_;
@@ -95,6 +114,11 @@ public:
   std::string get_topic() override
   {
     return topic_;
+  }
+
+  std::string get_client_id() override
+  {
+    return client_id_;
   }
 
 protected:
@@ -106,6 +130,7 @@ protected:
   rclcpp::Logger logger_;
   bool inactive_;
   std::string topic_;
+  std::string client_id_;
 };
 
 /**
