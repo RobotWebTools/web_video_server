@@ -294,9 +294,10 @@ bool WebVideoServer::handle_shutdown(
   }
 
   if (verbose_) {
+    const std::string client_id_info = client_id.empty() ? "" : " (client_id='" + client_id + "')";
     RCLCPP_INFO(
-      get_logger(), "Shutdown request for topic '%s' (client_id='%s'): stopped %d stream(s)",
-      topic.c_str(), client_id.c_str(), stopped);
+      get_logger(), "Shutdown request for topic '%s'%s: stopped %d stream(s)",
+      topic.c_str(), client_id_info.c_str(), stopped);
   }
 
   async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
