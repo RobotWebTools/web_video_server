@@ -59,7 +59,7 @@ public:
   /**
    * @brief Stops the streaming process and marks the streamer as inactive.
    */
-  virtual void stop() {}
+  virtual void stop() = 0;
 
   /**
    * @brief Returns true if the streamer is inactive and should be deleted.
