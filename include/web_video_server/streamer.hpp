@@ -82,10 +82,7 @@ public:
   /**
    * @brief Returns the client_id associated with this stream, or an empty string if none.
    */
-  virtual std::string get_client_id()
-  {
-    return "";
-  }
+  virtual std::string get_client_id() = 0;
 };
 
 /**
