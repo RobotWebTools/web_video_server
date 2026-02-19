@@ -58,6 +58,7 @@ StreamerBase::StreamerBase(
   logger_(node_.lock()->get_logger().get_child(logger_name)),
   inactive_(false),
   topic_(request.get_query_param_value_or_default("topic", "")),
+  client_id_(request.get_query_param_value_or_default("client_id", "")),
   subscriber_factories_(subscriber_factories)
 {
 }
