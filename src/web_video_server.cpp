@@ -120,6 +120,9 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   handler_group_.addHandlerForPath(
     "/snapshot",
     boost::bind(&WebVideoServer::handle_snapshot, this, _1, _2, _3, _4));
+  handler_group_.addHandlerForPath(
+    "/shutdown",
+    boost::bind(&WebVideoServer::handle_shutdown, this, _1, _2, _3, _4));
 
   try {
     server_.reset(
@@ -260,6 +263,50 @@ bool WebVideoServer::handle_stream_viewer(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);
   }
+  return true;
+}
+
+bool WebVideoServer::handle_shutdown(
+  const async_web_server_cpp::HttpRequest & request,
+  async_web_server_cpp::HttpConnectionPtr connection, const char * begin,
+  const char * end)
+{
+  const std::string topic = request.get_query_param_value_or_default("topic", "");
+  if (topic.empty()) {
+    async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::bad_request)(
+      request, connection, begin, end);
+    return true;
+  }
+
+  const std::string client_id = request.get_query_param_value_or_default("client_id", "");
+
+  int stopped = 0;
+  {
+    const std::scoped_lock lock(streamers_mutex_);
+    for (auto & streamer : streamers_) {
+      if (streamer->get_topic() == topic) {
+        if (client_id.empty() || streamer->get_client_id() == client_id) {
+          streamer->stop();
+          ++stopped;
+        }
+      }
+    }
+  }
+
+  if (verbose_) {
+    const std::string client_id_info = client_id.empty() ? "" : " (client_id='" + client_id + "')";
+    RCLCPP_INFO(
+      get_logger(), "Shutdown request for topic '%s'%s: stopped %d stream(s)",
+      topic.c_str(), client_id_info.c_str(), stopped);
+  }
+
+  async_web_server_cpp::HttpReply::builder(async_web_server_cpp::HttpReply::ok)
+  .header("Connection", "close")
+  .header("Server", "web_video_server")
+  .header("Content-type", "text/plain;")
+  .write(connection);
+
+  connection->write("stopped=" + std::to_string(stopped));
   return true;
 }
 

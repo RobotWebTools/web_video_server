@@ -178,6 +178,35 @@ http://localhost:8080/snapshot?topic=/camera/image_raw
 | `default_transport` | string | "raw" | "raw", "compressed", "theora" | Image transport to use |
 | `qos_profile` | string | "default" | "default", "system_default", "sensor_data", "services_default" | QoS profile for ROS 2 subscribers |
 
+### Stop an Active Stream
+
+To stop one or more active streams from the server side (e.g. when a UI component unmounts), use the `/shutdown` endpoint:
+
+```
+http://localhost:8080/shutdown?topic=/camera/image_raw
+```
+
+This closes all active streams for the given topic. An optional `client_id` parameter scopes the shutdown to a single named connection:
+
+```
+http://localhost:8080/shutdown?topic=/camera/image_raw&client_id=my-ui
+```
+
+To associate a stream with a `client_id`, pass it when opening the stream:
+
+```
+http://localhost:8080/stream?topic=/camera/image_raw&client_id=my-ui
+```
+
+The response is plain text in the form `stopped=<count>`, where `<count>` is the number of streams that were stopped. Returns `400 Bad Request` if `topic` is omitted.
+
+#### URL Parameters for Shutdown
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `topic` | string | (required) | The ROS topic whose streams should be stopped |
+| `client_id` | string | (none) | If provided, only the stream with this client_id is stopped |
+
 ## Creating custom streamer plugins
 See the [custom streamer plugin tutorial](doc/custom-streamer-plugin.md) for information on how to write your own streamer plugins.
 
