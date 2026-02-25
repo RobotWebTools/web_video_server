@@ -2,6 +2,11 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+3.1.0 (2026-02-25)
+------------------
+* feat: Add shutdown handler for client to call and close alive sockets (#194)
+* Contributors: Błażej Sowa, varunverlencar
+
 3.0.0 (2026-01-30)
 ------------------
 * refactor: Add clang-tidy checks (#195)
