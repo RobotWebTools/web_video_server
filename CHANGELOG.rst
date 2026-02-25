@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.1.0 (2026-02-25)
+------------------
 * feat: Add shutdown handler for client to call and close alive sockets (#194)
 * Contributors: Błażej Sowa, varunverlencar
 
