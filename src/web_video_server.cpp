@@ -34,6 +34,7 @@
 #include <chrono>
 #include <cstring>
 #include <exception>
+#include <iterator>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -147,7 +148,9 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       [this]() {restream_frames(1s / publish_rate_);});
   }
 
-  cleanup_timer_ = create_wall_timer(500ms, [this]() {cleanup_inactive_streams();});
+  resource_management_timer_ = create_wall_timer(100ms,
+      [this]() {resourse_management_timer_callback();}
+  );
 
   server_->run();
 }
@@ -166,6 +169,27 @@ void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
   }
 }
 
+void WebVideoServer::activate_pending_streamers()
+{
+  std::vector<std::shared_ptr<StreamerInterface>> to_activate;
+  {
+    const std::scoped_lock lock(pending_mutex_);
+    to_activate.swap(pending_streamers_);
+  }
+
+  for (auto & streamer : to_activate) {
+    streamer->start();
+  }
+
+  if (!to_activate.empty()) {
+    const std::scoped_lock lock(streamers_mutex_);
+    streamers_.insert(
+      streamers_.end(),
+      std::make_move_iterator(to_activate.begin()),
+      std::make_move_iterator(to_activate.end()));
+  }
+}
+
 void WebVideoServer::cleanup_inactive_streams()
 {
   const std::unique_lock lock(streamers_mutex_, std::try_to_lock);
@@ -180,6 +204,12 @@ void WebVideoServer::cleanup_inactive_streams()
     }
     streamers_.erase(new_end, streamers_.end());
   }
+}
+
+void WebVideoServer::resourse_management_timer_callback()
+{
+  activate_pending_streamers();
+  cleanup_inactive_streams();
 }
 
 bool WebVideoServer::handle_request(
@@ -208,9 +238,8 @@ bool WebVideoServer::handle_stream(
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
     const std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
       request, connection, weak_from_this());
-    streamer->start();
-    const std::scoped_lock lock(streamers_mutex_);
-    streamers_.push_back(streamer);
+    const std::scoped_lock lock(pending_mutex_);
+    pending_streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);
@@ -228,9 +257,8 @@ bool WebVideoServer::handle_snapshot(
     const std::shared_ptr<StreamerInterface> streamer =
       snapshot_streamer_factories_[type]->create_streamer(
       request, connection, weak_from_this());
-    streamer->start();
-    const std::scoped_lock lock(streamers_mutex_);
-    streamers_.push_back(streamer);
+    const std::scoped_lock lock(pending_mutex_);
+    pending_streamers_.push_back(streamer);
   } else {
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
       request, connection, begin, end);

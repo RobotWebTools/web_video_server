@@ -101,10 +101,12 @@ public:
 
 private:
   void restream_frames(std::chrono::duration<double> max_age);
+  void activate_pending_streamers();
   void cleanup_inactive_streams();
+  void resourse_management_timer_callback();
 
   rclcpp::TimerBase::SharedPtr restream_timer_;
-  rclcpp::TimerBase::SharedPtr cleanup_timer_;
+  rclcpp::TimerBase::SharedPtr resource_management_timer_;
 
   // Parameters
   double publish_rate_;
@@ -118,11 +120,13 @@ private:
   async_web_server_cpp::HttpRequestHandlerGroup handler_group_;
 
   std::vector<std::shared_ptr<StreamerInterface>> streamers_;
+  std::vector<std::shared_ptr<StreamerInterface>> pending_streamers_;
   pluginlib::ClassLoader<StreamerFactoryInterface> streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> streamer_factories_;
   pluginlib::ClassLoader<SnapshotStreamerFactoryInterface> snapshot_streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> snapshot_streamer_factories_;
   std::mutex streamers_mutex_;
+  std::mutex pending_mutex_;
 };
 
 }  // namespace web_video_server
