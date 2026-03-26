@@ -125,7 +125,7 @@ protected:
   async_web_server_cpp::HttpRequest request_;
   rclcpp::Node::WeakPtr node_;
   rclcpp::Logger logger_;
-  bool inactive_;
+  std::atomic<bool> inactive_;
   std::string topic_;
   std::string client_id_;
 };
