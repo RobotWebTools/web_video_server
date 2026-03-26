@@ -147,10 +147,14 @@ void ImageTransportStreamerBase::start()
   }
 
   // Create subscriber
+  callback_group_ = node->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive, false);
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.callback_group = callback_group_;
   image_sub_ = image_transport::create_subscription(
     node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
-    default_transport_, qos_profile.value());
+    default_transport_, qos_profile.value(), sub_options);
 }
 
 #pragma GCC diagnostic pop

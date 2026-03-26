@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 #include <string>
@@ -37,6 +38,7 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
+#include "rclcpp/callback_group.hpp"
 #include "rclcpp/logger.hpp"
 #include "rclcpp/node.hpp"
 
@@ -83,6 +85,8 @@ public:
    * @brief Returns the client_id associated with this stream, or an empty string if none.
    */
   virtual std::string get_client_id() = 0;
+
+  virtual rclcpp::CallbackGroup::SharedPtr get_callback_group() const { return nullptr; }
 };
 
 /**
@@ -118,12 +122,15 @@ public:
     return client_id_;
   }
 
+  rclcpp::CallbackGroup::SharedPtr get_callback_group() const override { return callback_group_; }
+
 protected:
   rclcpp::Node::SharedPtr lock_node() const;
 
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
   rclcpp::Node::WeakPtr node_;
+  rclcpp::CallbackGroup::SharedPtr callback_group_;
   rclcpp::Logger logger_;
   std::atomic<bool> inactive_;
   std::string topic_;

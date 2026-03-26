@@ -114,12 +114,15 @@ rclcpp::Subscription<CompressedImage>::SharedPtr create_compressed_image_subscri
   const std::string & qos_profile_name,
   const rclcpp::Node::SharedPtr & node,
   const rclcpp::Logger & logger,
-  CallbackT && callback)
+  CallbackT && callback,
+  rclcpp::CallbackGroup::SharedPtr callback_group)
 {
   const std::string compressed_topic = topic + "/compressed";
   const auto qos = make_compressed_qos(compressed_topic, qos_profile_name, logger);
+  rclcpp::SubscriptionOptions sub_options;
+  sub_options.callback_group = callback_group;
   return node->create_subscription<CompressedImage>(
-    compressed_topic, qos, std::forward<CallbackT>(callback));
+    compressed_topic, qos, std::forward<CallbackT>(callback), sub_options);
 }
 
 bool has_compressed_topic(rclcpp::Node & node, const std::string & topic)
@@ -185,9 +188,13 @@ void RosCompressedStreamer::start()
     return;
   }
 
+  callback_group_ = node->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive, false);
+
   image_sub_ = create_compressed_image_subscription(
     topic_, qos_profile_name_, node, logger_,
-    std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1));
+    std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1),
+    callback_group_);
 }
 
 void RosCompressedStreamer::restream_frame(std::chrono::duration<double> max_age)
@@ -300,9 +307,13 @@ void RosCompressedSnapshotStreamer::start()
     return;
   }
 
+  callback_group_ = node->create_callback_group(
+    rclcpp::CallbackGroupType::MutuallyExclusive, false);
+
   image_sub_ = create_compressed_image_subscription(
     topic_, qos_profile_name_, node, logger_,
-    std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1));
+    std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1),
+    callback_group_);
 }
 
 void RosCompressedSnapshotStreamer::restream_frame(std::chrono::duration<double>/* max_age */)

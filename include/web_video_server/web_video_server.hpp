@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <map>
 #include <memory>
@@ -121,12 +122,14 @@ private:
 
   std::vector<std::shared_ptr<StreamerInterface>> streamers_;
   std::vector<std::shared_ptr<StreamerInterface>> pending_streamers_;
+  std::vector<std::thread> streamer_threads_;
   pluginlib::ClassLoader<StreamerFactoryInterface> streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> streamer_factories_;
   pluginlib::ClassLoader<SnapshotStreamerFactoryInterface> snapshot_streamer_factory_loader_;
   std::map<std::string, std::shared_ptr<StreamerFactoryInterface>> snapshot_streamer_factories_;
   std::mutex streamers_mutex_;
   std::mutex pending_mutex_;
+  std::atomic<bool> creation_in_progress_{false};
 };
 
 }  // namespace web_video_server

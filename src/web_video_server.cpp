@@ -41,6 +41,7 @@
 #include <set>
 #include <string>
 #include <sstream>
+#include <thread>
 #include <vector>
 
 #include <boost/algorithm/string/join.hpp>
@@ -53,9 +54,11 @@
 #include "async_web_server_cpp/http_reply.hpp"
 #include "async_web_server_cpp/http_server.hpp"
 #include "pluginlib/exceptions.hpp"
+#include "rclcpp/executors/single_threaded_executor.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/node_options.hpp"
 #include "rclcpp/logging.hpp"
+#include "rclcpp/utilities.hpp"
 
 #include "web_video_server/streamer.hpp"
 
@@ -157,6 +160,23 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 
 WebVideoServer::~WebVideoServer()
 {
+  // Mark all streamers inactive so their executor loops exit.
+  {
+    const std::scoped_lock lock(streamers_mutex_);
+    for (auto & streamer : streamers_) {
+      streamer->stop();
+    }
+    streamers_.clear();
+  }
+
+  // Join all per-subscription threads before tearing down rclcpp context.
+  for (auto & t : streamer_threads_) {
+    if (t.joinable()) {
+      t.join();
+    }
+  }
+  streamer_threads_.clear();
+
   server_->stop();
 }
 
@@ -171,38 +191,97 @@ void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 
 void WebVideoServer::activate_pending_streamers()
 {
-  std::vector<std::shared_ptr<StreamerInterface>> to_activate;
+  // Activate only ONE pending streamer per timer tick.  create_subscription()
+  // in FastDDS serialises on a participant-level mutex, so spawning many
+  // threads that all call it concurrently just makes them pile up.  If one
+  // gets stuck (FastDDS internal deadlock), all the others block behind it.
+  // Processing one at a time limits the blast radius to a single thread.
+  std::shared_ptr<StreamerInterface> streamer;
   {
     const std::scoped_lock lock(pending_mutex_);
-    to_activate.swap(pending_streamers_);
+    if (pending_streamers_.empty()) {
+      return;
+    }
+    streamer = pending_streamers_.front();
+    pending_streamers_.erase(pending_streamers_.begin());
   }
 
-  for (auto & streamer : to_activate) {
-    streamer->start();
-  }
-
-  if (!to_activate.empty()) {
+  // Add to the active list immediately.  The streamer won't produce output
+  // until start() sets up its subscription, and cleanup_inactive_streams()
+  // will collect it if start() fails (sets inactive_ = true).
+  {
     const std::scoped_lock lock(streamers_mutex_);
-    streamers_.insert(
-      streamers_.end(),
-      std::make_move_iterator(to_activate.begin()),
-      std::make_move_iterator(to_activate.end()));
+    streamers_.push_back(streamer);
   }
+
+  // Call start() on its own thread.  create_subscription() can deadlock
+  // inside FastDDS (lock-ordering between reader mutex and PDP/EDP mutexes),
+  // so we must not block the timer callback on it.
+  //
+  // The thread also spins an isolated SingleThreadedExecutor for the
+  // streamer's callback group.  This keeps subscription callbacks completely
+  // out of the main executor — if one DDS reader deadlocks, only that
+  // stream's thread is affected; all other streams and the management
+  // timers keep running.
+  auto weak_node = weak_from_this();
+  streamer_threads_.emplace_back([s = streamer, weak_node]() {
+    s->start();
+    if (s->is_inactive()) {
+      return;
+    }
+
+    auto node = weak_node.lock();
+    if (!node) {
+      return;
+    }
+
+    auto cb_group = s->get_callback_group();
+    if (!cb_group) {
+      return;
+    }
+
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_callback_group(cb_group, node->get_node_base_interface());
+
+    while (!s->is_inactive() && rclcpp::ok()) {
+      executor.spin_once(std::chrono::milliseconds(100));
+    }
+  });
 }
 
 void WebVideoServer::cleanup_inactive_streams()
 {
-  const std::unique_lock lock(streamers_mutex_, std::try_to_lock);
-  if (lock) {
-    auto new_end = std::partition(
-      streamers_.begin(), streamers_.end(),
-      [](const std::shared_ptr<StreamerInterface> & streamer) {return !streamer->is_inactive();});
-    if (verbose_) {
-      for (auto itr = new_end; itr < streamers_.end(); ++itr) {
-        RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->get_topic().c_str());
+  std::vector<std::shared_ptr<StreamerInterface>> to_destroy;
+  {
+    const std::unique_lock lock(streamers_mutex_, std::try_to_lock);
+    if (lock) {
+      auto new_end = std::partition(
+        streamers_.begin(), streamers_.end(),
+        [](const std::shared_ptr<StreamerInterface> & streamer) {
+          return !streamer->is_inactive();
+        });
+      if (verbose_) {
+        for (auto itr = new_end; itr < streamers_.end(); ++itr) {
+          RCLCPP_INFO(get_logger(), "Removed Stream: %s", (*itr)->get_topic().c_str());
+        }
       }
+      // Move dead streamers out — don't destroy them while holding the lock
+      // or on the executor thread.
+      to_destroy.assign(
+        std::make_move_iterator(new_end),
+        std::make_move_iterator(streamers_.end()));
+      streamers_.erase(new_end, streamers_.end());
     }
-    streamers_.erase(new_end, streamers_.end());
+  }
+
+  if (!to_destroy.empty()) {
+    // Destroy on a detached thread.  Subscription teardown calls
+    // deleteUserEndpoint which waits on the DDS event thread — if that
+    // thread is stuck (FastDDS internal deadlock), we'd block the entire
+    // main executor.  A throwaway thread can afford to wait.
+    std::thread([captured = std::move(to_destroy)]() mutable {
+      captured.clear();
+    }).detach();
   }
 }
 
