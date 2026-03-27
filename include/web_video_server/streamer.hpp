@@ -107,10 +107,7 @@ public:
     connection_.reset();
   }
 
-  bool is_inactive() override
-  {
-    return inactive_;
-  }
+  bool is_inactive() override;
 
   std::string get_topic() override
   {

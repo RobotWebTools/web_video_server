@@ -30,10 +30,14 @@
 
 #include "web_video_server/streamer.hpp"
 
+#include <cerrno>
 #include <vector>
 #include <sstream>
 #include <string>
 #include <utility>
+
+#include <sys/socket.h>
+#include <netinet/tcp.h>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
@@ -54,6 +58,58 @@ StreamerBase::StreamerBase(
   topic_(request.get_query_param_value_or_default("topic", "")),
   client_id_(request.get_query_param_value_or_default("client_id", ""))
 {
+  // Enable TCP keepalive with aggressive probing so the kernel detects
+  // dead connections even when the peer vanishes without sending FIN
+  // (e.g. network drop, killed process).  After idle_s + cnt * intvl_s
+  // seconds of silence the OS marks the socket dead, and our is_inactive()
+  // recv(MSG_PEEK) check will see the error.
+  try {
+    int fd = connection_->socket().native_handle();
+    int on = 1;
+    setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
+    int idle_s = 5;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle_s, sizeof(idle_s));
+    int intvl_s = 1;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &intvl_s, sizeof(intvl_s));
+    int cnt = 3;
+    setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &cnt, sizeof(cnt));
+  } catch (...) {
+    // Non-critical — fall through to the FIN-based detection.
+  }
+}
+
+bool StreamerBase::is_inactive()
+{
+  if (inactive_) {
+    return true;
+  }
+  // Detect closed TCP connections that would otherwise go unnoticed
+  // when no messages arrive on the subscribed topic (nothing triggers
+  // a write, so async_web_server_cpp never sees the broken pipe).
+  if (connection_) {
+    try {
+      auto & socket = connection_->socket();
+      if (!socket.is_open()) {
+        inactive_ = true;
+        return true;
+      }
+      char buf;
+      ssize_t ret = ::recv(socket.native_handle(), &buf, 1, MSG_PEEK | MSG_DONTWAIT);
+      if (ret == 0) {
+        // Peer sent FIN — connection closed.
+        inactive_ = true;
+        return true;
+      }
+      if (ret < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        inactive_ = true;
+        return true;
+      }
+    } catch (...) {
+      inactive_ = true;
+      return true;
+    }
+  }
+  return false;
 }
 
 rclcpp::Node::SharedPtr StreamerBase::lock_node() const

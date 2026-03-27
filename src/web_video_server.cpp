@@ -199,6 +199,16 @@ void WebVideoServer::activate_pending_streamers()
   std::shared_ptr<StreamerInterface> streamer;
   {
     const std::scoped_lock lock(pending_mutex_);
+    // Purge pending streamers whose connections have already closed.
+    // With rapid open/close clients the TCP peer may have sent FIN long
+    // before we get to activate the streamer; creating a subscription
+    // for a dead connection wastes resources and the stream would never
+    // be cleaned up (no messages → no write → no error detection).
+    pending_streamers_.erase(
+      std::remove_if(
+        pending_streamers_.begin(), pending_streamers_.end(),
+        [](const std::shared_ptr<StreamerInterface> & s) { return s->is_inactive(); }),
+      pending_streamers_.end());
     if (pending_streamers_.empty()) {
       return;
     }
