@@ -86,7 +86,7 @@ public:
    */
   virtual std::string get_client_id() = 0;
 
-  virtual rclcpp::CallbackGroup::SharedPtr get_callback_group() const { return nullptr; }
+  virtual rclcpp::CallbackGroup::SharedPtr get_callback_group() const {return nullptr;}
 };
 
 /**
@@ -119,7 +119,7 @@ public:
     return client_id_;
   }
 
-  rclcpp::CallbackGroup::SharedPtr get_callback_group() const override { return callback_group_; }
+  rclcpp::CallbackGroup::SharedPtr get_callback_group() const override {return callback_group_;}
 
 protected:
   rclcpp::Node::SharedPtr lock_node() const;

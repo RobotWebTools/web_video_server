@@ -151,8 +151,9 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
       [this]() {restream_frames(1s / publish_rate_);});
   }
 
-  resource_management_timer_ = create_wall_timer(100ms,
-      [this]() {resourse_management_timer_callback();}
+  resource_management_timer_ = create_wall_timer(
+    100ms,
+    [this]() {resourse_management_timer_callback();}
   );
 
   server_->run();
@@ -207,7 +208,7 @@ void WebVideoServer::activate_pending_streamers()
     pending_streamers_.erase(
       std::remove_if(
         pending_streamers_.begin(), pending_streamers_.end(),
-        [](const std::shared_ptr<StreamerInterface> & s) { return s->is_inactive(); }),
+        [](const std::shared_ptr<StreamerInterface> & s) {return s->is_inactive();}),
       pending_streamers_.end());
     if (pending_streamers_.empty()) {
       return;
@@ -234,29 +235,30 @@ void WebVideoServer::activate_pending_streamers()
   // stream's thread is affected; all other streams and the management
   // timers keep running.
   auto weak_node = weak_from_this();
-  streamer_threads_.emplace_back([s = streamer, weak_node]() {
-    s->start();
-    if (s->is_inactive()) {
-      return;
-    }
+  streamer_threads_.emplace_back(
+    [s = streamer, weak_node]() {
+      s->start();
+      if (s->is_inactive()) {
+        return;
+      }
 
-    auto node = weak_node.lock();
-    if (!node) {
-      return;
-    }
+      auto node = weak_node.lock();
+      if (!node) {
+        return;
+      }
 
-    auto cb_group = s->get_callback_group();
-    if (!cb_group) {
-      return;
-    }
+      auto cb_group = s->get_callback_group();
+      if (!cb_group) {
+        return;
+      }
 
-    rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_callback_group(cb_group, node->get_node_base_interface());
+      rclcpp::executors::SingleThreadedExecutor executor;
+      executor.add_callback_group(cb_group, node->get_node_base_interface());
 
-    while (!s->is_inactive() && rclcpp::ok()) {
-      executor.spin_once(std::chrono::milliseconds(100));
-    }
-  });
+      while (!s->is_inactive() && rclcpp::ok()) {
+        executor.spin_once(std::chrono::milliseconds(100));
+      }
+    });
 }
 
 void WebVideoServer::cleanup_inactive_streams()
@@ -289,9 +291,10 @@ void WebVideoServer::cleanup_inactive_streams()
     // deleteUserEndpoint which waits on the DDS event thread — if that
     // thread is stuck (FastDDS internal deadlock), we'd block the entire
     // main executor.  A throwaway thread can afford to wait.
-    std::thread([captured = std::move(to_destroy)]() mutable {
-      captured.clear();
-    }).detach();
+    std::thread(
+      [captured = std::move(to_destroy)]() mutable {
+        captured.clear();
+      }).detach();
   }
 }
 
