@@ -46,7 +46,6 @@ namespace web_video_server
 
 struct PendingFooter
 {
-  std::chrono::steady_clock::time_point timestamp;
   std::weak_ptr<std::string> contents;
 };
 

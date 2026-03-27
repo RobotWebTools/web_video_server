@@ -86,11 +86,10 @@ void MultipartStream::send_part_header(
   connection_->write(async_web_server_cpp::HttpReply::to_buffers(*headers), headers);
 }
 
-void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & time)
+void MultipartStream::send_part_footer(const std::chrono::steady_clock::time_point & /* time */)
 {
   const std::shared_ptr<std::string> str(new std::string("\r\n--" + boundary_ + "\r\n"));
   PendingFooter pf;
-  pf.timestamp = time;
   pf.contents = str;
   connection_->write(boost::asio::buffer(*str), str);
   if (max_queue_size_ > 0) {pending_footers_.push(pf);}
@@ -121,19 +120,11 @@ void MultipartStream::send_part(
 
 bool MultipartStream::is_busy()
 {
-  auto current_time = std::chrono::steady_clock::now();
   while (!pending_footers_.empty()) {
     if (pending_footers_.front().contents.expired()) {
       pending_footers_.pop();
     } else {
-      auto footer_time = pending_footers_.front().timestamp;
-      if (std::chrono::duration_cast<std::chrono::duration<double>>(
-          (current_time - footer_time)).count() > 0.5)
-      {
-        pending_footers_.pop();
-      } else {
-        break;
-      }
+      break;
     }
   }
   return max_queue_size_ != 0 && pending_footers_.size() >= max_queue_size_;
