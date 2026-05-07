@@ -17,7 +17,7 @@ find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 find_package(OpenCV REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(avcodec libavcodec REQUIRED)
@@ -97,7 +97,6 @@ target_link_libraries(${PROJECT_NAME}_streamers
   rclcpp::rclcpp
   ${sensor_msgs_TARGETS}
   Boost::boost
-  Boost::system
   ${OpenCV_LIBS}
   ${avcodec_LIBRARIES}
   ${avformat_LIBRARIES}
