@@ -2,8 +2,8 @@
 Changelog for package web_video_server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+3.1.1 (2026-05-07)
+------------------
 * fix: Don't link against Boost::system (#200)
 * Contributors: Błażej Sowa
 
