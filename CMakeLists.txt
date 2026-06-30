@@ -41,6 +41,10 @@ if(${cv_bridge_VERSION} VERSION_LESS "3.3.0")
   add_compile_definitions(CV_BRIDGE_USES_OLD_HEADERS)
 endif()
 
+if(${image_transport_VERSION} VERSION_LESS "6.4.0")
+  add_compile_definitions(IMAGE_TRANSPORT_USES_OLD_API)
+endif()
+
 ## Declare a cpp library
 add_library(${PROJECT_NAME} SHARED
   src/web_video_server.cpp

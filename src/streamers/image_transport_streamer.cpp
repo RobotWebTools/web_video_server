@@ -118,7 +118,11 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
+#ifdef IMAGE_TRANSPORT_USES_OLD_API
+  const image_transport::TransportHints hints(node.get(), default_transport_);
+#else
   const image_transport::TransportHints hints(*node.get(), default_transport_);
+#endif
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -147,10 +151,17 @@ void ImageTransportStreamerBase::start()
   }
 
   // Create subscriber
+#ifdef IMAGE_TRANSPORT_USES_OLD_API
+  image_sub_ = image_transport::create_subscription(
+    node.get(), topic_,
+    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
+    default_transport_, qos_profile.get_rmw_qos_profile());
+#else
   image_sub_ = image_transport::create_subscription(
     *node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
+#endif
 }
 
 #pragma GCC diagnostic pop
