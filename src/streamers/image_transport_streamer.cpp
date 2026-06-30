@@ -155,7 +155,7 @@ void ImageTransportStreamerBase::start()
   image_sub_ = image_transport::create_subscription(
     node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
-    default_transport_, qos_profile.get_rmw_qos_profile());
+    default_transport_, qos_profile.value().get_rmw_qos_profile());
 #else
   image_sub_ = image_transport::create_subscription(
     *node.get(), topic_,
