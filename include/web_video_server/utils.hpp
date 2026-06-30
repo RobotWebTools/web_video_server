@@ -32,7 +32,7 @@
 #include <string>
 #include <optional>
 
-#include "rmw/types.h"
+#include "rclcpp/qos.hpp"
 
 namespace web_video_server
 {
@@ -42,6 +42,6 @@ namespace web_video_server
  * @param name The name of the QoS profile name.
  * @return An optional containing the matching QoS profile.
  */
-std::optional<rmw_qos_profile_t> get_qos_profile_from_name(std::string name);
+std::optional<rclcpp::QoS> get_qos_profile_from_name(std::string name);
 
 }  // namespace web_video_server

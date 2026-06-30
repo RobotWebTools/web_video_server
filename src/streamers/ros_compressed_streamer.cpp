@@ -84,12 +84,10 @@ rclcpp::QoS make_compressed_qos(
       logger,
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name.c_str());
-    qos_profile = rmw_qos_profile_default;
+    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
   }
 
-  return rclcpp::QoS(
-    rclcpp::QoSInitialization(qos_profile.value().history, 1),
-    qos_profile.value());
+  return qos_profile.value();
 }
 
 std::optional<std::string> resolve_content_type(

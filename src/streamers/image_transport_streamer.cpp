@@ -118,7 +118,7 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
-  const image_transport::TransportHints hints(node.get(), default_transport_);
+  const image_transport::TransportHints hints(*node.get(), default_transport_);
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -139,7 +139,7 @@ void ImageTransportStreamerBase::start()
     qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
+    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
     RCLCPP_ERROR(
       logger_,
       "Invalid QoS profile %s specified. Using default profile.",
@@ -148,7 +148,7 @@ void ImageTransportStreamerBase::start()
 
   // Create subscriber
   image_sub_ = image_transport::create_subscription(
-    node.get(), topic_,
+    *node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
 }
