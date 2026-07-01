@@ -52,7 +52,6 @@
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 #include "rmw/qos_profiles.h"
@@ -118,11 +117,6 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
-#ifdef IMAGE_TRANSPORT_USES_OLD_API
-  const image_transport::TransportHints hints(node.get(), default_transport_);
-#else
-  const image_transport::TransportHints hints(*node.get(), default_transport_);
-#endif
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
