@@ -87,7 +87,9 @@ rclcpp::QoS make_compressed_qos(
     qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
   }
 
-  return qos_profile.value();
+  auto qos = qos_profile.value();
+  qos.keep_last(1);
+  return qos;
 }
 
 std::optional<std::string> resolve_content_type(
