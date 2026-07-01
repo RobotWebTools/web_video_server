@@ -34,12 +34,11 @@
 
 #include "rclcpp/qos.hpp"
 #include "rmw/qos_profiles.h"
-#include "rmw/types.h"
 
 namespace web_video_server
 {
 
-std::optional<rclcpp::QoS> get_qos_profile_from_name(const std::string name)
+std::optional<rclcpp::QoS> get_qos_profile_from_name(const std::string & name)
 {
   if (name == "default") {
     return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
