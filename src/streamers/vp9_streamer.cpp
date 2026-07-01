@@ -35,7 +35,6 @@ extern "C"
 #include <libavutil/opt.h>
 }
 
-#include <cstring>
 #include <memory>
 
 #include "async_web_server_cpp/http_connection.hpp"

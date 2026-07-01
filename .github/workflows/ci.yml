@@ -21,6 +21,11 @@ jobs:
       ROS_DISTRO: ${{ matrix.ROS_DISTRO }}
       ROS_REPO: ${{ matrix.ROS_REPO }}
       CMAKE_ARGS: ${{ matrix.ROS_DISTRO == 'rolling' && '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DENABLE_CLANG_TIDY=ON' || '' }}
+      # gcc-16 is installed on the rolling image alongside gcc-15 but without its
+      # libstdc++ headers, so clang-tidy (which auto-selects the newest GCC found)
+      # fails with "'chrono'/'string'/'memory' file not found". Installing
+      # libstdc++-16-dev fixes this.
+      ADDITIONAL_DEBS: ${{ matrix.ROS_DISTRO == 'rolling' && 'libstdc++-16-dev' || '' }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
