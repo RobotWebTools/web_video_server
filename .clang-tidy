@@ -7,7 +7,7 @@ Checks: [
     misc-*,
     -misc-non-private-member-variables-in-classes,
     readability-*,
-    -readability-container-contains, # Removed for compatiblity with C++17 which is used in ROS Humble
+    -readability-container-contains, # Removed for compatibility with C++17 which is used in ROS Humble
     -readability-identifier-length,
     -readability-magic-numbers,
   ]
