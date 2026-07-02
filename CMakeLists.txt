@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(web_video_server)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -24,10 +24,6 @@ pkg_check_modules(avcodec libavcodec REQUIRED)
 pkg_check_modules(avformat libavformat REQUIRED)
 pkg_check_modules(avutil libavutil REQUIRED)
 pkg_check_modules(swscale libswscale REQUIRED)
-
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
 
 ###################################################
 ## Declare things to be passed to other projects ##

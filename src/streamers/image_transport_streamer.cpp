@@ -54,6 +54,7 @@
 #include "image_transport/image_transport.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
+#include "rclcpp/qos.hpp"
 #include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/image.hpp"
 

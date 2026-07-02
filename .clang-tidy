@@ -1,14 +1,16 @@
 ---
-Checks: >
-  clang-analyzer-*,
-  -clang-analyzer-optin.cplusplus.VirtualCall,
-  clang-diagnostic-*,
-  google-*,
-  misc-*,
-  -misc-non-private-member-variables-in-classes,
-  readability-*,
-  -readability-identifier-length,
-  -readability-magic-numbers,
+Checks: [
+    clang-analyzer-*,
+    -clang-analyzer-optin.cplusplus.VirtualCall,
+    clang-diagnostic-*,
+    google-*,
+    misc-*,
+    -misc-non-private-member-variables-in-classes,
+    readability-*,
+    -readability-container-contains, # Removed for compatibility with C++17 which is used in ROS Humble
+    -readability-identifier-length,
+    -readability-magic-numbers,
+  ]
 
 CheckOptions:
   misc-include-cleaner.IgnoreHeaders: bits/chrono.h
@@ -23,13 +25,13 @@ CheckOptions:
   readability-identifier-naming.StaticConstantCase: lower_case
   readability-identifier-naming.StaticVariableCase: lower_case
   readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
-  readability-identifier-naming.MacroDefinitionIgnoredRegexp: '^[A-Z]+(_[A-Z]+)*_$'
+  readability-identifier-naming.MacroDefinitionIgnoredRegexp: "^[A-Z]+(_[A-Z]+)*_$"
   readability-identifier-naming.PrivateMemberCase: lower_case
   readability-identifier-naming.ProtectedMemberCase: lower_case
   readability-identifier-naming.PublicMemberCase: lower_case
   readability-identifier-naming.PrivateMemberSuffix: _
   readability-identifier-naming.ProtectedMemberSuffix: _
-  readability-identifier-naming.PublicMemberSuffix: ''
+  readability-identifier-naming.PublicMemberSuffix: ""
   readability-identifier-naming.NamespaceCase: lower_case
   readability-identifier-naming.ParameterCase: lower_case
   readability-identifier-naming.TypeAliasCase: CamelCase
