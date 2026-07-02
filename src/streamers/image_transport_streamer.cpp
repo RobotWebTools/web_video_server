@@ -52,7 +52,6 @@
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
 #include "image_transport/image_transport.hpp"
-#include "image_transport/transport_hints.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
 #include "rmw/qos_profiles.h"
@@ -118,7 +117,6 @@ void ImageTransportStreamerBase::start()
     return;
   }
 
-  const image_transport::TransportHints hints(node.get(), default_transport_);
   auto tnat = node->get_topic_names_and_types();
   inactive_ = true;
   for (auto topic_and_types : tnat) {
@@ -139,7 +137,7 @@ void ImageTransportStreamerBase::start()
     qos_profile_name_.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
   if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
+    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
     RCLCPP_ERROR(
       logger_,
       "Invalid QoS profile %s specified. Using default profile.",
@@ -147,10 +145,17 @@ void ImageTransportStreamerBase::start()
   }
 
   // Create subscriber
+#ifdef IMAGE_TRANSPORT_USES_OLD_API
   image_sub_ = image_transport::create_subscription(
     node.get(), topic_,
     std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
+    default_transport_, qos_profile.value().get_rmw_qos_profile());
+#else
+  image_sub_ = image_transport::create_subscription(
+    *node.get(), topic_,
+    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
     default_transport_, qos_profile.value());
+#endif
 }
 
 #pragma GCC diagnostic pop
