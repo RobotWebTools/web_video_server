@@ -74,19 +74,15 @@ void SubscriberBase::subscribe(
     qos_profile_name.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name);
   if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
+    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
     RCLCPP_ERROR(
       logger_, "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name.c_str());
   }
 
-  const rclcpp::QoS qos = rclcpp::QoS(
-    rclcpp::QoSInitialization(qos_profile.value().history, 1),
-    qos_profile.value());
-
   // Create subscriber
   sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
-    topic, qos,
+    topic, *qos_profile,
     std::bind(&SubscriberBase::subscriber_callback, this, std::placeholders::_1));
 }
 

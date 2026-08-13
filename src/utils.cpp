@@ -32,22 +32,22 @@
 #include <optional>
 #include <string>
 
+#include "rclcpp/qos.hpp"
 #include "rmw/qos_profiles.h"
-#include "rmw/types.h"
 
 namespace web_video_server
 {
 
-std::optional<rmw_qos_profile_t> get_qos_profile_from_name(const std::string name)
+std::optional<rclcpp::QoS> get_qos_profile_from_name(const std::string & name)
 {
   if (name == "default") {
-    return rmw_qos_profile_default;
+    return rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
   }
   if (name == "system_default") {
-    return rmw_qos_profile_system_default;
+    return rclcpp::SystemDefaultsQoS();
   }
   if (name == "sensor_data") {
-    return rmw_qos_profile_sensor_data;
+    return rclcpp::SensorDataQoS();
   }
   return std::nullopt;
 }

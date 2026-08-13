@@ -93,19 +93,25 @@ void ImageTransportSubscriber::subscribe(
     qos_profile_name.c_str());
   auto qos_profile = get_qos_profile_from_name(qos_profile_name);
   if (!qos_profile) {
-    qos_profile = rmw_qos_profile_default;
+    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
     RCLCPP_ERROR(
       logger_,
       "Invalid QoS profile %s specified. Using default profile.",
       qos_profile_name.c_str());
   }
 
-  const auto qos = qos_profile.value();
-
+  // Create subscriber
+#ifdef IMAGE_TRANSPORT_USES_OLD_API
   sub_ = image_transport::create_subscription(
     node_.get(), topic,
     std::bind(&ImageTransportSubscriber::subscriber_callback, this, std::placeholders::_1),
-    transport, qos);
+    transport, qos_profile.value().get_rmw_qos_profile());
+#else
+  sub_ = image_transport::create_subscription(
+    *node_.get(), topic,
+    std::bind(&ImageTransportSubscriber::subscriber_callback, this, std::placeholders::_1),
+    transport, qos_profile.value());
+#endif
 }
 
 #pragma GCC diagnostic pop

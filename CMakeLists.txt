@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(web_video_server)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -17,17 +17,13 @@ find_package(rmw REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 find_package(OpenCV REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(avcodec libavcodec REQUIRED)
 pkg_check_modules(avformat libavformat REQUIRED)
 pkg_check_modules(avutil libavutil REQUIRED)
 pkg_check_modules(swscale libswscale REQUIRED)
-
-if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif()
 
 ###################################################
 ## Declare things to be passed to other projects ##
@@ -39,6 +35,10 @@ endif()
 
 if(${cv_bridge_VERSION} VERSION_LESS "3.3.0")
   add_compile_definitions(CV_BRIDGE_USES_OLD_HEADERS)
+endif()
+
+if(${image_transport_VERSION} VERSION_LESS "6.4.0")
+  add_compile_definitions(IMAGE_TRANSPORT_USES_OLD_API)
 endif()
 
 ## Declare a cpp library
@@ -98,7 +98,6 @@ target_link_libraries(${PROJECT_NAME}_streamers
   rclcpp::rclcpp
   ${sensor_msgs_TARGETS}
   Boost::boost
-  Boost::system
   ${OpenCV_LIBS}
   ${avcodec_LIBRARIES}
   ${avformat_LIBRARIES}
