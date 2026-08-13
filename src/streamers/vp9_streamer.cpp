@@ -37,6 +37,7 @@ extern "C"
 
 #include <memory>
 #include <map>
+#include <string>
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
