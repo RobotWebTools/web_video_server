@@ -49,7 +49,7 @@ namespace streamers
 {
 
 /**
- * @brief A common base class for all streaming plugins using an image subscriber to get an image
+ * @brief A common base class for all streaming plugins using raw image data for streaming.
  * topics.
  */
 class ImageStreamerBase : public StreamerBase

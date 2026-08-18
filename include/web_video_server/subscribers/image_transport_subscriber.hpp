@@ -46,7 +46,7 @@ namespace subscribers
 class ImageTransportSubscriber : public SubscriberBase
 {
 public:
-  explicit ImageTransportSubscriber(rclcpp::Node::SharedPtr node);
+  explicit ImageTransportSubscriber(rclcpp::Node::WeakPtr node);
 
   ~ImageTransportSubscriber();
 
@@ -56,6 +56,15 @@ public:
     const ImageCallback & callback);
 
 private:
+  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
+  {
+    try {
+      callback_(input_msg);
+    } catch (...) {
+      RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
+    }
+  }
+
   void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
 
   image_transport::Subscriber sub_;

@@ -72,30 +72,16 @@ class SubscriberBase : public SubscriberInterface
 {
 public:
   explicit SubscriberBase(
-    rclcpp::Node::SharedPtr node,
+    rclcpp::Node::WeakPtr node,
     std::string logger_name = "subscriber");
 
-  std::mutex subscriber_mutex;
-
-  void subscribe(
-    const async_web_server_cpp::HttpRequest & request,
-    const std::string & topic,
-    const ImageCallback & callback) override;
-
-  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
-  {
-    try {
-      callback_(input_msg);
-    } catch (...) {
-      RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
-    }
-  }
-
 protected:
-  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg) override;
+  rclcpp::Node::SharedPtr lock_node() const;
 
-  rclcpp::Node::SharedPtr node_;
+  rclcpp::Node::WeakPtr node_;
   rclcpp::Logger logger_;
+  rclcpp::Clock::SharedPtr clock_;
+  std::mutex subscriber_mutex_;
   bool inactive_;
 
   ImageCallback callback_;

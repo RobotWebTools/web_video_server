@@ -59,8 +59,8 @@ namespace streamers
 {
 
 /**
- * @brief A common base class for all streaming plugins using an image subscriber to get image
- * topics and libav to encode and stream video.
+ * @brief A common base class for all streaming plugins using libav to encode raw image data and
+ * stream video.
  */
 class LibavStreamerBase : public ImageStreamerBase
 {

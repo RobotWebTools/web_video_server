@@ -180,7 +180,7 @@ RosCompressedStreamer::RosCompressedStreamer(
 
   const std::string default_qos_profile =
     node_locked->get_parameter("default_qos_profile").as_string();
-  auto qos_profile_name = request.get_query_param_value_or_default(
+  qos_profile_name_ = request.get_query_param_value_or_default(
     "qos_profile",
     default_qos_profile);
 }

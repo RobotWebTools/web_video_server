@@ -47,50 +47,22 @@ namespace web_video_server
 {
 
 SubscriberBase::SubscriberBase(
-  rclcpp::Node::SharedPtr node,
+  rclcpp::Node::WeakPtr node,
   std::string logger_name)
 : node_(node),
-  logger_(node->get_logger().get_child(logger_name)),
+  logger_(node_.lock()->get_logger().get_child(logger_name)),
+  clock_(std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME)),
   inactive_(false)
 {
 }
 
-void SubscriberBase::subscribe(
-  const async_web_server_cpp::HttpRequest & request,
-  const std::string & topic,
-  const ImageCallback & callback)
+rclcpp::Node::SharedPtr SubscriberBase::lock_node() const
 {
-  const std::scoped_lock lock(subscriber_mutex);
-
-  callback_ = callback;
-  const std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
-  auto qos_profile_name = request.get_query_param_value_or_default(
-    "qos_profile",
-    default_qos_profile);
-
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(
-    logger_, "Streaming topic %s with QoS profile %s", topic.c_str(),
-    qos_profile_name.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name);
-  if (!qos_profile) {
-    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
-    RCLCPP_ERROR(
-      logger_, "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name.c_str());
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
   }
-
-  // Create subscriber
-  sub_ = node_->create_subscription<sensor_msgs::msg::Image>(
-    topic, *qos_profile,
-    std::bind(&SubscriberBase::subscriber_callback, this, std::placeholders::_1));
-}
-
-void SubscriberBase::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
-{
-  const std::scoped_lock lock(subscriber_mutex);
-
-  try_forward_image(input_msg);
+  return node;
 }
 
 std::vector<std::string> SubscriberFactoryInterface::get_available_topics(

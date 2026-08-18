@@ -48,19 +48,25 @@ namespace web_video_server
 {
 namespace subscribers
 {
-ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::SharedPtr node)
-: SubscriberBase(node, "image_transport_subscriber")
+ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::WeakPtr _node)
+: SubscriberBase(_node, "image_transport_subscriber")
 {
-  const std::scoped_lock lock(subscriber_mutex);
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
 
-  if (!node_->has_parameter("default_transport")) {
-    node_->declare_parameter("default_transport", "raw");
+  const std::scoped_lock lock(subscriber_mutex_);
+
+  if (!node->has_parameter("default_transport")) {
+    node->declare_parameter("default_transport", "raw");
   }
 }
 
 ImageTransportSubscriber::~ImageTransportSubscriber()
 {
-  const std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex_);
   inactive_ = true;
 }
 
@@ -75,15 +81,21 @@ void ImageTransportSubscriber::subscribe(
   const std::string & topic,
   const ImageCallback & callback)
 {
-  const std::scoped_lock lock(subscriber_mutex);
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
+  const std::scoped_lock lock(subscriber_mutex_);
 
   callback_ = callback;
-  const std::string default_transport = node_->get_parameter("default_transport").as_string();
+  const std::string default_transport = node->get_parameter("default_transport").as_string();
   const std::string transport = request.get_query_param_value_or_default(
     "default_transport",
     default_transport);
 
-  const std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();
+  const std::string default_qos_profile = node->get_parameter("default_qos_profile").as_string();
   auto qos_profile_name = request.get_query_param_value_or_default(
     "qos_profile",
     default_qos_profile);
@@ -104,12 +116,12 @@ void ImageTransportSubscriber::subscribe(
   // Create subscriber
 #ifdef IMAGE_TRANSPORT_USES_OLD_API
   sub_ = image_transport::create_subscription(
-    node_.get(), topic,
+    node.get(), topic,
     std::bind(&ImageTransportSubscriber::subscriber_callback, this, std::placeholders::_1),
     transport, qos_profile.value().get_rmw_qos_profile());
 #else
   sub_ = image_transport::create_subscription(
-    *node_.get(), topic,
+    *node.get(), topic,
     std::bind(&ImageTransportSubscriber::subscriber_callback, this, std::placeholders::_1),
     transport, qos_profile.value());
 #endif
@@ -121,7 +133,7 @@ void ImageTransportSubscriber::subscribe(
 void ImageTransportSubscriber::subscriber_callback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
 {
-  const std::scoped_lock lock(subscriber_mutex);
+  const std::scoped_lock lock(subscriber_mutex_);
 
   if (inactive_) {return;}
 

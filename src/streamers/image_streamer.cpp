@@ -103,7 +103,14 @@ void ImageStreamerBase::start()
     if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
       inactive_ = false;
 
-      subscriber_ = subscriber_factories_[topic_type]->create_subscriber(node);
+      auto factory_it = subscriber_factories_.find(topic_type);
+      if (factory_it == subscriber_factories_.end()) {
+        RCLCPP_WARN_STREAM(
+          logger_, "No subscriber factory registered for topic type: " << topic_type);
+        inactive_ = true;
+        return;
+      }
+      subscriber_ = factory_it->second->create_subscriber(node);
       subscriber_->subscribe(
         request_, topic_,
         std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
