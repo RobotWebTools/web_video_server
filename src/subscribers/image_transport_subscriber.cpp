@@ -48,19 +48,19 @@ namespace web_video_server
 {
 namespace subscribers
 {
-ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::WeakPtr _node)
-: SubscriberBase(_node, "image_transport_subscriber")
+ImageTransportSubscriber::ImageTransportSubscriber(rclcpp::Node::WeakPtr node)
+: SubscriberBase(node, "image_transport_subscriber")
 {
-  auto node = lock_node();
-  if (!node) {
+  auto node_ptr = lock_node();
+  if (!node_ptr) {
     inactive_ = true;
     return;
   }
 
   const std::scoped_lock lock(subscriber_mutex_);
 
-  if (!node->has_parameter("default_transport")) {
-    node->declare_parameter("default_transport", "raw");
+  if (!node_ptr->has_parameter("default_transport")) {
+    node_ptr->declare_parameter("default_transport", "raw");
   }
 }
 

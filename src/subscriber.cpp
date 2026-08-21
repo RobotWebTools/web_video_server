@@ -31,18 +31,15 @@
 #include "web_video_server/subscriber.hpp"
 
 #include <vector>
-#include <mutex>
 #include <string>
-#include <functional>
+#include <memory>
 
 #include "rclcpp/node.hpp"
+#include "rclcpp/time.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/qos.hpp"
-#include "rmw/qos_profiles.h"
-#include "sensor_msgs/msg/image.hpp"
 
-#include "async_web_server_cpp/http_request.hpp"
-#include "web_video_server/utils.hpp"
+#include "rcl/time.h"
+
 namespace web_video_server
 {
 
