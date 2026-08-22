@@ -85,39 +85,7 @@ ImageStreamerBase::~ImageStreamerBase()
 
 void ImageStreamerBase::start()
 {
-  auto node = lock_node();
-  if (!node) {
-    inactive_ = true;
-    return;
-  }
-
-  auto tnat = node->get_topic_names_and_types();
-  inactive_ = true;
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    const auto & topic_name = topic_and_types.first;
-    const auto & topic_type = topic_and_types.second[0];
-    if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
-      inactive_ = false;
-
-      auto factory_it = subscriber_factories_.find(topic_type);
-      if (factory_it == subscriber_factories_.end()) {
-        RCLCPP_WARN_STREAM(
-          logger_, "No subscriber factory registered for topic type: " << topic_type);
-        inactive_ = true;
-        return;
-      }
-      subscriber_ = factory_it->second->create_subscriber(node);
-      subscriber_->subscribe(
-        request_, topic_,
-        std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
-
-      break;
-    }
-  }
+  attach_subscriber(std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
 }
 
 void ImageStreamerBase::initialize(const cv::Mat & /*img*/)

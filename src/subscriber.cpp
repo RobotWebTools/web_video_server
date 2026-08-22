@@ -30,7 +30,6 @@
 
 #include "web_video_server/subscriber.hpp"
 
-#include <vector>
 #include <string>
 #include <memory>
 
@@ -60,12 +59,6 @@ rclcpp::Node::SharedPtr SubscriberBase::lock_node() const
     RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
   }
   return node;
-}
-
-std::vector<std::string> SubscriberFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */)
-{
-  return {};
 }
 
 }  // namespace web_video_server

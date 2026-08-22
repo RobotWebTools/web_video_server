@@ -31,7 +31,6 @@
 #include "web_video_server/streamer.hpp"
 #include "web_video_server/subscriber.hpp"
 
-#include <vector>
 #include <sstream>
 #include <string>
 #include <map>
@@ -80,13 +79,6 @@ std::string StreamerFactoryInterface::create_viewer(
   ss << request.query;
   ss << "\"></img>";
   return ss.str();
-}
-
-std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node & /*node*/,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/*subscriber_factories*/)
-{
-  return {};
 }
 
 }  // namespace web_video_server
