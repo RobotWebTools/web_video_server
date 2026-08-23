@@ -83,7 +83,7 @@ protected:
 private:
   bool initialized_;
 
-  void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   void try_send_image(
     const cv::Mat & img, const std::chrono::steady_clock::time_point & time,
     rclcpp::Node & node);

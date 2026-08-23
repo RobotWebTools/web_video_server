@@ -1,6 +1,8 @@
 # How to write a custom streamer plugin
 
-This tutorial will guide you through the steps to create a simple custom streamer plugin for the `web_video_server` package in ROS 2. The example plugin will log messages when it is created, started, and when frames are restreamed.
+Web_video_server contains two types of plugins: 1) subscribers 2) streamers.  Subscribers attach to ros topics and convert them into a standard image format.  Typically, streamers attach to subscribers, receive msg in the standard format, and publish the image data as web streams.  However, it is also possible for a streamer to bypass the subscriber pipeline and directly subscribe and process ros topics into streams.
+
+This tutorial will guide you through the steps to create a simple custom streamer plugin for the `web_video_server` package in ROS 2. The example plugin will create ros log messages when it is created, started, and when new images are received from a subscriber or restreamed.
 
 1. Create you local workspace if you don't have one:
   ```bash
@@ -34,7 +36,7 @@ This tutorial will guide you through the steps to create a simple custom streame
 
       void start();
       void restream_frame(std::chrono::duration<double> max_age);
-      void image_callback(const   sensor_msgs::msg::Image::ConstSharedPtr & msg);
+      void subscriber_callback(const   sensor_msgs::msg::Image::ConstSharedPtr & msg);
     };
 
     class TestStreamerFactory : public web_video_server::StreamerFactoryInterface
@@ -79,8 +81,11 @@ This tutorial will guide you through the steps to create a simple custom streame
     void TestStreamer::start()
     {
       RCLCPP_INFO(logger_, "TestStreamer started for topic: %s", topic_.c_str());
-
-      attach_subscriber(std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
+      
+      // Use subscriber factories to find an available subscriber for topic_ by msgs type. 
+      // Attaches a callback that will trigger when new msgs is processed by subscriber.  
+      // Remove this line and add your own pipeline to bypass subscriber functionality.
+      attach_subscriber(std::bind(&TestStreamer::subscriber_callback, this, std::placeholders::_1));
     }
 
     void TestStreamer::restream_frame(std::chrono::duration<double> max_age)
@@ -88,9 +93,9 @@ This tutorial will guide you through the steps to create a simple custom streame
       RCLCPP_INFO(logger_, "TestStreamer restream_frame called for topic: %s", topic_.c_str());
     }
 
-    void TestStreamer::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+    void TestStreamer::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
     {
-      RCLCPP_INFO(logger_, "TestStreamer image_callback called for topic: %s", topic_.c_str());
+      RCLCPP_INFO(logger_, "TestStreamer image received from subscriber for topic: %s", topic_.c_str());
     }
 
     std::shared_ptr<web_video_server::StreamerInterface> TestStreamerFactory::create_streamer(
@@ -108,6 +113,8 @@ This tutorial will guide you through the steps to create a simple custom streame
     {
       std::vector<std::string> results;
 
+      // Use subscriber factories to list avaiable topics by msgs type.
+      // Remove this loop and add your own pipeline to bypass subscriber functionality.
       for (auto subscriber: subscriber_factories) {
         std::vector<std::string> entries = subscriber.second->get_available_topics(node);
         results.insert(results.end(), entries.begin(), entries.end());

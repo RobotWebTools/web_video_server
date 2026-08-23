@@ -85,7 +85,13 @@ ImageStreamerBase::~ImageStreamerBase()
 
 void ImageStreamerBase::start()
 {
-  attach_subscriber(std::bind(&ImageStreamerBase::image_callback, this, std::placeholders::_1));
+  attach_subscriber(
+    std::bind(
+      &ImageStreamerBase::subscriber_callback,
+      this,
+      std::placeholders::_1
+    )
+  );
 }
 
 void ImageStreamerBase::initialize(const cv::Mat & /*img*/)
@@ -107,7 +113,7 @@ void ImageStreamerBase::restream_frame(std::chrono::duration<double>/* max_age *
   try_send_image(output_size_image_, last_frame_, *node);
 }
 
-void ImageStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageStreamerBase::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
