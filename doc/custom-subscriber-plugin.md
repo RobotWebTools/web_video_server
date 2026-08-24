@@ -19,6 +19,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
   ```cpp
   #pragma once
 
+  #include "web_video_server/utils.hpp"
   #include "web_video_server/subscriber.hpp"
 
   #include <opencv2/opencv.hpp>
@@ -31,13 +32,13 @@ This tutorial will guide you through the steps to create a simple custom subscri
   // replace the following line with one appropriate for you data type
   #include <std_msgs/msg/string.hpp>
 
-    namespace test_subscriber_plugin
-    {
+  namespace test_subscriber_plugin
+  {
 
     class TestSubscriber : public web_video_server::SubscriberBase
     {
     public:
-      TestSubscriber(rclcpp::Node::SharedPtr node);
+      TestSubscriber(rclcpp::Node::WeakPtr node);
 
       ~TestSubscriber();
 
@@ -46,12 +47,21 @@ This tutorial will guide you through the steps to create a simple custom subscri
                     const web_video_server::ImageCallback& callback);
 
     private:
+      void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
+      {
+        try {
+          callback_(input_msg);
+        } catch (...) {
+          RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
+        }
+      }
+
       // replace param in the following line with one appropriate for you data type  
       void subscriber_callback(const std_msgs::msg::String::ConstSharedPtr &input_msg);
 
       // replace param in the following line with one appropriate for you data type  
       rclcpp::Subscription<std_msgs::msg::String>::SharedPtr sub_;
-      rclcpp::CallbackGroup::SharedPtr cbg_;   
+      rclcpp::CallbackGroup::SharedPtr cbg_;
     };
 
     class TestSubscriberFactory : public web_video_server::SubscriberFactoryInterface
@@ -68,7 +78,7 @@ This tutorial will guide you through the steps to create a simple custom subscri
       std::vector<std::string> get_available_topics(rclcpp::Node & node);
     };
 
-    }  // namespace test_subscriber_plugin
+  }  // namespace test_subscriber_plugin
   ```
 
 1. Implement the `TestSubscriber` and `TestSubscriberFactory` classes in `src/test_subscriber_plugin.cpp`:
@@ -78,15 +88,23 @@ This tutorial will guide you through the steps to create a simple custom subscri
   namespace test_subscriber_plugin
   {
 
-  TestSubscriber::TestSubscriber(rclcpp::Node::SharedPtr node)
+  TestSubscriber::TestSubscriber(rclcpp::Node::WeakPtr node)
   : web_video_server::SubscriberBase(node, "test_subscriber")
   {
+    auto node_ptr = lock_node();
+    if (!node_ptr) {
+      inactive_ = true;
+      return;
+    }
+
     const std::scoped_lock lock(subscriber_mutex_);
     
     RCLCPP_INFO(logger_, "TestSubscriber created!");
 
     // Declare any new parameters required for this subscriber
-    if (!node_->has_parameter("test_parameter")) node_->declare_parameter("test_parameter", "default");
+    if (!node_ptr->has_parameter("test_parameter")) {
+      node_ptr->declare_parameter("test_parameter", "default");
+    }
   }
 
   TestSubscriber::~TestSubscriber()
@@ -97,10 +115,17 @@ This tutorial will guide you through the steps to create a simple custom subscri
     RCLCPP_INFO(logger_, "TestSubscriber destroyed!");
   }
 
-  void TestSubscriber::subscribe(const async_web_server_cpp::HttpRequest &request,
-                                  const std::string& topic, 
-                                  const web_video_server::ImageCallback& callback)
+  void TestSubscriber::subscribe(
+    const async_web_server_cpp::HttpRequest &request,
+    const std::string& topic, 
+    const web_video_server::ImageCallback& callback)
   {
+    auto node = lock_node();
+    if (!node) {
+      inactive_ = true;
+      return;
+    }
+    
     const std::scoped_lock lock(subscriber_mutex_);
 
     callback_ = callback;
@@ -108,36 +133,37 @@ This tutorial will guide you through the steps to create a simple custom subscri
     RCLCPP_INFO(logger_, "TestSubscriber started for topic: %s", topic.c_str());
 
     // Load parameters used by this subscriber
-    std::string default_test_parameter = node_->get_parameter("test_parameter").as_string();  
-    std::string test_parameter = request.get_query_param_value_or_default("test_parameter", default_test_parameter);
+    const std::string default_test_parameter = node->get_parameter("test_parameter").as_string();  
+    const std::string test_parameter = request.get_query_param_value_or_default(
+      "test_parameter", 
+      default_test_parameter);
     
-    std::string default_qos_profile = node_->get_parameter("default_qos_profile").as_string();    
-    auto qos_profile_name = request.get_query_param_value_or_default("qos_profile", default_qos_profile);
-    
+    const std::string default_qos_profile = node->get_parameter("default_qos_profile").as_string();
+    auto qos_profile_name = request.get_query_param_value_or_default(
+      "qos_profile",
+      default_qos_profile);
+
     // Get QoS profile from query parameter
     RCLCPP_INFO(
       logger_, "Streaming topic %s with QoS profile %s", topic.c_str(),
       qos_profile_name.c_str());
     auto qos_profile = web_video_server::get_qos_profile_from_name(qos_profile_name);
     if (!qos_profile) {
-      qos_profile = rmw_qos_profile_default;
+      qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
       RCLCPP_ERROR(
         logger_,
         "Invalid QoS profile %s specified. Using default profile.",
         qos_profile_name.c_str());
     }
 
-    const auto qos = rclcpp::QoS(
-      rclcpp::QoSInitialization(qos_profile.value().history, 1),
-      qos_profile.value());
-
-    cbg_ = node_->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);    
+    cbg_ = node->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);    
     rclcpp::SubscriptionOptions options;
     options.callback_group = cbg_;  
     
     // Create subscriber (update as appropriate for your subscriber)
-    sub_ = node_->create_subscription<std_msgs::msg::String>(
-      topic, qos, std::bind(&TestSubscriber::subscriber_callback, this, std::placeholders::_1), options
+    sub_ = node->create_subscription<std_msgs::msg::String>(
+      topic, qos_profile.value(), 
+      std::bind(&TestSubscriber::subscriber_callback, this, std::placeholders::_1), options
     );
   }
 
