@@ -36,6 +36,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
 
 #include <opencv2/core/mat.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -48,7 +49,8 @@
 #include "sensor_msgs/msg/image.hpp"
 
 #include "web_video_server/streamer.hpp"
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
 #ifdef CV_BRIDGE_USES_OLD_HEADERS
 #include "cv_bridge/cv_bridge.h"
@@ -63,8 +65,11 @@ namespace streamers
 
 PngStreamer::PngStreamer(
   const async_web_server_cpp::HttpRequest & request,
-  async_web_server_cpp::HttpConnectionPtr connection, rclcpp::Node::WeakPtr node)
-: ImageTransportStreamerBase(request, connection, node, "png_streamer"), stream_(connection)
+  async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
+  rclcpp::Node::WeakPtr node)
+: ImageStreamerBase(request, connection, subscriber_factories, node, "png_streamer"),
+  stream_(connection)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
   stream_.send_initial_header();
@@ -73,7 +78,7 @@ PngStreamer::PngStreamer(
 PngStreamer::~PngStreamer()
 {
   this->inactive_ = true;
-  const std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex);  // protects send_image.
 }
 
 cv::Mat PngStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -83,7 +88,7 @@ cv::Mat PngStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr 
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   }
   // Use the normal decode otherwise
-  return ImageTransportStreamerBase::decode_image(msg);
+  return ImageStreamerBase::decode_image(msg);
 }
 
 void PngStreamer::send_image(
@@ -103,16 +108,18 @@ void PngStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
-  return std::make_shared<PngStreamer>(request, connection, node);
+  return std::make_shared<PngStreamer>(request, connection, subscriber_factories, node);
 }
 
 PngSnapshotStreamer::PngSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: ImageTransportStreamerBase(request, connection, node)
+: ImageStreamerBase(request, connection, subscriber_factories, node)
 {
   quality_ = request.get_query_param_value_or_default<int>("quality", 3);
 }
@@ -120,7 +127,7 @@ PngSnapshotStreamer::PngSnapshotStreamer(
 PngSnapshotStreamer::~PngSnapshotStreamer()
 {
   this->inactive_ = true;
-  const std::scoped_lock lock(send_mutex_);  // protects send_image.
+  const std::scoped_lock lock(send_mutex);  // protects send_image.
 }
 
 cv::Mat PngSnapshotStreamer::decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
@@ -130,7 +137,7 @@ cv::Mat PngSnapshotStreamer::decode_image(const sensor_msgs::msg::Image::ConstSh
     return cv_bridge::toCvCopy(msg, "bgra8")->image;
   }
   // Use the normal decode otherwise
-  return ImageTransportStreamerBase::decode_image(msg);
+  return ImageStreamerBase::decode_image(msg);
 }
 
 void PngSnapshotStreamer::send_image(
@@ -167,9 +174,10 @@ void PngSnapshotStreamer::send_image(
 std::shared_ptr<StreamerInterface> PngSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
-  return std::make_shared<PngSnapshotStreamer>(request, connection, node);
+  return std::make_shared<PngSnapshotStreamer>(request, connection, subscriber_factories, node);
 }
 
 }  // namespace streamers

@@ -66,15 +66,19 @@ namespace web_video_server
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
-  streamer_factory_loader_("web_video_server", "web_video_server::StreamerFactoryInterface"),
+  streamer_factory_loader_("web_video_server",
+    "web_video_server::StreamerFactoryInterface"),
   snapshot_streamer_factory_loader_("web_video_server",
-    "web_video_server::SnapshotStreamerFactoryInterface")
+    "web_video_server::SnapshotStreamerFactoryInterface"),
+  subscriber_factory_loader_("web_video_server",
+    "web_video_server::SubscriberFactoryInterface")
 {
   declare_parameter("port", 8080);
   declare_parameter("verbose", true);
   declare_parameter("address", "0.0.0.0");
   declare_parameter("server_threads", 1);
   declare_parameter("publish_rate", -1.0);
+  declare_parameter("default_qos_profile", "default");
   declare_parameter("default_stream_type", "mjpeg");
   declare_parameter("default_snapshot_type", "jpeg");
 
@@ -87,23 +91,39 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("default_stream_type", default_stream_type_);
   get_parameter("default_snapshot_type", default_snapshot_type_);
 
+  for (auto cls : subscriber_factory_loader_.getDeclaredClasses()) {
+    RCLCPP_INFO(get_logger(), "Loading subscriber plugin: %s", cls.c_str());
+    try {
+      auto subscriber = subscriber_factory_loader_.createSharedInstance(cls);
+      subscriber_factories_[subscriber->get_type()] = subscriber;
+    } catch (pluginlib::PluginlibException & ex) {
+      RCLCPP_ERROR(
+        get_logger(),
+        "The subscriber plugin failed to load for some reason. Error: %s", ex.what());
+    }
+  }
+
   for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
     RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
     try {
       auto streamer = streamer_factory_loader_.createSharedInstance(cls);
       streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+      RCLCPP_ERROR(
+        get_logger(),
+        "The streamer plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
 
   for (auto cls : snapshot_streamer_factory_loader_.getDeclaredClasses()) {
-    RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
+    RCLCPP_INFO(get_logger(), "Loading snapshot plugin: %s", cls.c_str());
     try {
       auto streamer = snapshot_streamer_factory_loader_.createSharedInstance(cls);
       snapshot_streamer_factories_[streamer->get_type()] = streamer;
     } catch (pluginlib::PluginlibException & ex) {
-      RCLCPP_ERROR(get_logger(), "The plugin failed to load for some reason. Error: %s", ex.what());
+      RCLCPP_ERROR(
+        get_logger(),
+        "The snapshot plugin failed to load for some reason. Error: %s", ex.what());
     }
   }
 
@@ -206,7 +226,7 @@ bool WebVideoServer::handle_stream(
   const std::string type = request.get_query_param_value_or_default("type", default_stream_type_);
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
     const std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
-      request, connection, weak_from_this());
+      request, connection, subscriber_factories_, weak_from_this());
     streamer->start();
     const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
@@ -226,7 +246,7 @@ bool WebVideoServer::handle_snapshot(
   if (snapshot_streamer_factories_.find(type) != snapshot_streamer_factories_.end()) {
     const std::shared_ptr<StreamerInterface> streamer =
       snapshot_streamer_factories_[type]->create_streamer(
-      request, connection, weak_from_this());
+      request, connection, subscriber_factories_, weak_from_this());
     streamer->start();
     const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
@@ -321,7 +341,7 @@ bool WebVideoServer::handle_list_streams(
   for (const auto & factory_pair : streamer_factories_) {
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
     const std::vector<std::string> factory_topics =
-      factory_pair.second->get_available_topics(*this);
+      factory_pair.second->get_available_topics(*this, subscriber_factories_);
     RCLCPP_DEBUG(
       get_logger(), "Factory %s returned %zu topics",
       factory_pair.first.c_str(), factory_topics.size());
@@ -335,7 +355,7 @@ bool WebVideoServer::handle_list_streams(
   for (const auto & factory_pair : snapshot_streamer_factories_) {
     RCLCPP_DEBUG(get_logger(), "Getting topics from factory: %s", factory_pair.first.c_str());
     const std::vector<std::string> factory_topics =
-      factory_pair.second->get_available_topics(*this);
+      factory_pair.second->get_available_topics(*this, subscriber_factories_);
     RCLCPP_DEBUG(
       get_logger(), "Factory %s returned %zu topics",
       factory_pair.first.c_str(), factory_topics.size());

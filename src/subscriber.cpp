@@ -1,3 +1,4 @@
+// Copyright (c) 2014, Worcester Polytechnic Institute
 // Copyright (c) 2024-2025, The Robot Web Tools Contributors
 // All rights reserved.
 //
@@ -27,48 +28,37 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#pragma once
+#include "web_video_server/subscriber.hpp"
 
-#include <memory>
 #include <string>
+#include <memory>
 
-#include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_connection.hpp"
 #include "rclcpp/node.hpp"
+#include "rclcpp/time.hpp"
+#include "rclcpp/logging.hpp"
 
-#include "web_video_server/streamer.hpp"
-#include "web_video_server/streamers/libav_streamer.hpp"
+#include "rcl/time.h"
 
 namespace web_video_server
 {
-namespace streamers
+
+SubscriberBase::SubscriberBase(
+  rclcpp::Node::WeakPtr node,
+  std::string logger_name)
+: node_(node),
+  logger_(node_.lock()->get_logger().get_child(logger_name)),
+  clock_(std::make_shared<rclcpp::Clock>(RCL_SYSTEM_TIME)),
+  inactive_(false)
 {
+}
 
-class H264Streamer : public LibavStreamerBase
+rclcpp::Node::SharedPtr SubscriberBase::lock_node() const
 {
-public:
-  H264Streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
-    rclcpp::Node::WeakPtr node);
-  ~H264Streamer();
+  auto node = node_.lock();
+  if (!node) {
+    RCLCPP_WARN(logger_, "Unable to access node because the owning node has been destroyed");
+  }
+  return node;
+}
 
-protected:
-  virtual void initialize_encoder();
-  std::string preset_;
-};
-
-class H264StreamerFactory : public LibavStreamerFactoryBase
-{
-public:
-  std::string get_type() {return "h264";}
-  std::shared_ptr<StreamerInterface> create_streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
-    rclcpp::Node::WeakPtr node);
-};
-
-}  // namespace streamers
 }  // namespace web_video_server

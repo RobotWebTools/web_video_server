@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025, The Robot Web Tools Contributors
+// Copyright (c) 2024-2026, The Robot Web Tools Contributors
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,46 +29,57 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-
 #include "async_web_server_cpp/http_request.hpp"
-#include "async_web_server_cpp/http_connection.hpp"
+
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/streamer.hpp"
-#include "web_video_server/streamers/libav_streamer.hpp"
+#include "image_transport/image_transport.hpp"
+#include "image_transport/subscriber.hpp"
+
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
-namespace streamers
+namespace subscribers
 {
 
-class H264Streamer : public LibavStreamerBase
-{
-public:
-  H264Streamer(
-    const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
-    rclcpp::Node::WeakPtr node);
-  ~H264Streamer();
-
-protected:
-  virtual void initialize_encoder();
-  std::string preset_;
-};
-
-class H264StreamerFactory : public LibavStreamerFactoryBase
+class ImageTransportSubscriber : public SubscriberBase
 {
 public:
-  std::string get_type() {return "h264";}
-  std::shared_ptr<StreamerInterface> create_streamer(
+  explicit ImageTransportSubscriber(rclcpp::Node::WeakPtr node);
+
+  ~ImageTransportSubscriber();
+
+  void subscribe(
     const async_web_server_cpp::HttpRequest & request,
-    async_web_server_cpp::HttpConnectionPtr connection,
-    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
-    rclcpp::Node::WeakPtr node);
+    const std::string & topic,
+    const ImageCallback & callback);
+
+private:
+  void try_forward_image(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg)
+  {
+    try {
+      callback_(input_msg);
+    } catch (...) {
+      RCLCPP_ERROR(logger_, "The subscriber plugin failed send image for some reason.");
+    }
+  }
+
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & input_msg);
+
+  image_transport::Subscriber sub_;
 };
 
-}  // namespace streamers
+class ImageTransportSubscriberFactory : public SubscriberFactoryInterface
+{
+public:
+  std::string get_type() {return "sensor_msgs/msg/Image";}
+
+  std::shared_ptr<SubscriberInterface> create_subscriber(
+    rclcpp::Node::SharedPtr node);
+
+  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+};
+
+}  // namespace subscribers
 }  // namespace web_video_server

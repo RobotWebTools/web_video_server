@@ -31,7 +31,6 @@
 
 #include <chrono>
 #include <memory>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -39,8 +38,6 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/image_transport.hpp"
-#include "image_transport/subscriber.hpp"
 #include "rclcpp/node.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
@@ -52,18 +49,19 @@ namespace streamers
 {
 
 /**
- * @brief A common base class for all streaming plugins using image_transport to subscribe to image
+ * @brief A common base class for all streaming plugins using raw image data for streaming.
  * topics.
  */
-class ImageTransportStreamerBase : public StreamerBase
+class ImageStreamerBase : public StreamerBase
 {
 public:
-  ImageTransportStreamerBase(
+  ImageStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
-    std::string logger_name = "image_transport_streamer");
-  virtual ~ImageTransportStreamerBase();
+    std::string logger_name = "image_streamer");
+  virtual ~ImageStreamerBase();
 
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
@@ -75,36 +73,38 @@ protected:
     const std::chrono::steady_clock::time_point & time) = 0;
   virtual void initialize(const cv::Mat & img);
 
-  image_transport::Subscriber image_sub_;
   int output_width_;
   int output_height_;
   bool invert_;
-  std::string default_transport_;
-  std::string qos_profile_name_;
 
   std::chrono::steady_clock::time_point last_frame_;
   cv::Mat output_size_image_;
-  std::mutex send_mutex_;
 
 private:
   bool initialized_;
 
-  void image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
+  void subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg);
   void try_send_image(
     const cv::Mat & img, const std::chrono::steady_clock::time_point & time,
     rclcpp::Node & node);
 };
 
-class ImageTransportStreamerFactoryBase : public StreamerFactoryInterface
+class ImageStreamerFactoryBase : public StreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
-class ImageTransportSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
+class ImageSnapshotStreamerFactoryBase : public SnapshotStreamerFactoryInterface
 {
 public:
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 }  // namespace streamers

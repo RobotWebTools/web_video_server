@@ -51,7 +51,7 @@ extern "C"
 #include "async_web_server_cpp/http_request.hpp"
 #include "rclcpp/node.hpp"
 
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
 
 namespace web_video_server
 {
@@ -59,21 +59,21 @@ namespace streamers
 {
 
 /**
- * @brief A common base class for all streaming plugins using image_transport to subscribe to image
- * topics and libav to encode and stream video.
+ * @brief A common base class for all streaming plugins using libav to encode raw image data and
+ * stream video.
  */
-class LibavStreamerBase : public ImageTransportStreamerBase
+class LibavStreamerBase : public ImageStreamerBase
 {
 public:
   LibavStreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
     std::string logger_name,
     const std::string & format_name,
     const std::string & codec_name,
     const std::string & content_type);
-
   ~LibavStreamerBase();
 
 protected:
@@ -105,7 +105,7 @@ private:
   uint8_t * io_buffer_;  // custom IO buffer
 };
 
-class LibavStreamerFactoryBase : public ImageTransportStreamerFactoryBase
+class LibavStreamerFactoryBase : public ImageStreamerFactoryBase
 {
 public:
   virtual std::string create_viewer(const async_web_server_cpp::HttpRequest & request);

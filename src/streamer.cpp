@@ -29,11 +29,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/streamer.hpp"
+#include "web_video_server/subscriber.hpp"
 
-#include <vector>
 #include <sstream>
 #include <string>
-#include <utility>
+#include <map>
+#include <memory>
 
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
@@ -47,12 +48,17 @@ namespace web_video_server
 StreamerBase::StreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: connection_(connection), request_(request), node_(std::move(node)),
-  logger_(node_.lock()->get_logger().get_child(logger_name)), inactive_(false),
+: connection_(connection),
+  request_(request),
+  node_(node),
+  logger_(node_.lock()->get_logger().get_child(logger_name)),
+  inactive_(false),
   topic_(request.get_query_param_value_or_default("topic", "")),
-  client_id_(request.get_query_param_value_or_default("client_id", ""))
+  client_id_(request.get_query_param_value_or_default("client_id", "")),
+  subscriber_factories_(subscriber_factories)
 {
 }
 
@@ -73,12 +79,6 @@ std::string StreamerFactoryInterface::create_viewer(
   ss << request.query;
   ss << "\"></img>";
   return ss.str();
-}
-
-std::vector<std::string> StreamerFactoryInterface::get_available_topics(
-  rclcpp::Node & /* node */)
-{
-  return {};
 }
 
 }  // namespace web_video_server

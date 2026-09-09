@@ -28,7 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-#include "web_video_server/streamers/image_transport_streamer.hpp"
+#include "web_video_server/streamers/image_streamer.hpp"
 
 #include <chrono>
 #include <exception>
@@ -36,6 +36,8 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 
 #include <boost/system/system_error.hpp>
 #include <opencv2/core.hpp>
@@ -51,122 +53,52 @@
 
 #include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_request.hpp"
-#include "image_transport/image_transport.hpp"
 #include "rclcpp/node.hpp"
 #include "rclcpp/logging.hpp"
-#include "rclcpp/qos.hpp"
-#include "rmw/qos_profiles.h"
 #include "sensor_msgs/msg/image.hpp"
 
 #include "web_video_server/streamer.hpp"
-#include "web_video_server/utils.hpp"
+#include "web_video_server/subscriber.hpp"
 
 namespace web_video_server
 {
 namespace streamers
 {
 
-namespace
-{
-
-std::vector<std::string> get_image_topics(rclcpp::Node & node)
-{
-  std::vector<std::string> result;
-  auto topic_names_and_types = node.get_topic_names_and_types();
-  for (const auto & topic_and_types : topic_names_and_types) {
-    for (const auto & type : topic_and_types.second) {
-      if (type == "sensor_msgs/msg/Image") {
-        result.push_back(topic_and_types.first);
-        break;
-      }
-    }
-  }
-  return result;
-}
-
-}  // namespace
-
-ImageTransportStreamerBase::ImageTransportStreamerBase(
+ImageStreamerBase::ImageStreamerBase(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node,
   std::string logger_name)
-: StreamerBase(request, connection, node, logger_name), initialized_(false)
+: StreamerBase(request, connection, subscriber_factories, node, logger_name),
+  initialized_(false)
 {
   output_width_ = request.get_query_param_value_or_default<int>("width", -1);
   output_height_ = request.get_query_param_value_or_default<int>("height", -1);
   invert_ = request.has_query_param("invert");
-  default_transport_ = request.get_query_param_value_or_default("default_transport", "raw");
-  qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
 
-ImageTransportStreamerBase::~ImageTransportStreamerBase()
+ImageStreamerBase::~ImageStreamerBase()
 {
 }
 
-// We disable deprecation warnings for image_transport API usage
-// to maintain compatibility with older ROS 2 distributions.
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-// NOLINTBEGIN(clang-diagnostic-deprecated-declarations)
-
-void ImageTransportStreamerBase::start()
+void ImageStreamerBase::start()
 {
-  auto node = lock_node();
-  if (!node) {
-    inactive_ = true;
-    return;
-  }
-
-  auto tnat = node->get_topic_names_and_types();
-  inactive_ = true;
-  for (auto topic_and_types : tnat) {
-    if (topic_and_types.second.size() > 1) {
-      // skip over topics with more than one type
-      continue;
-    }
-    const auto & topic_name = topic_and_types.first;
-    if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
-      inactive_ = false;
-      break;
-    }
-  }
-
-  // Get QoS profile from query parameter
-  RCLCPP_INFO(
-    logger_, "Streaming topic %s with QoS profile %s", topic_.c_str(),
-    qos_profile_name_.c_str());
-  auto qos_profile = get_qos_profile_from_name(qos_profile_name_);
-  if (!qos_profile) {
-    qos_profile = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
-    RCLCPP_ERROR(
-      logger_,
-      "Invalid QoS profile %s specified. Using default profile.",
-      qos_profile_name_.c_str());
-  }
-
-  // Create subscriber
-#ifdef IMAGE_TRANSPORT_USES_OLD_API
-  image_sub_ = image_transport::create_subscription(
-    node.get(), topic_,
-    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
-    default_transport_, qos_profile.value().get_rmw_qos_profile());
-#else
-  image_sub_ = image_transport::create_subscription(
-    *node.get(), topic_,
-    std::bind(&ImageTransportStreamerBase::image_callback, this, std::placeholders::_1),
-    default_transport_, qos_profile.value());
-#endif
+  attach_subscriber(
+    std::bind(
+      &ImageStreamerBase::subscriber_callback,
+      this,
+      std::placeholders::_1
+    )
+  );
 }
 
-#pragma GCC diagnostic pop
-// NOLINTEND(clang-diagnostic-deprecated-declarations)
-
-void ImageTransportStreamerBase::initialize(const cv::Mat & /*img*/)
+void ImageStreamerBase::initialize(const cv::Mat & /*img*/)
 {
 }
 
-void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
+void ImageStreamerBase::restream_frame(std::chrono::duration<double>/* max_age */)
 {
   if (inactive_ || !initialized_) {
     return;
@@ -181,7 +113,7 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
   try_send_image(output_size_image_, last_frame_, *node);
 }
 
-void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
+void ImageStreamerBase::subscriber_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (inactive_) {
     return;
@@ -212,7 +144,7 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
       cv::flip(img, img, 1);
     }
 
-    const std::scoped_lock lock(send_mutex_);  // protects output_size_image_
+    const std::scoped_lock lock(send_mutex);  // protects output_size_image_
     if (output_width_ != input_width || output_height_ != input_height) {
       cv::Mat img_resized;
       const cv::Size new_size(output_width_, output_height_);
@@ -243,13 +175,13 @@ void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::C
   try_send_image(output_size_image_, last_frame_, *node);
 }
 
-void ImageTransportStreamerBase::try_send_image(
+void ImageStreamerBase::try_send_image(
   const cv::Mat & img,
   const std::chrono::steady_clock::time_point & /* time */,
   rclcpp::Node & node)
 {
   try {
-    const std::scoped_lock lock(send_mutex_);
+    const std::scoped_lock lock(send_mutex);
     send_image(img, std::chrono::steady_clock::now());
   } catch (boost::system::system_error & e) {
     // happens when client disconnects
@@ -269,7 +201,7 @@ void ImageTransportStreamerBase::try_send_image(
   }
 }
 
-cv::Mat ImageTransportStreamerBase::decode_image(
+cv::Mat ImageStreamerBase::decode_image(
   const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
   if (msg->encoding.find("F") != std::string::npos) {
@@ -288,16 +220,32 @@ cv::Mat ImageTransportStreamerBase::decode_image(
   return cv_bridge::toCvCopy(msg, "bgr8")->image;
 }
 
-std::vector<std::string> ImageTransportStreamerFactoryBase::get_available_topics(
-  rclcpp::Node & node)
+std::vector<std::string> ImageStreamerFactoryBase::get_available_topics(
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
 {
-  return get_image_topics(node);
+  std::vector<std::string> results;
+
+  for (auto subscriber: subscriber_factories) {
+    std::vector<std::string> entries = subscriber.second->get_available_topics(node);
+    results.insert(results.end(), entries.begin(), entries.end());
+  }
+
+  return results;
 }
 
-std::vector<std::string> ImageTransportSnapshotStreamerFactoryBase::get_available_topics(
-  rclcpp::Node & node)
+std::vector<std::string> ImageSnapshotStreamerFactoryBase::get_available_topics(
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories)
 {
-  return get_image_topics(node);
+  std::vector<std::string> results;
+
+  for (auto subscriber: subscriber_factories) {
+    std::vector<std::string> entries = subscriber.second->get_available_topics(node);
+    results.insert(results.end(), entries.begin(), entries.end());
+  }
+
+  return results;
 }
 
 }  // namespace streamers
