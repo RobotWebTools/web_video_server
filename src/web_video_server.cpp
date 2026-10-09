@@ -192,11 +192,17 @@ void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
 
 void WebVideoServer::activate_pending_streamers()
 {
-  // Activate only ONE pending streamer per timer tick.  create_subscription()
-  // in FastDDS serialises on a participant-level mutex, so spawning many
-  // threads that all call it concurrently just makes them pile up.  If one
-  // gets stuck (FastDDS internal deadlock), all the others block behind it.
-  // Processing one at a time limits the blast radius to a single thread.
+  // FastDDS serialises create_subscription() on a participant-level mutex.
+  // Keep only one start() call in flight so later timer ticks cannot pile up
+  // more threads behind a stalled subscription creation.
+  bool expected = false;
+  if (!creation_in_progress_.compare_exchange_strong(expected, true)) {
+    return;
+  }
+  auto clear_creation_flag = [](std::atomic<bool> * flag) {flag->store(false);};
+  std::unique_ptr<std::atomic<bool>, decltype(clear_creation_flag)> creation_guard(
+    &creation_in_progress_, clear_creation_flag);
+
   std::shared_ptr<StreamerInterface> streamer;
   {
     const std::scoped_lock lock(pending_mutex_);
@@ -236,8 +242,9 @@ void WebVideoServer::activate_pending_streamers()
   // timers keep running.
   auto weak_node = weak_from_this();
   streamer_threads_.emplace_back(
-    [s = streamer, weak_node]() {
+    [s = streamer, weak_node, creation_guard = std::move(creation_guard)]() mutable {
       s->start();
+      creation_guard.reset();
       if (s->is_inactive()) {
         return;
       }
