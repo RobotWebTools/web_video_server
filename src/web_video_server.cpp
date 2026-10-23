@@ -32,6 +32,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <iterator>
@@ -42,6 +44,7 @@
 #include <string>
 #include <sstream>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <boost/algorithm/string/join.hpp>
@@ -68,6 +71,20 @@ using namespace boost::placeholders;  // NOLINT
 namespace web_video_server
 {
 
+// Tracks how long a streamer thread has been inside start() or spin_once().
+struct StreamerThreadWatch
+{
+  explicit StreamerThreadWatch(std::string topic)
+  : topic(std::move(topic)) {}
+
+  void mark_busy() {busy_since = std::chrono::steady_clock::now().time_since_epoch().count();}
+  void mark_idle() {busy_since = 0;}
+
+  const std::string topic;
+  // steady_clock ticks when the current call started, 0 while idle.
+  std::atomic<std::chrono::steady_clock::rep> busy_since{0};
+};
+
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
@@ -82,6 +99,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   declare_parameter("publish_rate", -1.0);
   declare_parameter("default_stream_type", "mjpeg");
   declare_parameter("default_snapshot_type", "jpeg");
+  declare_parameter("watchdog_timeout", 10.0);
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -91,6 +109,8 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("publish_rate", publish_rate_);
   get_parameter("default_stream_type", default_stream_type_);
   get_parameter("default_snapshot_type", default_snapshot_type_);
+  double watchdog_timeout;
+  get_parameter("watchdog_timeout", watchdog_timeout);
 
   for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
     RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
@@ -157,6 +177,12 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   );
 
   server_->run();
+
+  if (watchdog_timeout > 0.0) {
+    watchdog_timeout_ = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+      std::chrono::duration<double>(watchdog_timeout));
+    watchdog_thread_ = std::thread([this]() {watchdog_loop();});
+  }
 }
 
 WebVideoServer::~WebVideoServer()
@@ -179,6 +205,17 @@ WebVideoServer::~WebVideoServer()
   streamer_threads_.clear();
 
   server_->stop();
+
+  // Stop the watchdog last, so it can still cut short a shutdown that hangs
+  // on a deadlocked streamer thread.
+  if (watchdog_thread_.joinable()) {
+    {
+      const std::scoped_lock lock(watchdog_mutex_);
+      watchdog_stop_ = true;
+    }
+    watchdog_cv_.notify_all();
+    watchdog_thread_.join();
+  }
 }
 
 void WebVideoServer::restream_frames(std::chrono::duration<double> max_age)
@@ -231,19 +268,31 @@ void WebVideoServer::activate_pending_streamers()
     streamers_.push_back(streamer);
   }
 
-  // Call start() on its own thread.  create_subscription() can deadlock
-  // inside FastDDS (lock-ordering between reader mutex and PDP/EDP mutexes),
-  // so we must not block the timer callback on it.
+  auto watch = std::make_shared<StreamerThreadWatch>(streamer->get_topic());
+  {
+    const std::scoped_lock lock(watchdog_mutex_);
+    streamer_thread_watches_.erase(
+      std::remove_if(
+        streamer_thread_watches_.begin(), streamer_thread_watches_.end(),
+        [](const std::weak_ptr<StreamerThreadWatch> & w) {return w.expired();}),
+      streamer_thread_watches_.end());
+    streamer_thread_watches_.push_back(watch);
+  }
+
+  // Call start() on its own thread, so the timer callback is not blocked
+  // when create_subscription() hangs on a deadlocked FastDDS participant.
   //
   // The thread also spins an isolated SingleThreadedExecutor for the
-  // streamer's callback group.  This keeps subscription callbacks completely
-  // out of the main executor — if one DDS reader deadlocks, only that
-  // stream's thread is affected; all other streams and the management
-  // timers keep running.
+  // streamer's callback group.  This does not contain a FastDDS deadlock
+  // (its event and receive threads are shared by all subscriptions), but it
+  // gives the watchdog a precise place to detect one: a start() or
+  // spin_once() call that never returns.
   auto weak_node = weak_from_this();
   streamer_threads_.emplace_back(
-    [s = streamer, weak_node, creation_guard = std::move(creation_guard)]() mutable {
+    [s = streamer, weak_node, watch, creation_guard = std::move(creation_guard)]() mutable {
+      watch->mark_busy();
       s->start();
+      watch->mark_idle();
       creation_guard.reset();
       if (s->is_inactive()) {
         return;
@@ -263,7 +312,9 @@ void WebVideoServer::activate_pending_streamers()
       executor.add_callback_group(cb_group, node->get_node_base_interface());
 
       while (!s->is_inactive() && rclcpp::ok()) {
+        watch->mark_busy();
         executor.spin_once(std::chrono::milliseconds(100));
+        watch->mark_idle();
       }
     });
 }
@@ -309,6 +360,38 @@ void WebVideoServer::resourse_management_timer_callback()
 {
   activate_pending_streamers();
   cleanup_inactive_streams();
+}
+
+void WebVideoServer::watchdog_loop()
+{
+  std::unique_lock lock(watchdog_mutex_);
+  while (!watchdog_cv_.wait_for(lock, 1s, [this]() {return watchdog_stop_;})) {
+    const auto now = std::chrono::steady_clock::now().time_since_epoch().count();
+    for (const auto & weak_watch : streamer_thread_watches_) {
+      const auto watch = weak_watch.lock();
+      if (!watch) {
+        continue;
+      }
+      const auto busy_since = watch->busy_since.load();
+      if (busy_since == 0) {
+        continue;
+      }
+      const std::chrono::steady_clock::duration busy_for(now - busy_since);
+      if (busy_for > watchdog_timeout_) {
+        // A start() or spin_once() call this slow means FastDDS is stuck while
+        // holding a reader lock, which wedges the whole DDS participant and
+        // can't be recovered in-process.  Write straight to stderr, because
+        // RCLCPP logging also publishes to /rosout through that participant,
+        // and use _Exit, because destructors would block on it too.
+        std::fprintf(
+          stderr,
+          "[FATAL] [web_video_server]: Streamer thread for topic '%s' stuck for %.1f s, "
+          "assuming a FastDDS deadlock. Exiting so that the process can be respawned.\n",
+          watch->topic.c_str(), std::chrono::duration<double>(busy_for).count());
+        std::_Exit(EXIT_FAILURE);
+      }
+    }
+  }
 }
 
 bool WebVideoServer::handle_request(

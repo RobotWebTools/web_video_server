@@ -32,10 +32,12 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "async_web_server_cpp/http_connection.hpp"
@@ -51,6 +53,8 @@
 
 namespace web_video_server
 {
+
+struct StreamerThreadWatch;
 
 /**
  * @class WebVideoServer
@@ -105,6 +109,7 @@ private:
   void activate_pending_streamers();
   void cleanup_inactive_streams();
   void resourse_management_timer_callback();
+  void watchdog_loop();
 
   rclcpp::TimerBase::SharedPtr restream_timer_;
   rclcpp::TimerBase::SharedPtr resource_management_timer_;
@@ -130,6 +135,15 @@ private:
   std::mutex streamers_mutex_;
   std::mutex pending_mutex_;
   std::atomic<bool> creation_in_progress_{false};
+
+  // Watchdog that exits the process when a streamer thread gets stuck
+  // (FastDDS deadlock), so that it can be respawned.
+  std::chrono::steady_clock::duration watchdog_timeout_;
+  std::vector<std::weak_ptr<StreamerThreadWatch>> streamer_thread_watches_;
+  std::mutex watchdog_mutex_;
+  std::condition_variable watchdog_cv_;
+  bool watchdog_stop_{false};
+  std::thread watchdog_thread_;
 };
 
 }  // namespace web_video_server

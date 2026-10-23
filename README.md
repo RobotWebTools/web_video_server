@@ -93,6 +93,7 @@ ros2 run web_video_server web_video_server
 | `verbose` | bool | false | true, false | Enable verbose logging |
 | `default_stream_type` | string | "mjpeg" | "mjpeg", "vp8", "vp9", "h264", "png", "ros_compressed" | Default format for video streams |
 | `publish_rate` | double | -1.0 | -1.0 or positive value | Rate for republishing images (-1.0 means no republishing) |
+| `watchdog_timeout` | double | 10.0 | 0.0 or positive value | Exit the process when a stream's subscription has been stuck for this many seconds, so that it can be respawned (0.0 disables the watchdog) |
 
 #### Running with Custom Parameters
 
