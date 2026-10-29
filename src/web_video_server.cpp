@@ -203,7 +203,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   declare_parameter("default_stream_type", "mjpeg");
   declare_parameter("default_snapshot_type", "jpeg");
   declare_parameter("watchdog_timeout", 10.0);
-  declare_parameter("resubscribe_timeout", 5.0);
+  declare_parameter("resubscribe_timeout", 2.0);
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
