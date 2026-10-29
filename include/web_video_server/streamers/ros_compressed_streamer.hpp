@@ -60,6 +60,9 @@ public:
   ~RosCompressedStreamer();
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
+  void subscribe() override;
+  void unsubscribe() override;
+  size_t get_publisher_count() const override;
 
 protected:
   virtual void send_image(
@@ -97,6 +100,9 @@ public:
   ~RosCompressedSnapshotStreamer();
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
+  void subscribe() override;
+  void unsubscribe() override;
+  size_t get_publisher_count() const override;
 
 protected:
   virtual void send_image(

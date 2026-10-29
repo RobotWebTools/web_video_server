@@ -40,6 +40,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <string>
 #include <sstream>
@@ -85,6 +86,108 @@ struct StreamerThreadWatch
   std::atomic<std::chrono::steady_clock::rep> busy_since{0};
 };
 
+namespace
+{
+
+// Upper bound for the resubscribe backoff.
+constexpr auto kMaxResubscribeTimeout = std::chrono::seconds(60);
+// Pause between dropping a subscription and creating it again, so that the
+// old reader's DATA(Ur) is out before the new reader is announced.
+constexpr auto kResubscribeGap = std::chrono::milliseconds(500);
+
+// Spins the streamer's callback group until the streamer becomes inactive.
+//
+// With a Fast DDS discovery server, a new reader is sometimes matched with a
+// publisher that never learns about it: the server drops the reader's DATA(r)
+// when it processes a DATA(Ur) from the same participant before the DATA(r)
+// was acknowledged by everyone, e.g. when the UI switches streams.  The reader
+// then gets no data, although it reports a matched publisher.  So, if no
+// message arrives within resubscribe_timeout after subscribing or after a new
+// publisher was matched, recreate the subscription, which announces a new
+// reader.  The timeout doubles after each attempt that brings no message.
+void spin_streamer(
+  const std::shared_ptr<StreamerInterface> & s,
+  const rclcpp::Node::SharedPtr & node,
+  StreamerThreadWatch & watch,
+  std::chrono::steady_clock::duration resubscribe_timeout)
+{
+  auto cb_group = s->get_callback_group();
+  if (!cb_group) {
+    return;
+  }
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_callback_group(cb_group, node->get_node_base_interface());
+
+  const bool resubscribe_enabled = resubscribe_timeout.count() > 0;
+  auto timeout = resubscribe_timeout;
+  // Since when a message is expected, unset when one arrived.
+  std::optional<std::chrono::steady_clock::time_point> waiting_since =
+    std::chrono::steady_clock::now();
+  size_t publisher_count = s->get_publisher_count();
+
+  while (!s->is_inactive() && rclcpp::ok()) {
+    watch.mark_busy();
+    executor.spin_once(std::chrono::milliseconds(100));
+    watch.mark_idle();
+
+    if (!resubscribe_enabled) {
+      continue;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    const size_t new_publisher_count = s->get_publisher_count();
+    if (new_publisher_count > publisher_count) {
+      waiting_since = now;
+    }
+    publisher_count = new_publisher_count;
+
+    if (!waiting_since) {
+      continue;
+    }
+    if (s->get_last_message_time() >= *waiting_since) {
+      waiting_since.reset();
+      timeout = resubscribe_timeout;
+      continue;
+    }
+    if (publisher_count == 0 || now - *waiting_since < timeout || s->is_inactive()) {
+      continue;
+    }
+
+    RCLCPP_WARN(
+      node->get_logger(),
+      "No message on topic '%s' for %.1f s although %zu publisher(s) are matched, resubscribing",
+      s->get_topic().c_str(), std::chrono::duration<double>(now - *waiting_since).count(),
+      publisher_count);
+
+    executor.remove_callback_group(cb_group);
+    cb_group.reset();
+    watch.mark_busy();
+    s->unsubscribe();
+    watch.mark_idle();
+
+    std::this_thread::sleep_for(kResubscribeGap);
+    if (s->is_inactive() || !rclcpp::ok()) {
+      return;
+    }
+
+    watch.mark_busy();
+    s->subscribe();
+    watch.mark_idle();
+    cb_group = s->get_callback_group();
+    if (!cb_group) {
+      return;
+    }
+    executor.add_callback_group(cb_group, node->get_node_base_interface());
+
+    waiting_since = std::chrono::steady_clock::now();
+    publisher_count = s->get_publisher_count();
+    timeout = std::min<std::chrono::steady_clock::duration>(timeout * 2, kMaxResubscribeTimeout);
+  }
+}
+
+}  // namespace
+
 WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
 : rclcpp::Node("web_video_server", options), handler_group_(
     async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)),
@@ -100,6 +203,7 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   declare_parameter("default_stream_type", "mjpeg");
   declare_parameter("default_snapshot_type", "jpeg");
   declare_parameter("watchdog_timeout", 10.0);
+  declare_parameter("resubscribe_timeout", 5.0);
 
   get_parameter("port", port_);
   get_parameter("verbose", verbose_);
@@ -111,6 +215,10 @@ WebVideoServer::WebVideoServer(const rclcpp::NodeOptions & options)
   get_parameter("default_snapshot_type", default_snapshot_type_);
   double watchdog_timeout;
   get_parameter("watchdog_timeout", watchdog_timeout);
+  double resubscribe_timeout;
+  get_parameter("resubscribe_timeout", resubscribe_timeout);
+  resubscribe_timeout_ = std::chrono::duration_cast<std::chrono::steady_clock::duration>(
+    std::chrono::duration<double>(std::max(resubscribe_timeout, 0.0)));
 
   for (auto cls : streamer_factory_loader_.getDeclaredClasses()) {
     RCLCPP_INFO(get_logger(), "Loading streamer plugin: %s", cls.c_str());
@@ -289,7 +397,8 @@ void WebVideoServer::activate_pending_streamers()
   // spin_once() call that never returns.
   auto weak_node = weak_from_this();
   streamer_threads_.emplace_back(
-    [s = streamer, weak_node, watch, creation_guard = std::move(creation_guard)]() mutable {
+    [s = streamer, weak_node, watch, resubscribe_timeout = resubscribe_timeout_,
+    creation_guard = std::move(creation_guard)]() mutable {
       watch->mark_busy();
       s->start();
       watch->mark_idle();
@@ -303,19 +412,7 @@ void WebVideoServer::activate_pending_streamers()
         return;
       }
 
-      auto cb_group = s->get_callback_group();
-      if (!cb_group) {
-        return;
-      }
-
-      rclcpp::executors::SingleThreadedExecutor executor;
-      executor.add_callback_group(cb_group, node->get_node_base_interface());
-
-      while (!s->is_inactive() && rclcpp::ok()) {
-        watch->mark_busy();
-        executor.spin_once(std::chrono::milliseconds(100));
-        watch->mark_idle();
-      }
+      spin_streamer(s, node, *watch, resubscribe_timeout);
     });
 }
 

@@ -133,6 +133,17 @@ void ImageTransportStreamerBase::start()
     }
   }
 
+  subscribe();
+}
+
+void ImageTransportStreamerBase::subscribe()
+{
+  auto node = lock_node();
+  if (!node) {
+    inactive_ = true;
+    return;
+  }
+
   // Get QoS profile from query parameter
   RCLCPP_INFO(
     logger_, "Streaming topic %s with QoS profile %s", topic_.c_str(),
@@ -160,6 +171,17 @@ void ImageTransportStreamerBase::start()
 #pragma GCC diagnostic pop
 // NOLINTEND(clang-diagnostic-deprecated-declarations)
 
+void ImageTransportStreamerBase::unsubscribe()
+{
+  image_sub_.shutdown();
+  callback_group_.reset();
+}
+
+size_t ImageTransportStreamerBase::get_publisher_count() const
+{
+  return image_sub_.getNumPublishers();
+}
+
 void ImageTransportStreamerBase::initialize(const cv::Mat & /*img*/)
 {
 }
@@ -181,6 +203,7 @@ void ImageTransportStreamerBase::restream_frame(std::chrono::duration<double>/* 
 
 void ImageTransportStreamerBase::image_callback(const sensor_msgs::msg::Image::ConstSharedPtr & msg)
 {
+  mark_message_received();
   if (inactive_) {
     return;
   }

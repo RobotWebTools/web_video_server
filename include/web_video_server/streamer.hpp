@@ -87,6 +87,30 @@ public:
   virtual std::string get_client_id() = 0;
 
   virtual rclcpp::CallbackGroup::SharedPtr get_callback_group() const {return nullptr;}
+
+  /**
+   * @brief Creates the subscription and its callback group.
+   *
+   * Called by start(), and again after unsubscribe() to resubscribe.
+   */
+  virtual void subscribe() {}
+
+  /**
+   * @brief Destroys the subscription and its callback group.
+   *
+   * The callback group must not be in an executor anymore.
+   */
+  virtual void unsubscribe() {}
+
+  /**
+   * @brief Returns the number of publishers matched with the subscription.
+   */
+  virtual size_t get_publisher_count() const {return 0;}
+
+  /**
+   * @brief Returns when the last message was received, or a default time point if none was.
+   */
+  virtual std::chrono::steady_clock::time_point get_last_message_time() const {return {};}
 };
 
 /**
@@ -121,8 +145,19 @@ public:
 
   rclcpp::CallbackGroup::SharedPtr get_callback_group() const override {return callback_group_;}
 
+  std::chrono::steady_clock::time_point get_last_message_time() const override
+  {
+    return std::chrono::steady_clock::time_point(
+      std::chrono::steady_clock::duration(last_message_time_.load()));
+  }
+
 protected:
   rclcpp::Node::SharedPtr lock_node() const;
+
+  void mark_message_received()
+  {
+    last_message_time_ = std::chrono::steady_clock::now().time_since_epoch().count();
+  }
 
   async_web_server_cpp::HttpConnectionPtr connection_;
   async_web_server_cpp::HttpRequest request_;
@@ -132,6 +167,10 @@ protected:
   std::atomic<bool> inactive_;
   std::string topic_;
   std::string client_id_;
+
+private:
+  // steady_clock ticks of the last received message, 0 if none was.
+  std::atomic<std::chrono::steady_clock::rep> last_message_time_{0};
 };
 
 /**

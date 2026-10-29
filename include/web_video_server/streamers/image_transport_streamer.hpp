@@ -67,6 +67,9 @@ public:
 
   virtual void start();
   virtual void restream_frame(std::chrono::duration<double> max_age);
+  void subscribe() override;
+  void unsubscribe() override;
+  size_t get_publisher_count() const override;
 
 protected:
   virtual cv::Mat decode_image(const sensor_msgs::msg::Image::ConstSharedPtr & msg);

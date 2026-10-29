@@ -182,6 +182,11 @@ RosCompressedStreamer::~RosCompressedStreamer()
 
 void RosCompressedStreamer::start()
 {
+  subscribe();
+}
+
+void RosCompressedStreamer::subscribe()
+{
   auto node = lock_node();
   if (!node) {
     inactive_ = true;
@@ -195,6 +200,17 @@ void RosCompressedStreamer::start()
     topic_, qos_profile_name_, node, logger_,
     std::bind(&RosCompressedStreamer::image_callback, this, std::placeholders::_1),
     callback_group_);
+}
+
+void RosCompressedStreamer::unsubscribe()
+{
+  image_sub_.reset();
+  callback_group_.reset();
+}
+
+size_t RosCompressedStreamer::get_publisher_count() const
+{
+  return image_sub_ ? image_sub_->get_publisher_count() : 0;
 }
 
 void RosCompressedStreamer::restream_frame(std::chrono::duration<double> max_age)
@@ -249,6 +265,7 @@ void RosCompressedStreamer::send_image(
 void RosCompressedStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
+  mark_message_received();
   const std::scoped_lock lock(send_mutex_);  // protects last_msg_ and last_frame_
   last_msg_ = msg;
   last_frame_ = std::chrono::steady_clock::now();
@@ -301,6 +318,11 @@ RosCompressedSnapshotStreamer::~RosCompressedSnapshotStreamer()
 
 void RosCompressedSnapshotStreamer::start()
 {
+  subscribe();
+}
+
+void RosCompressedSnapshotStreamer::subscribe()
+{
   auto node = lock_node();
   if (!node) {
     inactive_ = true;
@@ -314,6 +336,17 @@ void RosCompressedSnapshotStreamer::start()
     topic_, qos_profile_name_, node, logger_,
     std::bind(&RosCompressedSnapshotStreamer::image_callback, this, std::placeholders::_1),
     callback_group_);
+}
+
+void RosCompressedSnapshotStreamer::unsubscribe()
+{
+  image_sub_.reset();
+  callback_group_.reset();
+}
+
+size_t RosCompressedSnapshotStreamer::get_publisher_count() const
+{
+  return image_sub_ ? image_sub_->get_publisher_count() : 0;
 }
 
 void RosCompressedSnapshotStreamer::restream_frame(std::chrono::duration<double>/* max_age */)
@@ -380,6 +413,7 @@ void RosCompressedSnapshotStreamer::send_image(
 void RosCompressedSnapshotStreamer::image_callback(
   const sensor_msgs::msg::CompressedImage::ConstSharedPtr msg)
 {
+  mark_message_received();
   send_image(msg, std::chrono::steady_clock::now());
 }
 

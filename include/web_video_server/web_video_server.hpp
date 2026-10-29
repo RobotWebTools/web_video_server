@@ -144,6 +144,10 @@ private:
   std::condition_variable watchdog_cv_;
   bool watchdog_stop_{false};
   std::thread watchdog_thread_;
+
+  // How long a streamer may get no message from a matched publisher before
+  // its subscription is recreated, zero to disable.
+  std::chrono::steady_clock::duration resubscribe_timeout_;
 };
 
 }  // namespace web_video_server

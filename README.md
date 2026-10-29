@@ -94,6 +94,7 @@ ros2 run web_video_server web_video_server
 | `default_stream_type` | string | "mjpeg" | "mjpeg", "vp8", "vp9", "h264", "png", "ros_compressed" | Default format for video streams |
 | `publish_rate` | double | -1.0 | -1.0 or positive value | Rate for republishing images (-1.0 means no republishing) |
 | `watchdog_timeout` | double | 10.0 | 0.0 or positive value | Exit the process when a stream's subscription has been stuck for this many seconds, so that it can be respawned (0.0 disables the watchdog) |
+| `resubscribe_timeout` | double | 5.0 | 0.0 or positive value | Recreate a stream's subscription when it gets no message for this many seconds after subscribing or after a new publisher was matched, although a publisher is matched. Doubles after each attempt, up to 60 s (0.0 disables resubscribing) |
 
 #### Running with Custom Parameters
 
