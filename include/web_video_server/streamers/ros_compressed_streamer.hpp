@@ -56,6 +56,7 @@ public:
   RosCompressedStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~RosCompressedStreamer();
   virtual void start();
@@ -72,7 +73,6 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::CompressedImage>::SharedPtr image_sub_;
   std::chrono::steady_clock::time_point last_frame_;
   sensor_msgs::msg::CompressedImage::ConstSharedPtr last_msg_;
-  std::mutex send_mutex_;
   std::string qos_profile_name_;
 };
 
@@ -83,8 +83,12 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 class RosCompressedSnapshotStreamer : public StreamerBase
@@ -93,6 +97,7 @@ public:
   RosCompressedSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~RosCompressedSnapshotStreamer();
   virtual void start();
@@ -117,8 +122,12 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
-  std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  );
 };
 
 }  // namespace streamers

@@ -40,6 +40,8 @@
 #include "rclcpp/logger.hpp"
 #include "rclcpp/node.hpp"
 
+#include "web_video_server/subscriber.hpp"
+
 namespace web_video_server
 {
 
@@ -70,6 +72,11 @@ public:
   virtual bool is_inactive() = 0;
 
   /**
+   * @brief Create a subscription through a SubscriberFactoryInterface.
+   */
+  virtual void attach_subscriber(const ImageCallback & callback) = 0;
+
+  /**
    * @brief Restreams the last received image frame if older than max_age.
    */
   virtual void restream_frame(std::chrono::duration<double> max_age) = 0;
@@ -94,8 +101,11 @@ public:
   StreamerBase(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node,
     std::string logger_name = "streamer");
+
+  std::mutex send_mutex;
 
   void stop() override
   {
@@ -106,6 +116,41 @@ public:
   bool is_inactive() override
   {
     return inactive_;
+  }
+
+  void attach_subscriber(const ImageCallback & callback) override
+  {
+    auto node = lock_node();
+    if (!node) {
+      inactive_ = true;
+      return;
+    }
+
+    auto tnat = node->get_topic_names_and_types();
+    inactive_ = true;
+    for (auto topic_and_types : tnat) {
+      if (topic_and_types.second.size() > 1) {
+        // skip over topics with more than one type
+        continue;
+      }
+      const auto & topic_name = topic_and_types.first;
+      const auto & topic_type = topic_and_types.second[0];
+      if (topic_name == topic_ || (topic_name.find("/") == 0 && topic_name.substr(1) == topic_)) {
+        inactive_ = false;
+
+        auto factory_it = subscriber_factories_.find(topic_type);
+        if (factory_it == subscriber_factories_.end()) {
+          RCLCPP_WARN_STREAM(
+            logger_, "No subscriber factory registered for topic type: " << topic_type);
+          inactive_ = true;
+          return;
+        }
+        subscriber_ = factory_it->second->create_subscriber(node);
+        subscriber_->subscribe(request_, topic_, callback);
+
+        break;
+      }
+    }
   }
 
   std::string get_topic() override
@@ -128,6 +173,8 @@ protected:
   bool inactive_;
   std::string topic_;
   std::string client_id_;
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories_;
+  std::shared_ptr<SubscriberInterface> subscriber_;
 };
 
 /**
@@ -155,7 +202,9 @@ public:
   virtual std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
-    rclcpp::Node::WeakPtr node) = 0;
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
+    rclcpp::Node::WeakPtr node
+  ) = 0;
 
   /**
    * @brief Creates HTML code for embedding a viewer for this streamer.
@@ -168,7 +217,10 @@ public:
    * @param node The ROS2 node to use for discovering topics.
    * @return A vector of topic names.
    */
-  virtual std::vector<std::string> get_available_topics(rclcpp::Node & node);
+  virtual std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  ) = 0;
 };
 
 /**
