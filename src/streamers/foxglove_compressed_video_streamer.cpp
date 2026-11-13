@@ -159,8 +159,10 @@ bool annex_b_key_frame(const std::vector<uint8_t> & data, bool hevc)
 FoxgloveCompressedVideoStreamer::FoxgloveCompressedVideoStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: StreamerBase(request, connection, node, "foxglove_compressed_video_streamer")
+: StreamerBase(
+    request, connection, subscriber_factories, node, "foxglove_compressed_video_streamer")
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
   send_http_header();
@@ -276,6 +278,7 @@ void FoxgloveCompressedVideoStreamer::send_frame(Message::ConstSharedPtr msg, bo
 std::shared_ptr<StreamerInterface> FoxgloveCompressedVideoStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   auto locked = node.lock();
@@ -285,11 +288,13 @@ std::shared_ptr<StreamerInterface> FoxgloveCompressedVideoStreamerFactory::creat
     RCLCPP_WARN(locked->get_logger(), "%s is not %s", topic.c_str(), kMessageType);
     return nullptr;
   }
-  return std::make_shared<FoxgloveCompressedVideoStreamer>(request, connection, node);
+  return std::make_shared<FoxgloveCompressedVideoStreamer>(
+    request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string> FoxgloveCompressedVideoStreamerFactory::get_available_topics(
-  rclcpp::Node & node)
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
 {
   return collect_topics(node);
 }

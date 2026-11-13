@@ -30,6 +30,7 @@
 #pragma once
 
 #include <chrono>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -55,6 +56,7 @@ public:
   FoxgloveCompressedImageStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~FoxgloveCompressedImageStreamer() override;
 
@@ -81,8 +83,12 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node) override;
-  std::vector<std::string> get_available_topics(rclcpp::Node & node) override;
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  ) override;
 };
 
 class FoxgloveCompressedImageSnapshotStreamer : public StreamerBase
@@ -91,6 +97,7 @@ public:
   FoxgloveCompressedImageSnapshotStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~FoxgloveCompressedImageSnapshotStreamer() override;
 
@@ -111,8 +118,12 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node) override;
-  std::vector<std::string> get_available_topics(rclcpp::Node & node) override;
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  ) override;
 };
 
 }  // namespace streamers

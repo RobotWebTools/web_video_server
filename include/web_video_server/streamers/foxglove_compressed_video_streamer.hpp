@@ -35,6 +35,7 @@ extern "C"
 }
 
 #include <chrono>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -59,6 +60,7 @@ public:
   FoxgloveCompressedVideoStreamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node);
   ~FoxgloveCompressedVideoStreamer() override;
 
@@ -89,9 +91,13 @@ public:
   std::shared_ptr<StreamerInterface> create_streamer(
     const async_web_server_cpp::HttpRequest & request,
     async_web_server_cpp::HttpConnectionPtr connection,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
     rclcpp::Node::WeakPtr node) override;
   std::string create_viewer(const async_web_server_cpp::HttpRequest & request) override;
-  std::vector<std::string> get_available_topics(rclcpp::Node & node) override;
+  std::vector<std::string> get_available_topics(
+    rclcpp::Node & node,
+    std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> subscriber_factories
+  ) override;
 };
 
 }  // namespace streamers

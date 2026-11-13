@@ -109,8 +109,10 @@ std::vector<std::string> collect_topics(rclcpp::Node & node)
 FoxgloveCompressedImageStreamer::FoxgloveCompressedImageStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: StreamerBase(request, connection, node, "foxglove_compressed_image_streamer"),
+: StreamerBase(
+    request, connection, subscriber_factories, node, "foxglove_compressed_image_streamer"),
   stream_(connection)
 {
   stream_.send_initial_header();
@@ -171,6 +173,7 @@ void FoxgloveCompressedImageStreamer::send_image(
 std::shared_ptr<StreamerInterface> FoxgloveCompressedImageStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   auto locked = node.lock();
@@ -180,11 +183,13 @@ std::shared_ptr<StreamerInterface> FoxgloveCompressedImageStreamerFactory::creat
     RCLCPP_WARN(locked->get_logger(), "%s is not %s", topic.c_str(), kMessageType);
     return nullptr;
   }
-  return std::make_shared<FoxgloveCompressedImageStreamer>(request, connection, node);
+  return std::make_shared<FoxgloveCompressedImageStreamer>(
+    request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string> FoxgloveCompressedImageStreamerFactory::get_available_topics(
-  rclcpp::Node & node)
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
 {
   return collect_topics(node);
 }
@@ -192,8 +197,11 @@ std::vector<std::string> FoxgloveCompressedImageStreamerFactory::get_available_t
 FoxgloveCompressedImageSnapshotStreamer::FoxgloveCompressedImageSnapshotStreamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
-: StreamerBase(request, connection, node, "foxglove_compressed_image_snapshot_streamer")
+: StreamerBase(
+    request, connection, subscriber_factories, node,
+    "foxglove_compressed_image_snapshot_streamer")
 {
   qos_profile_name_ = request.get_query_param_value_or_default("qos_profile", "default");
 }
@@ -248,17 +256,21 @@ std::shared_ptr<StreamerInterface>
 FoxgloveCompressedImageSnapshotStreamerFactory::create_streamer(
   const async_web_server_cpp::HttpRequest & request,
   async_web_server_cpp::HttpConnectionPtr connection,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> & subscriber_factories,
   rclcpp::Node::WeakPtr node)
 {
   auto locked = node.lock();
   if (!locked) {return nullptr;}
   const auto topic = request.get_query_param_value_or_default("topic", "");
   if (!topic_has_type(*locked, topic, kMessageType)) {return nullptr;}
-  return std::make_shared<FoxgloveCompressedImageSnapshotStreamer>(request, connection, node);
+  return std::make_shared<FoxgloveCompressedImageSnapshotStreamer>(
+    request, connection, subscriber_factories, node);
 }
 
 std::vector<std::string>
-FoxgloveCompressedImageSnapshotStreamerFactory::get_available_topics(rclcpp::Node & node)
+FoxgloveCompressedImageSnapshotStreamerFactory::get_available_topics(
+  rclcpp::Node & node,
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
 {
   return collect_topics(node);
 }
