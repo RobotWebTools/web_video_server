@@ -31,7 +31,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cstdio>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -40,6 +39,15 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <map>
+
+#include "async_web_server_cpp/http_connection.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+#include "foxglove_msgs/msg/compressed_image.hpp"
+#include "rclcpp/logger.hpp"
+#include "rclcpp/node.hpp"
+
+#include "web_video_server/streamer.hpp"
 
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
@@ -60,13 +68,14 @@ namespace
 {
 
 using Message = foxglove_msgs::msg::CompressedImage;
-constexpr const char * kMessageType = "foxglove_msgs/msg/CompressedImage";
+constexpr const char * KMessageType = "foxglove_msgs/msg/CompressedImage";
 
 rclcpp::QoS make_qos(
   const std::string & topic, const std::string & profile_name, const rclcpp::Logger & logger)
 {
-  RCLCPP_INFO(logger, "Streaming topic %s with QoS profile %s", topic.c_str(),
-          profile_name.c_str());
+  RCLCPP_INFO(
+    logger, "Streaming topic %s with QoS profile %s", topic.c_str(),
+    profile_name.c_str());
   auto profile = get_qos_profile_from_name(profile_name);
   if (!profile) {
     RCLCPP_ERROR(logger, "Invalid QoS profile %s; using default", profile_name.c_str());
@@ -98,7 +107,7 @@ std::vector<std::string> collect_topics(rclcpp::Node & node)
 {
   std::vector<std::string> result;
   for (const auto & item : node.get_topic_names_and_types()) {
-    if (std::find(item.second.begin(), item.second.end(), kMessageType) != item.second.end()) {
+    if (std::find(item.second.begin(), item.second.end(), KMessageType) != item.second.end()) {
       result.push_back(item.first);
     }
   }
@@ -180,8 +189,8 @@ std::shared_ptr<StreamerInterface> FoxgloveCompressedImageStreamerFactory::creat
   auto locked = node.lock();
   if (!locked) {return nullptr;}
   const auto topic = request.get_query_param_value_or_default("topic", "");
-  if (!topic_has_type(*locked, topic, kMessageType)) {
-    RCLCPP_WARN(locked->get_logger(), "%s is not %s", topic.c_str(), kMessageType);
+  if (!topic_has_type(*locked, topic, KMessageType)) {
+    RCLCPP_WARN(locked->get_logger(), "%s is not %s", topic.c_str(), KMessageType);
     return nullptr;
   }
   return std::make_shared<FoxgloveCompressedImageStreamer>(
@@ -263,7 +272,7 @@ FoxgloveCompressedImageSnapshotStreamerFactory::create_streamer(
   auto locked = node.lock();
   if (!locked) {return nullptr;}
   const auto topic = request.get_query_param_value_or_default("topic", "");
-  if (!topic_has_type(*locked, topic, kMessageType)) {return nullptr;}
+  if (!topic_has_type(*locked, topic, KMessageType)) {return nullptr;}
   return std::make_shared<FoxgloveCompressedImageSnapshotStreamer>(
     request, connection, subscriber_factories, node);
 }
