@@ -313,6 +313,43 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
   let buffer = new Uint8Array(0);
   let cachedH264Sps;
   let cachedH264Pps;
+  const queryParameters = new URLSearchParams(window.location.search);
+
+  function positiveNumberParameter(name) {
+    const value = queryParameters.get(name);
+    if (value === null || value === '') return undefined;
+    const number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) {
+      throw new Error(name + ' must be a positive number');
+    }
+    return number;
+  }
+
+  const requestedWidth = positiveNumberParameter('width');
+  const requestedHeight = positiveNumberParameter('height');
+  const requestedDisplayFps = positiveNumberParameter('display_fps');
+  const minimumDrawIntervalMs = requestedDisplayFps ? 1000 / requestedDisplayFps : 0;
+  let lastDrawTimeMs = -Infinity;
+
+  function outputDimensions(frame) {
+    const sourceWidth = frame.displayWidth;
+    const sourceHeight = frame.displayHeight;
+    if (requestedWidth !== undefined && requestedHeight !== undefined) {
+      return {
+        width: Math.max(1, Math.round(requestedWidth)),
+        height: Math.max(1, Math.round(requestedHeight))
+      };
+    }
+    if (requestedWidth !== undefined) {
+      const width = Math.max(1, Math.round(requestedWidth));
+      return {width, height: Math.max(1, Math.round(sourceHeight * width / sourceWidth))};
+    }
+    if (requestedHeight !== undefined) {
+      const height = Math.max(1, Math.round(requestedHeight));
+      return {width: Math.max(1, Math.round(sourceWidth * height / sourceHeight)), height};
+    }
+    return {width: sourceWidth, height: sourceHeight};
+  }
 
   function hasAnnexBStartCode(payload) {
     for (let i = 0; i + 3 < payload.length; ++i) {
@@ -421,8 +458,13 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
   }
 
   async function configure(codecNumber, payload, keyFrame) {
-    if (decoder && configuredCodecNumber === codecNumber) return;
-    if (!keyFrame) throw new Error('Waiting for a key frame before configuring the decoder');
+    if (decoder && configuredCodecNumber === codecNumber) {
+      return true;
+    }
+    if (!keyFrame) {
+      status.textContent = 'Waiting for a key frame before configuring the decoder';
+      return false;
+    }
     const codec = codecName(codecNumber, payload);
     if (decoder) decoder.close();
     const config = {codec, optimizeForLatency: true, hardwareAcceleration: 'prefer-hardware'};
@@ -430,19 +472,36 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
     if (!support.supported) throw new Error('Browser does not support ' + codec);
     decoder = new VideoDecoder({
       output: frame => {
-        if (canvas.width !== frame.displayWidth || canvas.height !== frame.displayHeight) {
-          canvas.width = frame.displayWidth;
-          canvas.height = frame.displayHeight;
+        const now = performance.now();
+        if (minimumDrawIntervalMs > 0 && now - lastDrawTimeMs < minimumDrawIntervalMs) {
+          frame.close();
+          return;
         }
-        context.drawImage(frame, 0, 0, canvas.width, canvas.height);
+
+        const sourceWidth = frame.displayWidth;
+        const sourceHeight = frame.displayHeight;
+        const dimensions = outputDimensions(frame);
+        if (canvas.width !== dimensions.width || canvas.height !== dimensions.height) {
+          canvas.width = dimensions.width;
+          canvas.height = dimensions.height;
+        }
+        context.drawImage(frame, 0, 0, dimensions.width, dimensions.height);
         frame.close();
-        status.textContent = codec + ' - ' + canvas.width + 'x' + canvas.height;
+        lastDrawTimeMs = now;
+
+        let message = codec + ' - ' + sourceWidth + 'x' + sourceHeight +
+          ' -> ' + dimensions.width + 'x' + dimensions.height;
+        if (requestedDisplayFps !== undefined) {
+          message += ' - display <= ' + requestedDisplayFps + ' FPS';
+        }
+        status.textContent = message;
       },
       error: error => { status.textContent = 'Decoder error: ' + error.message; }
     });
     decoder.configure(support.config);
     configuredCodec = codec;
     configuredCodecNumber = codecNumber;
+    return true;
   }
 
   function append(chunk) {
@@ -496,7 +555,10 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
       }
       const timestampUs = seconds * 1000000 + Math.floor(nanoseconds / 1000);
       if (firstTimestampUs === undefined) firstTimestampUs = timestampUs;
-      await configure(codecNumber, payload, effectiveKeyFrame);
+      const configured = await configure(codecNumber, payload, effectiveKeyFrame);
+      if (!configured) {
+        continue;
+      }
       decoder.decode(new EncodedVideoChunk({
         type: effectiveKeyFrame ? 'key' : 'delta',
         timestamp: timestampUs - firstTimestampUs,
@@ -505,18 +567,51 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
     }
   }
 
+  const streamUrl = '/stream?)HTML";
+  stream << request.query;
+  stream << R"HTML(';
+
+  async function runAttempt() {
+    buffer = new Uint8Array(0);
+    firstTimestampUs = undefined;
+
+    const controller = new AbortController();
+    const keyFrameTimeout = window.setTimeout(() => {
+      if (!decoder) controller.abort();
+    }, 2000);
+
+    try {
+      const response = await fetch(streamUrl, {
+        signal: controller.signal,
+        cache: 'no-store'
+      });
+      if (!response.ok || !response.body) throw new Error('HTTP ' + response.status);
+      const reader = response.body.getReader();
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        append(result.value);
+        await consumeFrames();
+        if (decoder) window.clearTimeout(keyFrameTimeout);
+      }
+    } finally {
+      window.clearTimeout(keyFrameTimeout);
+    }
+  }
+
   async function run() {
     if (!('VideoDecoder' in window)) throw new Error('This browser does not provide WebCodecs VideoDecoder');
-    const response = await fetch('/stream?)HTML";
-  stream << request.query;
-  stream << R"HTML(');
-    if (!response.ok || !response.body) throw new Error('HTTP ' + response.status);
-    const reader = response.body.getReader();
+
     while (true) {
-      const result = await reader.read();
-      if (result.done) break;
-      append(result.value);
-      await consumeFrames();
+      try {
+        await runAttempt();
+        if (decoder) throw new Error('Video stream ended');
+      } catch (error) {
+        if (decoder) throw error;
+        if (error.name !== 'AbortError') console.warn(error);
+        status.textContent = 'Waiting for a key frame; reconnecting...';
+        await new Promise(resolve => window.setTimeout(resolve, 100));
+      }
     }
   }
 

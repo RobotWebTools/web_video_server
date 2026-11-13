@@ -240,3 +240,14 @@ browser WebCodecs API for decoding and rendering. H.264, H.265, VP9, and AV1 are
 playback depends on the codecs exposed by the browser and client hardware. WebCodecs is a
 secure-context API, so use HTTPS or access the server through localhost. New viewers receive the
 encoded stream immediately and initialize decoding after receiving the required parameter sets and key frame.
+
+The Foxglove compressed-video viewer also accepts optional client-side display controls:
+
+```text
+&width=640&height=360     # Force an exact output size
+&width=640                # Preserve aspect ratio and calculate height
+&height=360               # Preserve aspect ratio and calculate width
+&display_fps=10           # Draw no more than 10 frames per second
+```
+
+These controls affect only browser canvas rendering. They do not reduce network bandwidth or the number or resolution of frames decoded by the browser.
