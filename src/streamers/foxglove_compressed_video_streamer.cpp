@@ -74,7 +74,8 @@ constexpr std::size_t kFrameHeaderSize = 20;
 rclcpp::QoS make_qos(
   const std::string & topic, const std::string & profile_name, const rclcpp::Logger & logger)
 {
-  RCLCPP_INFO(logger, "Streaming topic %s with QoS profile %s", topic.c_str(), profile_name.c_str());
+  RCLCPP_INFO(logger, "Streaming topic %s with QoS profile %s", topic.c_str(),
+          profile_name.c_str());
   auto profile = get_qos_profile_from_name(profile_name);
   if (!profile) {
     RCLCPP_ERROR(logger, "Invalid QoS profile %s; using default", profile_name.c_str());
@@ -198,7 +199,7 @@ void FoxgloveCompressedVideoStreamer::start()
 }
 
 void FoxgloveCompressedVideoStreamer::restream_frame(
-  std::chrono::duration<double> /* max_age */)
+  std::chrono::duration<double>/* max_age */)
 {
   // Repeating an encoded delta frame is invalid, so video streams are never restreamed.
 }
@@ -294,7 +295,7 @@ std::shared_ptr<StreamerInterface> FoxgloveCompressedVideoStreamerFactory::creat
 
 std::vector<std::string> FoxgloveCompressedVideoStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/* subscriber_factories */)
 {
   return collect_topics(node);
 }
@@ -303,7 +304,8 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
   const async_web_server_cpp::HttpRequest & request)
 {
   std::stringstream stream;
-  stream << R"HTML(
+  stream <<
+    R"HTML(
 <canvas id="foxglove-video" style="max-width:100%;height:auto;background:#000"></canvas>
 <div id="foxglove-video-status">Connecting...</div>
 <script>
@@ -574,7 +576,8 @@ std::string FoxgloveCompressedVideoStreamerFactory::create_viewer(
 
   const streamUrl = '/stream?)HTML";
   stream << request.query;
-  stream << R"HTML(';
+  stream <<
+    R"HTML(';
 
   async function runAttempt() {
     buffer = new Uint8Array(0);

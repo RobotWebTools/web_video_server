@@ -65,7 +65,8 @@ constexpr const char * kMessageType = "foxglove_msgs/msg/CompressedImage";
 rclcpp::QoS make_qos(
   const std::string & topic, const std::string & profile_name, const rclcpp::Logger & logger)
 {
-  RCLCPP_INFO(logger, "Streaming topic %s with QoS profile %s", topic.c_str(), profile_name.c_str());
+  RCLCPP_INFO(logger, "Streaming topic %s with QoS profile %s", topic.c_str(),
+          profile_name.c_str());
   auto profile = get_qos_profile_from_name(profile_name);
   if (!profile) {
     RCLCPP_ERROR(logger, "Invalid QoS profile %s; using default", profile_name.c_str());
@@ -189,7 +190,7 @@ std::shared_ptr<StreamerInterface> FoxgloveCompressedImageStreamerFactory::creat
 
 std::vector<std::string> FoxgloveCompressedImageStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/* subscriber_factories */)
 {
   return collect_topics(node);
 }
@@ -222,7 +223,7 @@ void FoxgloveCompressedImageSnapshotStreamer::start()
 }
 
 void FoxgloveCompressedImageSnapshotStreamer::restream_frame(
-  std::chrono::duration<double> /* max_age */)
+  std::chrono::duration<double>/* max_age */)
 {
 }
 
@@ -270,7 +271,7 @@ FoxgloveCompressedImageSnapshotStreamerFactory::create_streamer(
 std::vector<std::string>
 FoxgloveCompressedImageSnapshotStreamerFactory::get_available_topics(
   rclcpp::Node & node,
-  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>> /* subscriber_factories */)
+  std::map<std::string, std::shared_ptr<SubscriberFactoryInterface>>/* subscriber_factories */)
 {
   return collect_topics(node);
 }
