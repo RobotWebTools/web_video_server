@@ -15,6 +15,16 @@
     <description>Streams images published using compressed_image_transport as
       multipart/x-mixed-replace.</description>
   </class>
+  <class name="web_video_server/stream/foxglove_compressed_image"
+    type="web_video_server::streamers::FoxgloveCompressedImageStreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Passes through foxglove_msgs/msg/CompressedImage without decoding.</description>
+  </class>
+  <class name="web_video_server/stream/foxglove_compressed_video"
+    type="web_video_server::streamers::FoxgloveCompressedVideoStreamerFactory"
+    base_class_type="web_video_server::StreamerFactoryInterface">
+    <description>Passes through foxglove_msgs/msg/CompressedVideo for browser-side WebCodecs decoding.</description>
+  </class>
   <class name="web_video_server/stream/h264"
     type="web_video_server::streamers::H264StreamerFactory"
     base_class_type="web_video_server::StreamerFactoryInterface">
@@ -39,6 +49,11 @@
     type="web_video_server::streamers::PngSnapshotStreamerFactory"
     base_class_type="web_video_server::SnapshotStreamerFactoryInterface">
     <description>Provides single PNG images.</description>
+  </class>
+  <class name="web_video_server/snapshot/foxglove_compressed_image"
+    type="web_video_server::streamers::FoxgloveCompressedImageSnapshotStreamerFactory"
+    base_class_type="web_video_server::SnapshotStreamerFactoryInterface">
+    <description>Provides a foxglove_msgs/msg/CompressedImage snapshot without decoding.</description>
   </class>
   <class name="web_video_server/snapshot/ros_compressed"
     type="web_video_server::streamers::RosCompressedSnapshotStreamerFactory"

@@ -227,6 +227,11 @@ bool WebVideoServer::handle_stream(
   if (streamer_factories_.find(type) != streamer_factories_.end()) {
     const std::shared_ptr<StreamerInterface> streamer = streamer_factories_[type]->create_streamer(
       request, connection, subscriber_factories_, weak_from_this());
+    if (!streamer) {
+      async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
+        request, connection, begin, end);
+      return true;
+    }
     streamer->start();
     const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
@@ -247,6 +252,11 @@ bool WebVideoServer::handle_snapshot(
     const std::shared_ptr<StreamerInterface> streamer =
       snapshot_streamer_factories_[type]->create_streamer(
       request, connection, subscriber_factories_, weak_from_this());
+    if (!streamer) {
+      async_web_server_cpp::HttpReply::stock_reply(async_web_server_cpp::HttpReply::not_found)(
+        request, connection, begin, end);
+      return true;
+    }
     streamer->start();
     const std::scoped_lock lock(streamers_mutex_);
     streamers_.push_back(streamer);
