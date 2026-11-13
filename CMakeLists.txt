@@ -9,6 +9,7 @@ find_package(ament_cmake_ros REQUIRED)
 
 find_package(async_web_server_cpp REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(foxglove_msgs REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -71,6 +72,8 @@ add_library(${PROJECT_NAME}_streamers SHARED
   src/streamers/image_transport_streamer.cpp
   src/streamers/libav_streamer.cpp
   src/streamers/h264_streamer.cpp
+  src/streamers/foxglove_compressed_image_streamer.cpp
+  src/streamers/foxglove_compressed_video_streamer.cpp
   src/streamers/jpeg_streamers.cpp
   src/streamers/png_streamers.cpp
   src/streamers/ros_compressed_streamer.cpp
@@ -92,6 +95,7 @@ target_link_libraries(${PROJECT_NAME}_streamers
   ${PROJECT_NAME}
   async_web_server_cpp::async_web_server_cpp
   cv_bridge::cv_bridge
+  ${foxglove_msgs_TARGETS}
   image_transport::image_transport
   pluginlib::pluginlib
   rclcpp::rclcpp
@@ -137,6 +141,7 @@ ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(
   async_web_server_cpp
   cv_bridge
+  foxglove_msgs
   image_transport
   pluginlib
   rclcpp

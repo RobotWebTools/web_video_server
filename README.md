@@ -218,3 +218,25 @@ web_video_server is released with a BSD license. For full terms and conditions, 
 
 ### Authors
 See the [AUTHORS](AUTHORS.md) file for a full list of contributors.
+
+## Foxglove compressed image and video messages
+
+When built with `foxglove_msgs`, the following pass-through stream types are available:
+
+- `foxglove_compressed_image` for `foxglove_msgs/msg/CompressedImage`
+- `foxglove_compressed_video` for `foxglove_msgs/msg/CompressedVideo`
+
+Examples:
+
+```text
+http://localhost:8080/stream_viewer?topic=/camera/image&type=foxglove_compressed_image
+http://localhost:8080/stream_viewer?topic=/camera/video&type=foxglove_compressed_video
+http://localhost:8080/snapshot?topic=/camera/image&type=foxglove_compressed_image
+```
+
+The compressed-video streamer does not decode, resize, colorspace-convert, or re-encode video on
+the ROS host. It forwards complete encoded frames with lightweight framing and the viewer uses the
+browser WebCodecs API for decoding and rendering. H.264, H.265, VP9, and AV1 are accepted; actual
+playback depends on the codecs exposed by the browser and client hardware. WebCodecs is a
+secure-context API, so use HTTPS or access the server through localhost. New viewers receive the
+encoded stream immediately and initialize decoding after receiving the required parameter sets and key frame.
