@@ -28,10 +28,14 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/streamers/foxglove_compressed_video_streamer.hpp"
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/subscriber.hpp"
+#include "web_video_server/utils.hpp"
 
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+#include <libavcodec/codec_id.h>
 #include <libavutil/avutil.h>
 }
 
@@ -50,24 +54,22 @@ extern "C"
 #include <vector>
 #include <map>
 
-#include "async_web_server_cpp/http_connection.hpp"
-#include "async_web_server_cpp/http_request.hpp"
-#include "foxglove_msgs/msg/compressed_video.hpp"
-#include "rclcpp/logger.hpp"
-#include "rclcpp/node.hpp"
-
-#include "web_video_server/streamer.hpp"
-
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
 
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+
 #include "pluginlib/class_list_macros.hpp"
+
+#include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
 #include "rclcpp/qos.hpp"
 #include "rmw/qos_profiles.h"
 
-#include "web_video_server/utils.hpp"
+#include "foxglove_msgs/msg/compressed_video.hpp"
 
 namespace web_video_server
 {
@@ -78,7 +80,7 @@ namespace
 
 using Message = foxglove_msgs::msg::CompressedVideo;
 constexpr const char * KMessageType = "foxglove_msgs/msg/CompressedVideo";
-constexpr std::size_t kFrameHeaderSize = 20;
+constexpr std::size_t KFrameHeaderSize = 20;
 
 rclcpp::QoS make_qos(
   const std::string & topic, const std::string & profile_name, const rclcpp::Logger & logger)
@@ -263,7 +265,7 @@ void FoxgloveCompressedVideoStreamer::video_callback(Message::ConstSharedPtr msg
 
 void FoxgloveCompressedVideoStreamer::send_frame(Message::ConstSharedPtr msg, bool key_frame)
 {
-  auto header = std::make_shared<std::array<uint8_t, kFrameHeaderSize>>();
+  auto header = std::make_shared<std::array<uint8_t, KFrameHeaderSize>>();
   auto & h = *header;
   h[0] = 'F'; h[1] = 'G'; h[2] = 'V'; h[3] = '1';
   h[4] = 1;

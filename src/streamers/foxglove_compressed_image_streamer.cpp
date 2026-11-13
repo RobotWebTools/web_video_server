@@ -28,6 +28,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "web_video_server/streamers/foxglove_compressed_image_streamer.hpp"
+#include "web_video_server/streamer.hpp"
+#include "web_video_server/subscriber.hpp"
+#include "web_video_server/utils.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -41,24 +44,22 @@
 #include <vector>
 #include <map>
 
-#include "async_web_server_cpp/http_connection.hpp"
-#include "async_web_server_cpp/http_request.hpp"
-#include "foxglove_msgs/msg/compressed_image.hpp"
-#include "rclcpp/logger.hpp"
-#include "rclcpp/node.hpp"
-
-#include "web_video_server/streamer.hpp"
-
 #include <boost/asio/buffer.hpp>
 #include <boost/system/system_error.hpp>
 
+#include "async_web_server_cpp/http_connection.hpp"
 #include "async_web_server_cpp/http_reply.hpp"
+#include "async_web_server_cpp/http_request.hpp"
+
 #include "pluginlib/class_list_macros.hpp"
+
+#include "rclcpp/logger.hpp"
 #include "rclcpp/logging.hpp"
+#include "rclcpp/node.hpp"
 #include "rclcpp/qos.hpp"
 #include "rmw/qos_profiles.h"
 
-#include "web_video_server/utils.hpp"
+#include "foxglove_msgs/msg/compressed_image.hpp"
 
 namespace web_video_server
 {
