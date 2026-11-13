@@ -35,6 +35,7 @@
 extern "C"
 {
 #include <libavcodec/avcodec.h>
+#include <libavcodec/codec.h>
 #include <libavcodec/codec_id.h>
 #include <libavutil/avutil.h>
 }
